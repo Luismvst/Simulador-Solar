@@ -1,6 +1,8 @@
 # Simulador-Solar
-Simulador Solar llevado a cabo en el Instituto de Energía Solar. Trabajo de final de grado. 
+Simulador Solar llevado a cabo en el Instituto de Energía Solar. Trabajo de final de grado.
+
 Objetivo: Medir células multiunión (semiconductores III-V)
+
 Se pretenden controlar mediante un ordenador e IGORPro, un simulador solar con cierto grado de automatización.
 En él se encuentra un simulador solar, el cuál se podrá controlar para subir o bajar mediante un motor de DC. 
 Tendrá unos LED's que actúen para variar el espectro de la luz que reciben las células y podremos dar o quitar energía para regular las fotocorrientes generadas. 
