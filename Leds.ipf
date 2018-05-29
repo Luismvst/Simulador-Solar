@@ -8,6 +8,7 @@ Menu "Leds"
 	"Init", /Q, initialize()
 End
 
+
 //Initialize the LEDS with the 
 Function initialize()		
 	DFRef saveDFR=GetDataFolderDFR()
@@ -20,12 +21,34 @@ Function initialize()
 	init_OpenSerial(com, Device)	
 	SetDataFolder saveDFR
 end
+//Initialize data needed
+//Baudrate: 9600 bps, 		Other data: N, 8, 1 ( no hardware flow control )                                                                               
+//Do NOT use NULL Modem Cable
+
+//Response structure
+// ## ---- ## -> Everything OK
+// #! ---- #! -> Valid command but error during execution
+// #? ---- #? -> NOT valid in Range (Channel Nºx out of range)
+//When invalid command sent, it is returned: 
+//<SP><SP><SP><SP>xxxx is not defined] where “xxxx” is the command user input. 
 
 //endl is 
-//<LF> --> /n
-//<CR> --> /r
+//	<LF> --> /n
+//	<CR> --> /r
+//	<LF> <CR> are 0x0A and 0x0D in hex, 10 and 13 in decimal
+//space is <SP> (used when commands have no data field)
+
 //****May be not needed "/r/n" at the end of reply; just /r required??****//
 //Commands are NOT case sensitive 
+
+
+//MAGNITUDES
+//	Current	is expressed in mA
+//	Time 		is expressed in uS
+
+//RANGE
+//	Step  -> [ 0 - 127 ]			
+//	Repeat_range : 0 - 9999 ( 9999 is repeated for ever , 1 is repeated once... and so on )
 
 //ECHO MODE COMMAND -> Echo Control 
 //echoON returns the command recibed, a <LF><CR> answer and a prompt. echoOFF just a a <LF><CR> answer
@@ -43,7 +66,26 @@ Function echoCtrl (ctrl)
 	endif
 	VDTWrite2 /O=1 "echo" + ans + endl
 end
-	
+//****NOT TRUSTED BY LUIS, BUT JUST AN IDEA****//
+//getError() returns the number of error that has happened
+Function getError ()
+	string endl = "/n/r"
+	string reply
+	VDTWrite2 /O=1 "Error" + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	print reply
+end
+
+Function getDevInfo ()
+	string endl = "/n/r"
+	string reply
+	VDTWrite2 /O=1 "DeviceInfo" + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	print reply
+end
+
 //To listen the command back from Mightex Led Controller
 Function Listen ()
 	string reply
@@ -53,7 +95,7 @@ Function Listen ()
 end
 Function ls ()
 	return Listen()
-end//Short version of Listen() - For debugging
+end		//Short version of Listen() - For debugging
 	
 //G	et Current Working Mode
 Function getMode(channel)
@@ -74,12 +116,13 @@ Function setMode (channel, mode)
 	variable channel
 	variable mode
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "mode " + num2str(channel) + num2str(mode) + endl	
+	string sp = " "
+	VDTWrite2 /O=1 "mode " + num2str(channel) + sp + num2str(mode) + endl	
 end
-//MODE -> 	0 	DISABLE
+//	MODE: 	 	0 	DISABLE
 //				1	NORMAL
 //				2	STROBE 
-//			---	3	TRIGGER --- (NOT Implemented)
+//				3	TRIGGER	(NOT Implemented)
 
 
 //NORMAL MODE COMMANDS
@@ -89,9 +132,8 @@ Function setNormalParameters (channel, Imax, Iset)
 	variable Imax
 	variable Iset
 	string endl = "/n/r"
-//	nvar Inow = root:SolarSimulator:LedController:Inow
-//	nvar Imax = root:SolarSimulator:LedController:Imax
-	VDTWrite2 /O=1 "?current " + num2str(channel) + num2str(Imax) + num2str(Iset) + endl
+	string sp = " "
+	VDTWrite2 /O=1 "?current " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
 end
 
 Function getNormalParameters (channel)
@@ -112,8 +154,8 @@ Function setNormalCurrent (channel, Iset)
 	variable channel
 	variable Iset
 	string endl = "/n/r"
-//	nvar Inow = root:SolarSimulator:LedController:Inow
-	VDTWrite2 /O=1 "current "+num2str(channel) + num2str(Iset) + endl	
+	string sp = " "
+	VDTWrite2 /O=1 "current "+num2str(channel) + sp + num2str(Iset) + endl	
 end
 
 //STROBE MODE COMMANDS
@@ -123,8 +165,59 @@ Function setStrobeParameters (channel, Imax, Repeat)
 	variable channel
 	variable Imax
 	variable Repeat
-	//Repeat_range : 0 - 9999 ( 9999 is repeated for ever , 1 is repeated once... and so on )
-	string endl = "/n/r"	
+	string endl = "/n/r"
+	string sp = " "	
+	VDTWrite2 /O=1 "strobe " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Repeat) + endl	
+end
+
+//Set Strobe Profile 
+Function  setStrpProfile (channel, step, Iset, Tset)
+	//Format: STRP CHLno STPno Iset Tset<LF><CR>
+	//Sequence Example:
+	//STRP 1 0 500 2000<LF><CR> /* (500mA, 2000uS ) */ 
+	//STRP 1 1 10 100000<LF><CR> /* (10mA, 100000uS) */
+	//STRP 1 2 0 0 <LF><CR> /* (0,0) –End */ 
+	variable channel
+	variable step
+	variable Iset
+	variable Tset
+	string endl = "/n/r"
+	string sp = " "
+	VDTWrite2 /O=1 "strp " + num2str(channel) + sp + num2str(step) + sp + num2str(Iset) + endl	
+end
+
+//Get Strobe Mode Parameters
+Function getStrobeParameters (channel)
+	//Format: ?STROBE CHLno<LF><CF> 
+	//retrun: #Imax Repeat<CR><LF> 
+	variable channel
+	string reply
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "?strobe " + num2str(channel) + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	print reply	
+end
+
+//Get Strobe Mode Profile Parameters
+Function getStrpParameters (channel)
+	//Format: ?STRP CHLno<LF><CR> 
+	//return: #Iset1 Tset1 <CR><LF>... 
+	variable channel
+	string reply
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "?strp " + num2str(channel) + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	print reply	
+end
+	
+
+
+
+
+
+
 //**************************************************************************************************//
 //	PENDIENTE DE REALIZAR PARA CUANDO CONSIGA OTRAS FUNCIONES MENOS MODULARES PARA EL PANEL
 //	nvar Imax_panel = root:SolarSimulator:LedController:Imax
@@ -138,12 +231,4 @@ Function setStrobeParameters (channel, Imax, Repeat)
 	//Note: If you want to use the data of the panel, do not use IMax and Repeat as
 	//arguments of the function and they will be taken automatically from the panel 
 //**************************************************************************************************//
-	VDTWrite2 /O=1 "strobe " + num2str(channel) + num2str(Imax) + num2str(Repeat) + endl	
-end
-
-//Set Strobe Profile 
-Function  setStrobeProfile (
-
-
-
-//OTHER COMMANDS 
+	
