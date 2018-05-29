@@ -20,40 +20,82 @@ Function initialize()
 	init_OpenSerial(com, Device)	
 	SetDataFolder saveDFR
 end
+
 //endl is 
 //<LF> --> /n
 //<CR> --> /r
+//****May be not needed "/r/n" at the end of reply; just /r required??****//
+//Commands are NOT case sensitive 
 
-//MODE -> DISABLE, NORMAL, STROBE 
-Function setMode (mode, numchannel)
-	variable mode
-	variable numchannel
-	string cmd
+//ECHO MODE COMMAND -> Echo Control 
+//echoON returns the command recibed, a <LF><CR> answer and a prompt. echoOFF just a a <LF><CR> answer
+//The device is in EchoOFF as default ( after reset too )
+Function echoCtrl (ctrl)
+	//Format: ECHOON<LF><CR>
+	//Format: ECHOOFF<LF><CR>
+	variable ctrl 
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "?mode "+num2str(numchannel)+ endl	
+	string ans
+	if (ctrl == 1)
+		ans = "ON"
+	else if (ctrl == 0)
+		ans = "OFF"
+	endif
+	VDTWrite2 /O=1 "echo" + ans + endl
 end
-
-Function getMode(numchannel)
-	variable numchannel
+	
+//To listen the command back from Mightex Led Controller
+Function Listen ()
 	string reply
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "?mode "+num2str(numchannel)+ endl
-	delay (40)
-	//May be not needed "/r/n" at the end of reply; just /r required??
 	VDTRead2 /O=1 /T=endl reply
 	print reply
 end
+Function ls ()
+	return Listen()
+end//Short version of Listen() - For debugging
+	
+//G	et Current Working Mode
+Function getMode(numchannel)
+	//Format: ?MODE CHLNo<LF><CR>
+	variable numchannel
+	string reply
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "?mode " + num2str(numchannel) + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	//return 
+	print reply
+end
+
+//Set Current Working Mode
+Function setMode (numchannel, mode)
+	//Format: MODE CHLno mode<LF><CR>	
+	variable numchannel
+	variable mode
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "mode " + num2str(numchannel) + num2str(mode) + endl	
+end
+//MODE -> 	0 	DISABLE
+//				1	NORMAL
+//				2	STROBE 
+//			---	3	TRIGGER --- (NOT Implemented)
+
 
 //NORMAL MODE COMMANDS
-Function setNormalParameters (numchannel)
+Function setNormalParameters (numchannel, Imax, Iset)
+	//Format: NORMAL CHLno Imax Iset<LF><CR>
 	variable numchannel
+	variable Imax
+	variable Iset
 	string endl = "/n/r"
-	nvar Inow = root:SolarSimulator:LedController:Inow
-	nvar Imax = root:SolarSimulator:LedController:Imax
-	VDTWrite2 /O=1 "?current " + num2str(numchannel) + num2str(Imax) + num2str(Inow) + endl
+//	nvar Inow = root:SolarSimulator:LedController:Inow
+//	nvar Imax = root:SolarSimulator:LedController:Imax
+	VDTWrite2 /O=1 "?current " + num2str(numchannel) + num2str(Imax) + num2str(Iset) + endl
 end
 
 Function getNormalParameters (numchannel)
+	//Format: ?CURRENT CHLno<LF><CR> 
 	variable numchannel 
 	string reply
 	string endl = "/n/r"
@@ -65,21 +107,40 @@ Function getNormalParameters (numchannel)
 end
 
 //Set Normal Mode Working Current
-Function setNormalCurrent (numchannel)
+Function setNormalCurrent (numchannel, Iset)
+	//Format: CURRENT CHLno Iset<LF><CR>
 	variable numchannel
+	variable Iset
 	string endl = "/n/r"
-	nvar Inow = root:SolarSimulator:LedController:Inow
-	VDTWrite2 /O=1 "current "+num2str(numchannel) + num2str(Inow) + endl	
+//	nvar Inow = root:SolarSimulator:LedController:Inow
+	VDTWrite2 /O=1 "current "+num2str(numchannel) + num2str(Iset) + endl	
 end
 
 //STROBE MODE COMMANDS
-Function setStrobeParameters (numchannel)
+//Set Strobe Mode Parameters
+Function setStrobeParameters (numchannel, [Imax, Repeat])
 	//Format: STROBE CHLno Imax Repeat<LF><CR> 
 	variable numchannel
 	string endl = "/n/r"
-	nvar Imax = root:SolarSimulator:LedController:Imax
-	nvar Repeat = root:SolarSimulator:LedController:Repeat
+	nvar Imax_panel = root:SolarSimulator:LedController:Imax
+	nvar Repeat_panel = root:SolarSimulator:LedController:Repeat
 	//Repeat_range : 0 - 9999 ( 9999 is repeated for ever , 1 is repeated once... and so on )
+	if (paramisdefault(IMax_manual))
+		Imax = Imax_panel
+	endif
+	if (paramisdefault(Repeat))
+		Repeat = Repeat_panel
+	endif
+	// ***THIS IS PENDING TO BE APROBED BY IVAN G.****	
+	// *** may be not useful *** //
+	//Note: If you want to use the data of the panel, do not use IMax and Repeat as
+	//arguments of the function and they will be taken automatically from the panel 
 	VDTWrite2 /O=1 "strobe " + num2str(numchannel) + num2str(Imax) + num2str(Repeat) + endl	
 end
 
+//Set Strobe Profile 
+Function  setStrobeProfile (
+
+
+
+//OTHER COMMANDS 
