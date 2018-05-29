@@ -56,12 +56,12 @@ Function ls ()
 end//Short version of Listen() - For debugging
 	
 //G	et Current Working Mode
-Function getMode(numchannel)
+Function getMode(channel)
 	//Format: ?MODE CHLNo<LF><CR>
-	variable numchannel
+	variable channel
 	string reply
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "?mode " + num2str(numchannel) + endl
+	VDTWrite2 /O=1 "?mode " + num2str(channel) + endl
 	delay (40)
 	VDTRead2 /O=1 /T=endl reply
 	//return 
@@ -69,12 +69,12 @@ Function getMode(numchannel)
 end
 
 //Set Current Working Mode
-Function setMode (numchannel, mode)
+Function setMode (channel, mode)
 	//Format: MODE CHLno mode<LF><CR>	
-	variable numchannel
+	variable channel
 	variable mode
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "mode " + num2str(numchannel) + num2str(mode) + endl	
+	VDTWrite2 /O=1 "mode " + num2str(channel) + num2str(mode) + endl	
 end
 //MODE -> 	0 	DISABLE
 //				1	NORMAL
@@ -83,23 +83,23 @@ end
 
 
 //NORMAL MODE COMMANDS
-Function setNormalParameters (numchannel, Imax, Iset)
+Function setNormalParameters (channel, Imax, Iset)
 	//Format: NORMAL CHLno Imax Iset<LF><CR>
-	variable numchannel
+	variable channel
 	variable Imax
 	variable Iset
 	string endl = "/n/r"
 //	nvar Inow = root:SolarSimulator:LedController:Inow
 //	nvar Imax = root:SolarSimulator:LedController:Imax
-	VDTWrite2 /O=1 "?current " + num2str(numchannel) + num2str(Imax) + num2str(Iset) + endl
+	VDTWrite2 /O=1 "?current " + num2str(channel) + num2str(Imax) + num2str(Iset) + endl
 end
 
-Function getNormalParameters (numchannel)
+Function getNormalParameters (channel)
 	//Format: ?CURRENT CHLno<LF><CR> 
-	variable numchannel 
+	variable channel 
 	string reply
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "?current " + num2str(numchannel) + endl
+	VDTWrite2 /O=1 "?current " + num2str(channel) + endl
 	delay (40)
 	VDTRead2 /O=1 /T=endl reply
 	print reply	
@@ -107,35 +107,38 @@ Function getNormalParameters (numchannel)
 end
 
 //Set Normal Mode Working Current
-Function setNormalCurrent (numchannel, Iset)
+Function setNormalCurrent (channel, Iset)
 	//Format: CURRENT CHLno Iset<LF><CR>
-	variable numchannel
+	variable channel
 	variable Iset
 	string endl = "/n/r"
 //	nvar Inow = root:SolarSimulator:LedController:Inow
-	VDTWrite2 /O=1 "current "+num2str(numchannel) + num2str(Iset) + endl	
+	VDTWrite2 /O=1 "current "+num2str(channel) + num2str(Iset) + endl	
 end
 
 //STROBE MODE COMMANDS
 //Set Strobe Mode Parameters
-Function setStrobeParameters (numchannel, [Imax, Repeat])
+Function setStrobeParameters (channel, Imax, Repeat)
 	//Format: STROBE CHLno Imax Repeat<LF><CR> 
-	variable numchannel
-	string endl = "/n/r"
-	nvar Imax_panel = root:SolarSimulator:LedController:Imax
-	nvar Repeat_panel = root:SolarSimulator:LedController:Repeat
+	variable channel
+	variable Imax
+	variable Repeat
 	//Repeat_range : 0 - 9999 ( 9999 is repeated for ever , 1 is repeated once... and so on )
-	if (paramisdefault(IMax_manual))
-		Imax = Imax_panel
-	endif
-	if (paramisdefault(Repeat))
-		Repeat = Repeat_panel
-	endif
-	// ***THIS IS PENDING TO BE APROBED BY IVAN G.****	
-	// *** may be not useful *** //
+	string endl = "/n/r"	
+//**************************************************************************************************//
+//	PENDIENTE DE REALIZAR PARA CUANDO CONSIGA OTRAS FUNCIONES MENOS MODULARES PARA EL PANEL
+//	nvar Imax_panel = root:SolarSimulator:LedController:Imax
+//	nvar Repeat_panel = root:SolarSimulator:LedController:Repeat
+//	if (paramisdefault(IMax_manual))
+//		Imax = Imax_panel
+//	endif
+//	if (paramisdefault(Repeat))
+//		Repeat = Repeat_panel
+//	endif
 	//Note: If you want to use the data of the panel, do not use IMax and Repeat as
 	//arguments of the function and they will be taken automatically from the panel 
-	VDTWrite2 /O=1 "strobe " + num2str(numchannel) + num2str(Imax) + num2str(Repeat) + endl	
+//**************************************************************************************************//
+	VDTWrite2 /O=1 "strobe " + num2str(channel) + num2str(Imax) + num2str(Repeat) + endl	
 end
 
 //Set Strobe Profile 
