@@ -49,6 +49,7 @@ end
 //RANGE
 //	Step  -> [ 0 - 127 ]			
 //	Repeat_range : 0 - 9999 ( 9999 is repeated for ever , 1 is repeated once... and so on )
+//	pwmLevel  -> 0 - 10   	(5 = 50%)
 
 //ECHO MODE COMMAND -> Echo Control 
 //echoON returns the command recibed, a <LF><CR> answer and a prompt. echoOFF just a a <LF><CR> answer
@@ -66,7 +67,8 @@ Function echoCtrl (ctrl)
 	endif
 	VDTWrite2 /O=1 "echo" + ans + endl
 end
-//****NOT TRUSTED BY LUIS, BUT JUST AN IDEA****//
+
+//****NOT TRUSTED BY LUIS, BUT JUST AN IDEA****************//
 //getError() returns the number of error that has happened
 Function getError ()
 	string endl = "/n/r"
@@ -77,14 +79,7 @@ Function getError ()
 	print reply
 end
 
-Function getDevInfo ()
-	string endl = "/n/r"
-	string reply
-	VDTWrite2 /O=1 "DeviceInfo" + endl
-	delay (40)
-	VDTRead2 /O=1 /T=endl reply
-	print reply
-end
+//********************************************************//
 
 //To listen the command back from Mightex Led Controller
 Function Listen ()
@@ -100,6 +95,7 @@ end		//Short version of Listen() - For debugging
 //G	et Current Working Mode
 Function getMode(channel)
 	//Format: ?MODE CHLNo<LF><CR>
+	//return: #mode<CR><LF> 
 	variable channel
 	string reply
 	string endl = "/n/r"
@@ -136,8 +132,10 @@ Function setNormalParameters (channel, Imax, Iset)
 	VDTWrite2 /O=1 "?current " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
 end
 
+//Get Normal Mode Parameters
 Function getNormalParameters (channel)
 	//Format: ?CURRENT CHLno<LF><CR> 
+	//return: #Cal1 Cal2 Imax Iset<CR><LF> 
 	variable channel 
 	string reply
 	string endl = "/n/r"
@@ -213,11 +211,6 @@ Function getStrpParameters (channel)
 end
 	
 
-
-
-
-
-
 //**************************************************************************************************//
 //	PENDIENTE DE REALIZAR PARA CUANDO CONSIGA OTRAS FUNCIONES MENOS MODULARES PARA EL PANEL
 //	nvar Imax_panel = root:SolarSimulator:LedController:Imax
@@ -232,3 +225,58 @@ end
 	//arguments of the function and they will be taken automatically from the panel 
 //**************************************************************************************************//
 	
+//OTHER COMMANDS
+//Get Channel Load Voltage
+Function getLoadV (channel)
+	//Format: LoadVoltage CHLno<LF><CR> 
+	//return: #CHLno:vvvvv<CR><LF> [in mV]
+	//Note: As the controller polls the load voltage in a 20ms interval, this feature is proper for NORMAL mode or slow Strobe mode only. 
+	variable channel
+	string endl = "/n/r"
+	string reply
+	VDTWrite2 /O=1 "LoadVoltage " + num2str(channel) + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	print reply
+end
+
+//Shows the deviceInfo
+Function getDevInfo ()
+	//Format: DEVICEINFO<LF><CR> 
+	string endl = "/n/r"
+	string reply
+	VDTWrite2 /O=1 "DeviceInfo" + endl
+	delay (40)
+	VDTRead2 /O=1 /T=endl reply
+	print reply
+end
+
+//Reset Device
+Function reset ()
+	//Format: Reset<LF><CR> ( Soft Reset )
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "Reset" + endl
+end
+
+//Restore Factory Default 
+Function restore ()
+	//Format: RESTOREDEF<LF><CR> 
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "restoredef" + endl
+end
+
+//Store All settings to NV memory
+Function store ()
+	//Format: STORE<LF><CR>
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "restoredef" + endl
+end
+
+//Set Fan PWM Ratio
+Function pwm (pwmLevel)
+	//Format: FanPWM PWMLevel<LF><CR>
+	//Range pwmLevel  -> 0 - 10   	(5 = 50%)
+	variable pwmLevel
+	string endl = "/n/r"
+	VDTWrite2 /O=1 "FanPWM " + num2str(pwmLevel) + endl
+end
