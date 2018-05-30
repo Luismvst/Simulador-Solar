@@ -2,7 +2,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include "serialcom"
 #include "serialcomB"
-//#include "VDP"
 
 Menu "Leds"
 	"Init", /Q, initialize()
@@ -280,9 +279,9 @@ Function getDevInfo ()
 	string endl = "/n/r"
 	string reply
 	VDTWrite2 /O=1 "DeviceInfo" + endl
-	delay (40)
-	VDTRead2 /O=1 /T=endl reply
-	print reply
+//	delay (40)
+//	VDTRead2 /O=1 /T=endl reply
+//	print reply
 end
 
 //Reset Device
@@ -303,7 +302,7 @@ end
 Function store ()
 	//Format: STORE<LF><CR>
 	string endl = "/n/r"
-	VDTWrite2 /O=1 "restoredef" + endl
+	VDTWrite2 /O=1 "store" + endl
 end
 
 //Set Fan PWM Ratio
