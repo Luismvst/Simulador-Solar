@@ -18,8 +18,42 @@ Function initialize()
 	string Device = "LedController"
 	string com = "COM5"
 	variable/G Imax, Inow
-	init_OpenSerial(com, Device)	
+	print init_OpenSerial(com, Device)	
 	SetDataFolder saveDFR
+end
+//In a future it will be merged with Mario´s InitOpenSerial() 
+Function init_OpenSerial (com, Device)
+
+	string com, Device
+	string cmd, DeviceCommands
+	//string reply
+	variable flag
+	string sports=getSerialPorts()
+		print sports
+	if(StringMatch(Device,"MagicBox"))	//It looks for the Word in the DeviceStr
+		DeviceCommands=" baud=1200, stopbits=1, databits=8, parity=0"
+	elseif (StringMatch(Device, "LedController"))
+		DeviceCommands=" baud=9600, stopbits=1, databits=8, parity=0"
+	endif
+		// is the port available in the computer?
+	if (WhichListItem(com,sports)!=-1)
+		cmd = "VDT2 /P=" + com + DeviceCommands
+		Execute cmd
+		cmd = "VDTOperationsPort2 " + com
+		Execute cmd
+		cmd = "VDTOpenPort2 " + com
+		Execute cmd
+		flag = 1
+	else
+		//Error Message with an OK button
+		string smsg="Problem openning port:" +com+". Try the following:\r"
+		smsg+="0.- TURN IT ON!\r"
+		smsg+="1.- Verify is not being used by another program\r"
+		smsg+="2.- Verify the PORT is available in Device Manager (Ports COM). If not, rigth-click and scan hardware changes or disable and enable it.\r"
+		DoAlert /T="Unable to open Serial Port" 0, smsg
+		Abort "Execution aborted.... Restart IGOR"
+	endif
+	return flag 
 end
 //Initialize data needed
 //Baudrate: 9600 bps, 		Other data: N, 8, 1 ( no hardware flow control )                                                                               
@@ -62,7 +96,7 @@ Function echoCtrl (ctrl)
 	string ans
 	if (ctrl == 1)
 		ans = "ON"
-	else if (ctrl == 0)
+	elseif (ctrl == 0)
 		ans = "OFF"
 	endif
 	VDTWrite2 /O=1 "echo" + ans + endl
