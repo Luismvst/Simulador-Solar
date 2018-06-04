@@ -4,12 +4,12 @@
 #include "serialcomB"
 
 Menu "Leds"
-	"Init", /Q, initialize()
+	"Init", /Q, init()
 End
 
 
 //Initialize the LEDS with the 
-Function initialize()		
+Function init()		
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator:LedController"
 	DFRef dfr = $path
