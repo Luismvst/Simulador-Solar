@@ -1,5 +1,6 @@
 ﻿#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
+//#include "Leds"
 
 Menu "S.Solar"
 	"Init", /Q, init_SolarPanel()
@@ -9,7 +10,7 @@ End
 
 Function init_SolarPanel()
 	DFRef saveDFR=GetDataFolderDFR()
-	string path = "root:SolarSimulator:LedController"
+	string path = "root:SolarSimulator"
 	DFRef dfr = $path
 	SetDatafolder dfr
 	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
@@ -21,7 +22,7 @@ Function init_SolarPanel()
 		DoWindow /F COMPanel
 		return 0
 	endif
-	string/G COM = ""
+	string/G :LedController:COM = ""
 	Show_Panels()	
 	SetDataFolder saveDFR
 end
@@ -29,19 +30,19 @@ end
 Function Show_Panels ()
 
 	svar COM = root:SolarSimulator:LedController:COM
-	if (strlen (COM) == 0)
-		which_COM ()		
-	elseif (strlen (COM) > 0)
-		//We should check if the com of the serial port is useless or not, to kill the window or throw a DoAlert
-		
-		if (WinType("COMPanel")==7) //True if COMPanel exists as a name of a Panel "explicitly" ( non a graph or anythg else)
-			killWindow COMPanel
-			print "COMPanel is dead now"
-			Solar_Panel ()
-		endif
-		
-	endif
-	//Solar_Panel()
+//	if (strlen (COM) == 0)
+//		which_COM ()		
+//	elseif (strlen (COM) > 0)
+//		//We should check if the com of the serial port is useless or not, to kill the window or throw a DoAlert
+//		init_Leds(COM)
+//		if (WinType("COMPanel")==7) //True if COMPanel exists as a name of a Panel "explicitly" ( non a graph or anythg else)
+//			killWindow COMPanel
+//			print "COMPanel is dead now"
+//			Solar_Panel ()
+//		endif
+//		
+//	endif
+	Solar_Panel()
 end 
 
 Function which_COM ()	
@@ -92,7 +93,8 @@ Function Solar_Panel()
 	make /N=1 /O  root:PapeleradeVariables:ss
 	wave ss = root:PapeleradeVariables:ss
 	string nameDisplay 
-	
+	nvar Imax = root:SolarSimulator:LedController:Imax
+	nvar Iset = root:SolarSimulator:LedController:Iset
 	PauseUpdate; Silent 1		// building window...
 	
 	//Display 
@@ -126,6 +128,13 @@ Function Solar_Panel()
 	Button buttonMeas, pos={250.00,449.00},size={118.00,47.00}, proc=ButtonProcVDP, title="Measure"
 	Button buttonMeas, fSize=16,fColor=(1,16019,65535)
 	
+	//Slider	
+	Slider slider0,pos={52.00,71.00},size={26.00,66.00},proc=SliderProc
+	Slider slider0,help={"Current in mA"},labelBack=(65535,65535,65535)
+	Slider slider0,limits={0,1000,0},variable= root:SolarSimulator:LedController:Imax,ticks= -5
+	Slider slider1,pos={106.00,72.00},size={26.00,66.00},proc=SliderProc
+	Slider slider1,help={"Current in mA"},labelBack=(65535,65535,65535)
+	Slider slider1,limits={0,Imax,0},variable= root:SolarSimulator:LedController:Iset,ticks= -5
 	
 	//SetVar
 	SetVariable setvarmaxcurrent,pos={237.00,365.00},size={140.00,18.00},title="Max. Current"
@@ -134,7 +143,7 @@ Function Solar_Panel()
 	//ValDisplay
 	ValDisplay valdisp0,pos={253.00,420.00}, size={89.00,17.00}
 	ValDisplay valdisp0,barmisc={0,100}
-	ValDisplay valdisp0,value=#"root:VanDerPauw:result"
+	ValDisplay valdisp0,value=#"root:SolarSimulator:LedController:Imax"
 	
 	//Text
 	DrawText 252,409,"Total Resistance:"

@@ -4,20 +4,21 @@
 #include "serialcomB"
 
 Menu "Leds"
-	"Init", /Q, init()
+	"Init", /Q, init_Leds()
 End
 
 
 //Initialize the LEDS with the 
-Function init()		
+Function init_Leds(COM)		
+	string com
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator:LedController"
 	DFRef dfr = $path
 	SetDatafolder dfr
 	string Device = "LedController"
-	string com = "COM5"
-	variable/G Imax, Inow
-	print init_OpenSerial(com, Device)	
+	//variable COM = "COM5"
+	variable/G Imax, Iset
+	//init_OpenSerial(com, Device)
 	SetDataFolder saveDFR
 end
 //In a future it will be merged with Mario´s InitOpenSerial() 
