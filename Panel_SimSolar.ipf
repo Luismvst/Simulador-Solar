@@ -23,6 +23,7 @@ Function init_SolarPanel()
 		return 0
 	endif
 	string/G :LedController:COM = ""
+	variable/G :LedController:channel = 1
 	Show_Panels()	
 	SetDataFolder saveDFR
 end
@@ -45,30 +46,6 @@ Function Show_Panels ()
 	Solar_Panel()
 end 
 
-Function which_COM ()	
-	PauseUpdate; Silent 1		// building window...
-	DoWindow /K COMPanel; DelayUpdate
-	NewPanel /K=1 /W=(690,55,982,121) as "Choose COM SerialPort"
-	DoWindow /C COMPanel
-	CheckBox check1,pos={10.00,15.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM1"
-	CheckBox check1,help={"To know which COM Port you are using, right-click on Equipo and click on Administrar. It will show you in \"Administrador de dispositivos/Puertos\" the current COM's that are being used."}
-	CheckBox check1,value= 0,mode=1
-	CheckBox check2,pos={10.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM2"
-	CheckBox check2,value= 0,mode=1
-	CheckBox check3,pos={85.00,14.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM3"
-	CheckBox check3,value= 0,mode=1
-	CheckBox check4,pos={85.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM4"
-	CheckBox check4,value= 0,mode=1
-	CheckBox check5,pos={160.00,14.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM5"
-	CheckBox check5,value= 0,mode=1
-	CheckBox check6,pos={160.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM6"
-	CheckBox check6,value= 0,mode=1
-	CheckBox check7,pos={235.00,13.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM7"
-	CheckBox check7,value= 0,mode=1
-	CheckBox check8,pos={235.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM8"
-	CheckBox check8,value= 0,mode=1
-	
-end
 Function Solar_Panel()
 	
 	string path = "root:SolarSimulator"
@@ -95,6 +72,7 @@ Function Solar_Panel()
 	string nameDisplay 
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
+	nvar channel = root:SolarSimulator:LedController:channel
 	PauseUpdate; Silent 1		// building window...
 	
 	//Display 
@@ -131,16 +109,20 @@ Function Solar_Panel()
 	DrawText 99,62,"   Set  \rCurrent "
 	
 	//Buttons
-//	Button buttonClear, pos={278.00,318.00},size={80.00,30.00}, proc=ButtonProcVDP, title="Clean"
-//	Button buttonClear, fSize=12,fColor=(65535,49157,16385)
+	
 	Button buttonApplyCurrent,pos={141.00,143.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
 	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
 	Button buttonApplyCurrent,fColor=(1,16019,65535)
 	Button buttonSetParameters,pos={43.00,174.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
 	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
 	Button buttonSetParameters,fColor=(40000,20000,65535)
+	Button buttonMode,pos={288.00,42.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
+	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
 	
-	
+	//PopUps
+	PopupMenu popupchannel,pos={284.00,11.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
+	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
+	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
 	
 
 	//ValDisplay
@@ -150,8 +132,6 @@ Function Solar_Panel()
 //	ValDisplay valdisp1,pos={97.00,147.00},size={39.00,17.00}
 //	ValDisplay valdisp1,limits={0,0,0},barmisc={0,100}
 //	ValDisplay valdisp1,value= #"root:SolarSimulator:LedController:Iset"
-	
-	
 	
 	
 end
@@ -242,15 +222,21 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 		case 2: // mouse up
 			// click code here
 			strswitch (ba.ctrlname)	
-			nvar channel = root:SolarSimulator:LedController:channel
-			nvar Imax = root:SolarSimulator:LedController:Imax
-			case "buttonApplyCurrent":
-			nvar Iset = root:SolarSimulator:LedController:Iset
-				setNormalCurrent (channel, Iset)
+				nvar channel = root:SolarSimulator:LedController:channel
+				//nvar Imax = root:SolarSimulator:LedController:Imax
+				case "buttonApplyCurrent":
+					nvar Iset = root:SolarSimulator:LedController:Iset
+					setNormalCurrent (channel, Iset)
 				break
-			case "buttonSetParameters":
-				//Defect parameters to start 
-				setNormalParameters (channel, 20, 0)
+				case "buttonSetParameters":
+					//Defect parameters to start 
+					setNormalParameters (channel, 100, 0)
+				break
+				case "buttonMode":
+					setMode (channel, 1)
+					//	MODE: 	 	0 	DISABLE
+					//				1	NORMAL
+					//				2	STROBE 
 				break
 			endswitch
 			
@@ -261,6 +247,28 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 
 	return 0
 End
+
+Function PopMenuProc_SimSolar(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+
+	switch( pa.eventCode )
+		case 2: // mouse up
+			Variable popNum = pa.popNum
+			String popStr = pa.popStr
+			
+			strswitch (pa.ctrlname)
+				case "popupchannel":
+					nvar channel = root:SolarSimulator:LedController:channel
+					channel = popNum
+				break
+			endswitch
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
 
 Function Sliders (Imax)
 	
@@ -285,3 +293,28 @@ Function Sliders (Imax)
 	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
 	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
 End
+
+Function which_COM ()	
+	PauseUpdate; Silent 1		// building window...
+	DoWindow /K COMPanel; DelayUpdate
+	NewPanel /K=1 /W=(690,55,982,121) as "Choose COM SerialPort"
+	DoWindow /C COMPanel
+	CheckBox check1,pos={10.00,15.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM1"
+	CheckBox check1,help={"To know which COM Port you are using, right-click on Equipo and click on Administrar. It will show you in \"Administrador de dispositivos/Puertos\" the current COM's that are being used."}
+	CheckBox check1,value= 0,mode=1
+	CheckBox check2,pos={10.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM2"
+	CheckBox check2,value= 0,mode=1
+	CheckBox check3,pos={85.00,14.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM3"
+	CheckBox check3,value= 0,mode=1
+	CheckBox check4,pos={85.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM4"
+	CheckBox check4,value= 0,mode=1
+	CheckBox check5,pos={160.00,14.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM5"
+	CheckBox check5,value= 0,mode=1
+	CheckBox check6,pos={160.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM6"
+	CheckBox check6,value= 0,mode=1
+	CheckBox check7,pos={235.00,13.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM7"
+	CheckBox check7,value= 0,mode=1
+	CheckBox check8,pos={235.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM8"
+	CheckBox check8,value= 0,mode=1
+	
+end
