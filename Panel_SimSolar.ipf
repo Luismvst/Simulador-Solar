@@ -82,7 +82,7 @@ Function Solar_Panel()
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
 			genDFolders(path + ":LedController")
-			genDFolders("root:PapeleraDeVariables")
+			genDFolders(":PapeleraDeVariables")
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
 			
@@ -90,8 +90,8 @@ Function Solar_Panel()
 		endif
 	endif
 	SetDataFolder path
-	make /N=1 /O  root:PapeleradeVariables:ss
-	wave ss = root:PapeleradeVariables:ss
+	make /N=1 /O  root:SolarSimulator:PapeleradeVariables:ss
+	wave ss = root:SolarSimulator:PapeleradeVariables:ss
 	string nameDisplay 
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
@@ -122,30 +122,26 @@ Function Solar_Panel()
 	NewPanel /K=0 /W=(306,53,709,571) as "SolarSimulatorPanel"
 	DoWindow /C SSPanel
 	
+	Sliders(Imax)
+	
+	//Text
+	SetDrawEnv fstyle= 1
+	DrawText 40,61,"   Max \rCurrent"
+	SetDrawEnv fstyle= 1
+	DrawText 99,62,"   Set  \rCurrent "
+	
 	//Buttons
 //	Button buttonClear, pos={278.00,318.00},size={80.00,30.00}, proc=ButtonProcVDP, title="Clean"
 //	Button buttonClear, fSize=12,fColor=(65535,49157,16385)
-//	Button buttonMeas, pos={250.00,449.00},size={118.00,47.00}, proc=ButtonProcVDP, title="Measure"
-//	Button buttonMeas, fSize=16,fColor=(1,16019,65535)
+	Button buttonApplyCurrent,pos={141.00,143.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
+	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
+	Button buttonApplyCurrent,fColor=(1,16019,65535)
+	Button buttonSetParameters,pos={43.00,174.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
+	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
+	Button buttonSetParameters,fColor=(40000,20000,65535)
 	
-	//Slider	
-	Slider slider0,pos={50.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider0,help={"Current in mA"},labelBack=(65535,65535,65535)
-	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
-	Slider slider1,pos={100.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider1,help={"Current in mA"},labelBack=(65535,65535,65535)
-	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
 	
-	//SetVar
-	//Conservo este set variable por si acaso quiero hacer algo con él. Sino borrar.
-//	SetVariable setvarmaxcurrent,pos={32.00,187.00},size={140.00,18.00},title="Max. Current"
-//	SetVariable setvarmaxcurrent,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-	SetVariable setvarimax,pos={-1.00,147.00},size={78.00,18.00}
-	SetVariable setvarimax,fColor=(65535,65535,65535)
-	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-	SetVariable setvariset,pos={79.00,146.00},size={73.00,18.00}
-	SetVariable setvariset,fColor=(65535,65535,65535)
-	SetVariable setvariset,limits={0,494,1},value= root:SolarSimulator:LedController:Iset
+	
 
 	//ValDisplay
 //	ValDisplay valdisp0,pos={36.00,148.00},size={39.00,17.00}
@@ -155,11 +151,7 @@ Function Solar_Panel()
 //	ValDisplay valdisp1,limits={0,0,0},barmisc={0,100}
 //	ValDisplay valdisp1,value= #"root:SolarSimulator:LedController:Iset"
 	
-	//Text
-	SetDrawEnv fstyle= 1
-	DrawText 40,61,"   Max \rCurrent"
-	SetDrawEnv fstyle= 1
-	DrawText 99,62,"Current  \rCurrent "
+	
 	
 	
 end
@@ -196,24 +188,100 @@ Function SliderProc_SimSolar(sa) : SliderControl
 		default:
 			if( sa.eventCode & 1 ) // value set 
 				Variable curval = sa.curval
-				if (stringmatch (sa.ctrlname, "slider0"))
-					nvar Iset = root:SolarSimulator:LedController:Iset
-					nvar Imax = root:SolarSimulator:LedController:Imax
-					if(Imax<Iset)
+				nvar Iset = root:SolarSimulator:LedController:Iset
+				nvar Imax = root:SolarSimulator:LedController:Imax
+				//This was not necesary
+				if(Imax<Iset)
 						//To ensure: Iset <= Imax
 						Iset=Imax
-					elseif (Imax==0)
+				elseif (Imax==0)
 						
-					endif
-					//It willbe necesary to take care of these controls to create a good panel. 
-					//May be i design a function or something to change the things better than doing this
-					Slider slider1,pos={100.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
-					Slider slider1,help={"Current in mA"},labelBack=(65535,65535,65535)
-					Slider slider1,limits={0,curval,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
+				endif
+				if (stringmatch (sa.ctrlname, "slider0"))
+					//This makes the second slider to be syncronized to the first one in possible top values.
+					Sliders (Imax)
+				endif
+			elseif (sa.eventCode & 4 ) //Fix an error on sliders
+				if (Iset == 0 && Imax > Iset + 1 )
+					Iset=Iset+1
 				endif
 			endif
+			print sa.eventCode
 			break
 	endswitch
 
 	return 0
+End
+
+Function SetVarProc_SimSol(sva) : SetVariableControl
+	STRUCT WMSetVariableAction &sva
+
+	switch( sva.eventCode )
+		case 1: // mouse up
+		case 2: // Enter key
+		case 3: // Live update
+			Variable dval = sva.dval
+			String sval = sva.sval
+			nvar Iset = root:SolarSimulator:LedController:Iset
+			nvar Imax = root:SolarSimulator:LedController:Imax
+			if (Iset>Imax)
+				Iset = Imax
+			endif
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProc_SimSolar(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+			// click code here
+			strswitch (ba.ctrlname)	
+			nvar channel = root:SolarSimulator:LedController:channel
+			nvar Imax = root:SolarSimulator:LedController:Imax
+			case "buttonApplyCurrent":
+			nvar Iset = root:SolarSimulator:LedController:Iset
+				setNormalCurrent (channel, Iset)
+				break
+			case "buttonSetParameters":
+				//Defect parameters to start 
+				setNormalParameters (channel, 20, 0)
+				break
+			endswitch
+			
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function Sliders (Imax)
+	
+	variable Imax 
+	//Slider	
+	Slider slider0,pos={50.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
+	Slider slider0,help={"Current in mA"},labelBack=(65535,65535,65535)
+	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
+	Slider slider1,pos={100.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
+	Slider slider1,help={"Current in mA"},labelBack=(65535,65535,65535)
+	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
+	
+	//SetVar
+	//Conservo este set variable por si acaso quiero hacer algo con él. Sino borrar.
+//	SetVariable setvarmaxcurrent,pos={32.00,187.00},size={140.00,18.00},title="Max. Current"
+//	SetVariable setvarmaxcurrent,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
+	SetVariable setvarimax,pos={40.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
+	SetVariable setvarimax,fColor=(65535,65535,65535)
+	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
+	SetVariable setvariset,pos={90.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
+	SetVariable setvariset,fColor=(65535,65535,65535)
+	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
+	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
 End

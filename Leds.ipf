@@ -156,6 +156,7 @@ end
 
 
 //NORMAL MODE COMMANDS
+//Set Normal Mode Parameters
 Function setNormalParameters (channel, Imax, Iset)
 	//Format: NORMAL CHLno Imax Iset<LF><CR>
 	variable channel
@@ -163,7 +164,7 @@ Function setNormalParameters (channel, Imax, Iset)
 	variable Iset
 	string endl = "/n/r"
 	string sp = " "
-	VDTWrite2 /O=1 "?current " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
+	VDTWrite2 /O=1 "normal " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
 end
 
 //Get Normal Mode Parameters
