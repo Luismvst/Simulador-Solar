@@ -31,19 +31,19 @@ end
 Function Show_Panels ()
 
 	svar COM = root:SolarSimulator:LedController:COM
-//	if (strlen (COM) == 0)
-//		which_COM ()		
-//	elseif (strlen (COM) > 0)
-//		//We should check if the com of the serial port is useless or not, to kill the window or throw a DoAlert
-//		init_Leds(COM)
-//		if (WinType("COMPanel")==7) //True if COMPanel exists as a name of a Panel "explicitly" ( non a graph or anythg else)
-//			killWindow COMPanel
-//			print "COMPanel is dead now"
-//			Solar_Panel ()
-//		endif
-//		
-//	endif
-	Solar_Panel()
+	if (strlen (COM) == 0)
+		which_COM ()		
+	elseif (strlen (COM) > 0)
+		//We should check if the com of the serial port is useless or not, to kill the window or throw a DoAlert
+		init_Leds(COM)
+		if (WinType("COMPanel")==7) //True if COMPanel exists as a name of a Panel "explicitly" ( non a graph or anythg else)
+			killWindow COMPanel
+			print "COMPanel is dead now"
+			Solar_Panel ()
+		endif
+		
+	endif
+	//Solar_Panel()
 end 
 
 Function Solar_Panel()

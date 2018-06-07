@@ -18,7 +18,7 @@ Function init_Leds(COM)
 	string Device = "LedController"
 	//variable COM = "COM5"
 	variable/G Imax, Iset
-	//init_OpenSerial(com, Device)
+	init_OpenSerial(com, Device)
 	SetDataFolder saveDFR
 end
 //In a future it will be merged with Mario´s InitOpenSerial() 
