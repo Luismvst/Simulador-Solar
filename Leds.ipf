@@ -100,8 +100,6 @@ Function echoCtrl (ctrl)
 		ans = "OFF"
 	endif
 	VDTWrite2 /O=1 "echo" + ans + endl
-	vdtread2 /o=1 ans
-	print ans
 end
 
 //****NOT TRUSTED BY LUIS, BUT JUST AN IDEA****************//
@@ -119,10 +117,10 @@ end
 
 //To listen the command back from Mightex Led Controller
 Function Listen ()
-	string reply, reply2
+	string reply 
 	string endl = "/n/r"
 	//VDTRead2 /O=1 /T=endl reply
-	VDTRead2 /O=1 reply, reply2
+	VDTRead2 /O=1 /Q reply
 	print reply
 end
 Function ls ()
@@ -137,10 +135,10 @@ Function getMode(channel)
 	string reply
 	string endl = "/n/r"
 	VDTWrite2 /O=1 "?mode " + num2str(channel) + endl
-	delay (40)
-	VDTRead2 /O=1 /T=" " reply
-	//return 
-	print reply
+//	delay (40)
+//	VDTRead2 /O=1 /T=" " reply
+//	//return 
+//	print reply
 end
 
 //Set Current Working Mode
