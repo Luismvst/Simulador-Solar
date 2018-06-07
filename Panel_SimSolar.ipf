@@ -3,7 +3,7 @@
 //#include "Leds"
 
 Menu "S.Solar"
-	"Init", /Q, init_SolarPanel()
+	"Init/ç", /Q, init_SolarPanel()
 	
 End
 
@@ -97,7 +97,7 @@ Function Solar_Panel()
 //	SetDrawLayer /W=SSPanel UserFront
 	//Panel
 	DoWindow /K SSPanel;DelayUpdate
-	NewPanel /K=0 /W=(306,53,709,571) as "SolarSimulatorPanel"
+	NewPanel /K=0 /W=(730,63,1133,581) as "SolarSimulatorPanel"
 	DoWindow /C SSPanel
 	
 	Sliders(Imax)
@@ -175,18 +175,19 @@ Function SliderProc_SimSolar(sa) : SliderControl
 						//To ensure: Iset <= Imax
 						Iset=Imax
 				elseif (Imax==0)
-						
+						Iset=0
 				endif
+				
 				if (stringmatch (sa.ctrlname, "slider0"))
 					//This makes the second slider to be syncronized to the first one in possible top values.
 					Sliders (Imax)
 				endif
-			elseif (sa.eventCode & 4 ) //Fix an error on sliders
-				if (Iset == 0 && Imax > Iset + 1 )
-					Iset=Iset+1
-				endif
+			elseif (sa.eventCode & 4 ) //Fix an error on sliders, if maximun level has changed to 0
+			//I dont like this. Need a revision
+//				if (Iset == 0 && Imax > Iset + 1 )
+//					Iset=Iset+1
+//				endif
 			endif
-			print sa.eventCode
 			break
 	endswitch
 
@@ -206,9 +207,28 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			nvar Imax = root:SolarSimulator:LedController:Imax
 			if (Iset>Imax)
 				Iset = Imax
+			elseif (Imax == 0)
+				Iset = 0
+			
+			endif
+			if (stringmatch (sva.ctrlname, "setvarimax"))
+				//We try to adjust the Imax limit for sliders ( so it is only modified if you change imax )
+				//The funcition sliders avoid to roll it with the wheel, so i do this temporarily
+				//Sliders (Imax)
+				variable tick
+				if (Imax < 6)
+					tick = -1
+				else
+					tick = -5
+				endif
+				Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= tick
+				Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= tick
+				SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
 			endif
 			break
 		case -1: // control being killed
+			break
+		case 6:
 			break
 	endswitch
 
@@ -269,17 +289,22 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	return 0
 End
 
-
 Function Sliders (Imax)
 	
 	variable Imax 
+	variable tick 
+	if (Imax < 6)
+		tick = -1
+	else
+		tick = -5
+	endif
 	//Slider	
 	Slider slider0,pos={50.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider0,help={"Current in mA"},labelBack=(65535,65535,65535)
-	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
+	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= tick
 	Slider slider1,pos={100.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider1,help={"Current in mA"},labelBack=(65535,65535,65535)
-	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
+	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= tick
 	
 	//SetVar
 	//Conservo este set variable por si acaso quiero hacer algo con él. Sino borrar.
