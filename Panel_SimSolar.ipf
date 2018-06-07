@@ -240,10 +240,9 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-			// click code here
-			strswitch (ba.ctrlname)	
-				nvar channel = root:SolarSimulator:LedController:channel
-				//nvar Imax = root:SolarSimulator:LedController:Imax
+			nvar channel = root:SolarSimulator:LedController:channel
+			//nvar Imax = root:SolarSimulator:LedController:Imax
+			strswitch (ba.ctrlname)				
 				case "buttonApplyCurrent":
 					nvar Iset = root:SolarSimulator:LedController:Iset
 					setNormalCurrent (channel, Iset)
