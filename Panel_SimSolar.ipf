@@ -11,6 +11,9 @@ End
 Function init_SolarPanel()
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator"
+	if(!DatafolderExists(path))
+		genDFolders (path)
+	endif
 	DFRef dfr = $path
 	SetDatafolder dfr
 	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
@@ -22,15 +25,18 @@ Function init_SolarPanel()
 		DoWindow /F COMPanel
 		return 0
 	endif
-	string/G :LedController:COM = ""
-	variable/G :LedController:channel = 1
+	//**********************************************//
+	//Check it out in the future
+	string/G COM = ""
+	//variable/G :LedController:channel = 1
+	variable/G channel = 1
 	Show_Panels()	
 	SetDataFolder saveDFR
 end
 
 Function Show_Panels ()
 
-	svar COM = root:SolarSimulator:LedController:COM
+	svar COM = root:SolarSimulator:COM
 	if (strlen (COM) == 0)
 		which_COM ()		
 	elseif (strlen (COM) > 0)
@@ -55,11 +61,11 @@ Function Solar_Panel()
 		smsg += "Do you want to initialize?\n"
 		DoAlert /T="Unable to open the program" 1, smsg
 		if (V_flag == 2)		//Clicked <"NO">
-			Abort "Execution aborted.... Restart IGOR"
+			//Abort "Execution aborted.... Restart IGOR"
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
 			genDFolders(path + ":LedController")
-			genDFolders(":PapeleraDeVariables")
+			genDFolders(path + ":PapeleraDeVariables")
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
 			
@@ -321,7 +327,7 @@ End
 Function which_COM ()	
 	PauseUpdate; Silent 1		// building window...
 	DoWindow /K COMPanel; DelayUpdate
-	NewPanel /K=1 /W=(690,55,982,121) as "Choose COM SerialPort"
+	NewPanel /K=1 /W=(690,55,1092,121) as "Choose COM SerialPort"
 	DoWindow /C COMPanel
 	CheckBox check1,pos={10.00,15.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM1"
 	CheckBox check1,help={"To know which COM Port you are using, right-click on Equipo and click on Administrar. It will show you in \"Administrador de dispositivos/Puertos\" the current COM's that are being used."}
@@ -340,5 +346,6 @@ Function which_COM ()
 	CheckBox check7,value= 0,mode=1
 	CheckBox check8,pos={235.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM8"
 	CheckBox check8,value= 0,mode=1
-	
+	Button buttonCom,pos={299.00,21.00},size={88.00,26.00},proc=ButtonProc_SimSolar,title="Continue"
+	Button buttonCom,fColor=(32792,65535,1)
 end
