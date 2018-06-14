@@ -27,7 +27,7 @@ Function init_SolarPanel()
 	string/G COM = selectComLeds ()
 	variable/G channel = 1
 	if (strlen (com) != 0) 
-		//Check if message displayed on conflict ports is okey... I dont know if it is too agressive!
+		//Check if message displayed about conflict ports is okey... I dont know if it is too agressive!
 		init_Leds(com)
 	endif
 	Solar_Panel ()	
