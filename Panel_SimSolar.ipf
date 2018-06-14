@@ -9,6 +9,7 @@ End
 
 
 Function init_SolarPanel()
+
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator"
 	if(!DatafolderExists(path))
@@ -16,23 +17,24 @@ Function init_SolarPanel()
 	endif
 	DFRef dfr = $path
 	SetDatafolder dfr
+	//Check if this is right becouse i dont know if it is 
+	//good to reinitialize leds or something to reset some values... /* check */ 
 	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
 		SetDrawLayer /W=SSPanel  Progfront
 		DoWindow /F SSPanel
 		return 0
-	elseif (ItemsinList (WinList("COMPanel", ";", "")) > 0)
-		SetDrawLayer /W=COMPanel  Progfront
-		DoWindow /F COMPanel
-		return 0
 	endif 
 	string/G COM = selectComLeds ()
 	variable/G channel = 1
+	if (strlen (com) != 0) 
+		//Check if message displayed on conflict ports is okey... I dont know if it is too agressive!
+		init_Leds(com)
+	endif
 	Solar_Panel ()	
 	SetDataFolder saveDFR
 end
 
 Function/S selectComLeds()
-
 	Variable comNum=1
 	Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8"
 	DoPrompt "Choose the COM Port",comNum
