@@ -24,33 +24,24 @@ Function init_SolarPanel()
 		SetDrawLayer /W=COMPanel  Progfront
 		DoWindow /F COMPanel
 		return 0
-	endif
-	//**********************************************//
-	//Check it out in the future
-	string/G COM = ""
-	//variable/G :LedController:channel = 1
+	endif 
+	string/G COM = selectComLeds ()
 	variable/G channel = 1
-	Show_Panels()	
+	Solar_Panel ()	
 	SetDataFolder saveDFR
 end
 
-Function Show_Panels ()
+Function/S selectComLeds()
 
-	svar COM = root:SolarSimulator:COM
-	if (strlen (COM) == 0)
-		which_COM ()		
-	elseif (strlen (COM) > 0)
-		//We should check if the com of the serial port is useless or not, to kill the window or throw a DoAlert
-		init_Leds(COM)
-		if (WinType("COMPanel")==7) //True if COMPanel exists as a name of a Panel "explicitly" ( non a graph or anythg else)
-			killWindow COMPanel
-			print "COMPanel is dead now"
-			Solar_Panel ()
-		endif
-		
+	Variable comNum=1
+	Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8"
+	DoPrompt "Choose the COM Port",comNum
+	if (V_Flag)	
+		return ""		// user canceled
 	endif
-	//Solar_Panel()
-end 
+	string com = "COM" + num2str (comNum)
+	return com
+End
 
 Function Solar_Panel()
 	
@@ -149,14 +140,6 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 		case 2: // mouse up
 			Variable checked = cba.checked
 			
-			//We take the last number of the variable check'X' to create COM'X'
-			//The lowst COM is COM1, so check1 -> COM1	
-			//The highest COM is COM8, so check8 -> COM8
-			svar COM = root:SolarSimulator:LedController:COM 
-			string name = cba.ctrlname		
-			COM = "COM" + name[5]
-			//print com
-			Show_Panels()
 			break
 		case -1: // control being killed
 			break
@@ -323,29 +306,3 @@ Function Sliders (Imax)
 	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
 	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
 End
-
-Function which_COM ()	
-	PauseUpdate; Silent 1		// building window...
-	DoWindow /K COMPanel; DelayUpdate
-	NewPanel /K=1 /W=(690,55,1092,121) as "Choose COM SerialPort"
-	DoWindow /C COMPanel
-	CheckBox check1,pos={10.00,15.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM1"
-	CheckBox check1,help={"To know which COM Port you are using, right-click on Equipo and click on Administrar. It will show you in \"Administrador de dispositivos/Puertos\" the current COM's that are being used."}
-	CheckBox check1,value= 0,mode=1
-	CheckBox check2,pos={10.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM2"
-	CheckBox check2,value= 0,mode=1
-	CheckBox check3,pos={85.00,14.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM3"
-	CheckBox check3,value= 0,mode=1
-	CheckBox check4,pos={85.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM4"
-	CheckBox check4,value= 0,mode=1
-	CheckBox check5,pos={160.00,14.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM5"
-	CheckBox check5,value= 0,mode=1
-	CheckBox check6,pos={160.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM6"
-	CheckBox check6,value= 0,mode=1
-	CheckBox check7,pos={235.00,13.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM7"
-	CheckBox check7,value= 0,mode=1
-	CheckBox check8,pos={235.00,40.00},size={50.00,15.00},proc=CheckProc_SimSolar,title="COM8"
-	CheckBox check8,value= 0,mode=1
-	Button buttonCom,pos={299.00,21.00},size={88.00,26.00},proc=ButtonProc_SimSolar,title="Continue"
-	Button buttonCom,fColor=(32792,65535,1)
-end
