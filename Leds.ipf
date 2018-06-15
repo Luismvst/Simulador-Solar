@@ -60,7 +60,7 @@ end
 //Response structure
 // ## ---- ## -> Everything OK
 // #! ---- #! -> Valid command but error during execution
-// #? ---- #? -> NOT valid in Range (Channel Nºx out of range)ç
+// #? ---- #? -> NOT valid in Range (Channel Nºx out of range)
 //When invalid command sent, it is returned: 
 //<SP><SP><SP><SP>xxxx is not defined] where “xxxx” is the command user input. 
 
