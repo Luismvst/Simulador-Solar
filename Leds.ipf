@@ -145,7 +145,8 @@ Function setMode (channel, mode)
 	variable mode
 	string endl = "/n/r"
 	string sp = " "
-	VDTWrite2 /O=1 "mode " + num2str(channel) + sp + num2str(mode) + endl	
+	string cmd = "MODE 0" + num2str(channel) + sp + num2str(mode) + endl
+	VDTWrite2 /O=1 cmd	
 end
 //	MODE: 	 	0 	DISABLE
 //				1	NORMAL
@@ -162,7 +163,8 @@ Function setNormalParameters (channel, Imax, Iset)
 	variable Iset
 	string endl = "/n/r"
 	string sp = " "
-	VDTWrite2 /O=1 "normal " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
+	string cmd = "NORMAL 0" + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
+	VDTWrite2 /O=1 cmd
 end
 
 //Get Normal Mode Parameters
@@ -186,7 +188,7 @@ Function setNormalCurrent (channel, Iset)
 	variable Iset
 	string endl = "/n/r"
 	string sp = " "
-	VDTWrite2 /O=1 "current "+num2str(channel) + sp + num2str(Iset) + endl	
+	VDTWrite2 /O=1 "CURRENT 0"+num2str(channel) + sp + num2str(Iset) + endl	
 end
 
 //STROBE MODE COMMANDS
@@ -312,4 +314,30 @@ Function pwm (pwmLevel)
 	variable pwmLevel
 	string endl = "/n/r"
 	VDTWrite2 /O=1 "FanPWM " + num2str(pwmLevel) + endl
+end
+
+Function prueba (channel, Imax, Iset)
+	//Format: MODE CHLno mode<LF><CR>
+	//Format: NORMAL CHLno Imax Iset<LF><CR>	
+	//Format: CURRENT CHLno Iset<LF><CR>
+	
+	variable channel
+	variable Imax
+	variable Iset
+	variable mode = 1
+	string endl = "/r"
+	string sp = " "
+	string cmd 
+	
+	cmd = "MODE CHL0" + num2str(channel) + sp + num2str(mode) + endl
+	VDTWrite2 /O=1 cmd
+	delay (40)
+	
+	cmd = "NORMAL CHL0" + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
+	VDTWrite2 /O=1 cmd
+	delay(40)
+	
+	cmd = "CURRENT CHL0"+num2str(channel) + sp + num2str(Iset) + endl	
+	VDTWrite2 /O=1 cmd	
+	
 end

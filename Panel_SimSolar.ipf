@@ -13,7 +13,19 @@ Function init_SolarPanel()
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator"
 	if(!DatafolderExists(path))
-		genDFolders (path)
+		string smsg = "You have to initialize first.\n"
+		smsg += "Do you want to initialize?\n"
+		DoAlert /T="Unable to open the program" 1, smsg
+		if (V_flag == 2)		//Clicked <"NO">
+			//Abort "Execution aborted.... Restart IGOR"
+		elseif (V_flag == 1)	//Clicked <"YES">
+			genDFolders(path)
+			genDFolders(path + ":PapeleraDeVariables")
+			//init() everything. Estrategia ir haciendo
+			//cosas avisando a la gente de qué debe hacer
+			
+			//GetData se hace aquí, y dentro de cada initX()
+		endif
 	endif
 	DFRef dfr = $path
 	SetDatafolder dfr
@@ -57,7 +69,6 @@ Function Solar_Panel()
 			//Abort "Execution aborted.... Restart IGOR"
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
-			genDFolders(path + ":LedController")
 			genDFolders(path + ":PapeleraDeVariables")
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
@@ -71,7 +82,7 @@ Function Solar_Panel()
 	string nameDisplay 
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
-	nvar channel = root:SolarSimulator:LedController:channel
+	nvar channel = root:SolarSimulator:channel
 	PauseUpdate; Silent 1		// building window...
 	
 	//Display 
@@ -115,8 +126,10 @@ Function Solar_Panel()
 	Button buttonSetParameters,pos={43.00,174.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
 	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
 	Button buttonSetParameters,fColor=(40000,20000,65535)
-	Button buttonMode,pos={288.00,42.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
+	Button buttonMode,pos={290.00,42.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
 	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
+	Button buttonMode1,pos={290.00,82.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
+	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
 	
 	//PopUps
 	PopupMenu popupchannel,pos={284.00,11.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
@@ -231,22 +244,29 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 
 	switch( ba.eventCode )
 		case 2: // mouse up
-			nvar channel = root:SolarSimulator:LedController:channel
-			//nvar Imax = root:SolarSimulator:LedController:Imax
+			nvar channel = root:SolarSimulator:channel
+			nvar Imax = root:SolarSimulator:LedController:Imax
+			nvar Iset = root:SolarSimulator:LedController:Iset
 			strswitch (ba.ctrlname)				
 				case "buttonApplyCurrent":
-					nvar Iset = root:SolarSimulator:LedController:Iset
 					setNormalCurrent (channel, Iset)
 				break
 				case "buttonSetParameters":
 					//Defect parameters to start 
-					setNormalParameters (channel, 100, 0)
+					Imax = 100
+					Iset = 50
+					setNormalParameters (channel, Imax, Iset)
+					Sliders(Imax) //To refresh the sliders
 				break
 				case "buttonMode":
-					setMode (channel, 1)
+					prueba (channel, Imax, Iset)
+//					setMode (channel, 1)
 					//	MODE: 	 	0 	DISABLE
 					//				1	NORMAL
 					//				2	STROBE 
+				break
+				case "buttonMode1":
+					setMode (channel, 0)
 				break
 			endswitch
 			
@@ -268,7 +288,7 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 			
 			strswitch (pa.ctrlname)
 				case "popupchannel":
-					nvar channel = root:SolarSimulator:LedController:channel
+					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
 			endswitch
