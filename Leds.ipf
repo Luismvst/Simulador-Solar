@@ -30,7 +30,8 @@ Function init_OpenSerial (com, Device)
 	if(StringMatch(Device,"MagicBox"))	//It looks for the Word in the DeviceStr
 		DeviceCommands=" baud=1200, stopbits=1, databits=8, parity=0"
 	elseif (StringMatch(Device, "LedController"))
-		DeviceCommands=" baud=9600, stopbits=1, databits=8, parity=0"
+		//9600 N81 (No hw flow ctrl)
+		DeviceCommands=" baud=9600, parity=0, databits=8, stopbits=1"
 	endif
 		// is the port available in the computer?
 	if (WhichListItem(com,sports)!=-1)
@@ -59,7 +60,7 @@ end
 //Response structure
 // ## ---- ## -> Everything OK
 // #! ---- #! -> Valid command but error during execution
-// #? ---- #? -> NOT valid in Range (Channel Nºx out of range)
+// #? ---- #? -> NOT valid in Range (Channel Nºx out of range)ç
 //When invalid command sent, it is returned: 
 //<SP><SP><SP><SP>xxxx is not defined] where “xxxx” is the command user input. 
 
@@ -329,15 +330,19 @@ Function prueba (channel, Imax, Iset)
 	string sp = " "
 	string cmd 
 	
-	cmd = "MODE CHL0" + num2str(channel) + sp + num2str(mode) + endl
+	cmd = "MODE " + num2str(channel) + sp + num2str(mode) + endl
 	VDTWrite2 /O=1 cmd
 	delay (40)
 	
-	cmd = "NORMAL CHL0" + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
+	cmd = "NORMAL " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
 	VDTWrite2 /O=1 cmd
 	delay(40)
 	
-	cmd = "CURRENT CHL0"+num2str(channel) + sp + num2str(Iset) + endl	
+	cmd = "CURRENT "+num2str(channel) + sp + num2str(Iset) + endl	
 	VDTWrite2 /O=1 cmd	
 	
+	//Functions written to use Hyper-terminal
+//	mode 1 1 
+// normal 1 100 50 
+// current 1 10
 end

@@ -130,7 +130,8 @@ Function Solar_Panel()
 	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
 	Button buttonMode1,pos={290.00,82.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
 	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
-	
+	Button buttonInit,pos={25.00,224.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
+	Button buttonInit,fSize=12,fColor=(52428,1,20971)
 	//PopUps
 	PopupMenu popupchannel,pos={284.00,11.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
@@ -266,7 +267,12 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					//				2	STROBE 
 				break
 				case "buttonMode1":
+					//Disable
 					setMode (channel, 0)
+				break
+				case "buttonInit":
+					svar com = root:SolarSimulator:com
+					init_Leds (com)
 				break
 			endswitch
 			
