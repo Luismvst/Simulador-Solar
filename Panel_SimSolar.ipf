@@ -7,7 +7,6 @@ Menu "S.Solar"
 	
 End
 
-
 Function init_SolarPanel()
 
 	DFRef saveDFR=GetDataFolderDFR()
@@ -38,7 +37,7 @@ Function init_SolarPanel()
 	endif 
 	string/G COM = selectComLeds ()
 	variable/G channel = 1
-	if (strlen (com) != 0) 
+	if (strlen (com) != 0) 			
 		//Check if message displayed about conflict ports is okey... I dont know if it is too agressive!
 		init_Leds(com)
 	endif
@@ -48,7 +47,7 @@ end
 
 Function/S selectComLeds()
 	Variable comNum=1
-	Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8"
+	Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB"
 	DoPrompt "Choose the COM Port",comNum
 	if (V_Flag)	
 		return ""		// user canceled
@@ -81,7 +80,6 @@ Function Solar_Panel()
 	wave ss = root:SolarSimulator:PapeleradeVariables:ss
 	string nameDisplay 
 	nvar Imax = root:SolarSimulator:LedController:Imax
-	nvar Iset = root:SolarSimulator:LedController:Iset
 	nvar channel = root:SolarSimulator:channel
 	PauseUpdate; Silent 1		// building window...
 	
@@ -94,7 +92,7 @@ Function Solar_Panel()
 //	Label /W=$nameDisplay bottom "Voltage (V)"
 //	Label /W=$nameDisplay left "Intensity (A)"	
 //	ControlBar /W=$nameDisplay 128
-//	ControlBar/W=$nameDisplay  /R 152
+//	ControlBar/W=$nameDisplay  /R 152f
 //	ControlBar /W=$nameDisplay /L 71
 //	ModifyGraph  mirror=1, tick=2, zero=2, minor = 1, mode=3, standoff=0
 //	ModifyGraph  lsize=2
@@ -242,7 +240,9 @@ End
 
 Function ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
-
+	if (ba.eventcode == -1 || ba.eventcode == 2 || ba.eventcode == 6)
+		ba.blockReentry=1
+	endif
 	switch( ba.eventCode )
 		case 2: // mouse up
 			nvar channel = root:SolarSimulator:channel
@@ -278,6 +278,20 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			
 			break
 		case -1: // control being killed
+			strswitch (ba.ctrlname)	
+				case "buttonMode1":
+					//Disable being killed
+					string smsg = "Do you want to disable all channels?\n"
+					DoAlert /T="Disable before Exit" 1, smsg
+					if (V_flag == 2)		//Clicked <"NO">
+						//Abort "Execution aborted.... Restart IGOR"
+					elseif (V_flag == 1)	//Clicked <"YES">
+						
+						for (;;)
+						endfor
+					endif
+				break
+			endswitch
 			break
 	endswitch
 
@@ -316,10 +330,10 @@ Function Sliders (Imax)
 	endif
 	//Slider	
 	Slider slider0,pos={50.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider0,help={"Current in mA"},labelBack=(65535,65535,65535)
+	Slider slider0,help={"Current in mA"}
 	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= tick
 	Slider slider1,pos={100.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider1,help={"Current in mA"},labelBack=(65535,65535,65535)
+	Slider slider1,help={"Current in mA"}
 	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= tick
 	
 	//SetVar
