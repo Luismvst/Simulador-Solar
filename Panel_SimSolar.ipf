@@ -279,17 +279,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			break
 		case -1: // control being killed
 			strswitch (ba.ctrlname)	
-				case "buttonMode1":
-					//Disable being killed
-					string smsg = "Do you want to disable all channels?\n"
-					DoAlert /T="Disable before Exit" 1, smsg
-					if (V_flag == 2)		//Clicked <"NO">
-						//Abort "Execution aborted.... Restart IGOR"
-					elseif (V_flag == 1)	//Clicked <"YES">
-						
-						for (;;)
-						endfor
-					endif
+				case "buttonMode1":		//Button Disable being killed
+					Disable_All()					
 				break
 			endswitch
 			break
@@ -317,6 +308,20 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	endswitch
 
 	return 0
+End
+
+Function Disable_All ()
+	string smsg = "Do you want to disable all channels?\n"
+	DoAlert /T="Disable before Exit" 1, smsg
+	if (V_flag == 2)		//Clicked <"NO">
+	//Abort "Execution aborted.... Restart IGOR"
+		return 0
+	elseif (V_flag == 1)	//Clicked <"YES">
+		variable channel			
+		for (channel=1;channel<13;channel+=1)	//12 channels
+			setMode (channel, 0)
+		endfor
+	endif
 End
 
 Function Sliders (Imax)
