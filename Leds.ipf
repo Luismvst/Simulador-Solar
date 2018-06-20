@@ -341,26 +341,15 @@ Function prueba (channel, Imax, Iset)
 	string reply
 	string sp = " "
 	string cmd 
-	cmd = "echoon"
-	VDTWrite2 /O=1 cmd
 	
 	cmd = "MODE " + num2str(channel) + sp + num2str(mode) + sp + endl
 	VDTWrite2 /O=1 cmd
-	delay (40)
-	//VDTRead2 /O=4 reply
-	//print reply
 	
 	cmd = "NORMAL " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + sp + endl
 	VDTWrite2 /O=1 cmd
-	delay(40)
-	//VDTRead2 /O=1 reply
-	//print reply
 	
 	cmd = "CURRENT "+num2str(channel) + sp + num2str(Iset) + sp + endl	
 	VDTWrite2 /O=1 cmd	
-	delay (40)
-	VDTRead2 /O=2 reply
-	print reply
 	
 	//Functions written to use Hyper-terminal
 // echoon
