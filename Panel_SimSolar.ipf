@@ -87,22 +87,23 @@ Function Solar_Panel()
 //	DoWindow /K SolarSimulator;DelayUpdate
 //	Display /K=1 /W=(168.75,43.25,840.5,569.25) ss
 //	DoWindow /C SolarSimulator;DelayUpdate
+//	nameDisplay = "SolarSimulator"
 //	ModifyGraph  /W=$nameDisplay mirror=1, tick=2, zero=2, minor = 1, mode=3, standoff=0
 //	ModifyGraph /W=$nameDisplay lsize=2
 //	Label /W=$nameDisplay bottom "Voltage (V)"
 //	Label /W=$nameDisplay left "Intensity (A)"	
 //	ControlBar /W=$nameDisplay 128
-//	ControlBar/W=$nameDisplay  /R 152f
+//	ControlBar/W=$nameDisplay  /R 152
 //	ControlBar /W=$nameDisplay /L 71
 //	ModifyGraph  mirror=1, tick=2, zero=2, minor = 1, mode=3, standoff=0
-//	ModifyGraph  lsize=2
+//	ModifyGraph  lsize=2, wbRGB=(50000,54528,32768)	//Green
 //	Label bottom "Voltage (V)"
 //	Label left "Intensity (A)"	
 //	ControlBar 128
 //	ControlBar  /R 152
 //	ControlBar /L 71
 
-//	SetDrawLayer /W=SSPanel UserFront
+	SetDrawLayer /W=SSPanel UserFront
 	//Panel
 	DoWindow /K SSPanel;DelayUpdate
 	NewPanel /K=0 /W=(730,63,1133,581) as "SolarSimulatorPanel"
@@ -280,7 +281,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 		case -1: // control being killed
 			strswitch (ba.ctrlname)	
 				case "buttonMode1":		//Button Disable being killed
-					Disable_All()					
+				//	Disable_All()					
 				break
 			endswitch
 			break
@@ -353,3 +354,61 @@ Function Sliders (Imax)
 	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
 	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
 End
+//
+//Window SSPanel() : Panel
+//	PauseUpdate; Silent 1		// building window...
+//	NewPanel /W=(139,63,1204,746) as "SolarSimulatorPanel"
+//	ShowTools/A
+//	SetDrawLayer UserBack
+//	SetDrawEnv fstyle= 1
+//	DrawText 41,396,"   Max \rCurrent"
+//	SetDrawEnv fstyle= 1
+//	DrawText 92,397,"   Set  \rCurrent "
+//	SetDrawEnv linethick= 1.5
+//	DrawLine 515,636,515,21
+//	Slider slider0,pos={46.00,407.00},size={26.00,66.00},proc=SliderProc_SimSolar
+//	Slider slider0,help={"Current in mA"}
+//	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
+//	Slider slider1,pos={100.00,407.00},size={26.00,66.00},proc=SliderProc_SimSolar
+//	Slider slider1,help={"Current in mA"}
+//	Slider slider1,limits={0,100,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
+//	SetVariable setvarimax,pos={40.00,486.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
+//	SetVariable setvarimax,fColor=(65535,65535,65535)
+//	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
+//	SetVariable setvariset,pos={91.00,486.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
+//	SetVariable setvariset,fColor=(65535,65535,65535)
+//	SetVariable setvariset,limits={0,100,1},value= root:SolarSimulator:LedController:Iset
+//	Button buttonApplyCurrent,pos={144.00,486.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
+//	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
+//	Button buttonApplyCurrent,fColor=(1,16019,65535)
+//	Button buttonSetParameters,pos={35.00,518.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
+//	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
+//	Button buttonSetParameters,fColor=(40000,20000,65535)
+//	Button buttonMode,pos={208.00,532.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
+//	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
+//	Button buttonMode1,pos={208.00,573.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
+//	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
+//	Button buttonInit,pos={36.00,550.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
+//	Button buttonInit,fSize=12,fColor=(52428,1,20971)
+//	PopupMenu popupchannel,pos={208.00,349.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
+//	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
+//	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
+//	String fldrSav0= GetDataFolder(1)
+//	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
+//	Display/W=(0,0,513,271)/HOST=#  ss vs ss
+//	SetDataFolder fldrSav0
+//	ModifyGraph wbRGB=(50000,54528,32768)
+//	ModifyGraph mode=3
+//	ModifyGraph lSize=2
+//	ModifyGraph tick=2
+//	ModifyGraph zero=2
+//	ModifyGraph mirror=1
+//	ModifyGraph minor=1
+//	ModifyGraph standoff=0
+//	Label left "Eje y (..)"
+//	Label bottom "Eje X (..)"
+//	SetDrawLayer UserFront
+//	SetDrawEnv save
+//	RenameWindow #,G0
+//	SetActiveSubwindow ##
+//EndMacro
