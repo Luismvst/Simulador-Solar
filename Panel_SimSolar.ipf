@@ -102,8 +102,7 @@ Function Solar_Panel()
 //	ControlBar 128
 //	ControlBar  /R 152
 //	ControlBar /L 71
-
-	SetDrawLayer /W=SSPanel UserFront
+//	SetDrawLayer /W=SSPanel UserFront
 	//Panel
 	DoWindow /K SSPanel;DelayUpdate
 	NewPanel /K=0 /W=(730,63,1133,581) as "SolarSimulatorPanel"
@@ -261,7 +260,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Sliders(Imax) //To refresh the sliders
 				break
 				case "buttonMode":
-					prueba (channel, Imax, Iset)
+					prueba (channel, 100, 60)
 //					setMode (channel, 1)
 					//	MODE: 	 	0 	DISABLE
 					//				1	NORMAL

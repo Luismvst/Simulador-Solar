@@ -90,7 +90,7 @@ Function echoCtrl (ctrl)
 	//Format: ECHOON<LF><CR>
 	//Format: ECHOOFF<LF><CR>
 	variable ctrl 
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string ans
 	if (ctrl == 1)
 		ans = "ON"
@@ -103,7 +103,7 @@ end
 //****NOT TRUSTED BY LUIS, BUT JUST AN IDEA****************//
 //getError() returns the number of error that has happened
 Function getError ()
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string reply
 	VDTWrite2 /O=1 "Error" + endl
 	delay (40)
@@ -116,7 +116,7 @@ end
 //To listen the command back from Mightex Led Controller
 Function Listen ()
 	string reply 
-	string endl = "/n/r"
+	string endl = "\n\r"
 	//VDTRead2 /O=1 /T=endl reply
 	VDTRead2 /O=1 /Q reply
 	print reply
@@ -124,14 +124,24 @@ end
 Function ls ()
 	return Listen()
 end		//Short version of Listen() - For debugging
-	
+
+Function Send (cmd)
+	string cmd
+	string endl = "\n\r"
+	VDTWrite2 /O=1 cmd + endl
+end
+Function sd (cmd) 
+	string cmd
+	return Send(cmd)
+end
+
 //G	et Current Working Mode
 Function getMode(channel)
 	//Format: ?MODE CHLNo<LF><CR>
 	//return: #mode<CR><LF> 
 	variable channel
 	string reply
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "?mode " + num2str(channel) + endl
 //	delay (40)
 //	VDTRead2 /O=1 /T=" " reply
@@ -144,7 +154,7 @@ Function setMode (channel, mode)
 	//Format: MODE CHLno mode<LF><CR>	
 	variable channel
 	variable mode
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string sp = " "
 	string cmd = "MODE 0" + num2str(channel) + sp + num2str(mode) + endl
 	VDTWrite2 /O=1 cmd	
@@ -162,7 +172,7 @@ Function setNormalParameters (channel, Imax, Iset)
 	variable channel
 	variable Imax
 	variable Iset
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string sp = " "
 	string cmd = "NORMAL 0" + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
 	VDTWrite2 /O=1 cmd
@@ -174,7 +184,7 @@ Function getNormalParameters (channel)
 	//return: #Cal1 Cal2 Imax Iset<CR><LF> 
 	variable channel 
 	string reply
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "?current " + num2str(channel) + endl
 	delay (40)
 	VDTRead2 /O=1 /T=endl reply
@@ -187,7 +197,7 @@ Function setNormalCurrent (channel, Iset)
 	//Format: CURRENT CHLno Iset<LF><CR>
 	variable channel
 	variable Iset
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string sp = " "
 	VDTWrite2 /O=1 "CURRENT 0"+num2str(channel) + sp + num2str(Iset) + endl	
 end
@@ -199,7 +209,7 @@ Function setStrobeParameters (channel, Imax, Repeat)
 	variable channel
 	variable Imax
 	variable Repeat
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string sp = " "	
 	VDTWrite2 /O=1 "strobe " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Repeat) + endl	
 end
@@ -215,7 +225,7 @@ Function  setStrpProfile (channel, step, Iset, Tset)
 	variable step
 	variable Iset
 	variable Tset
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string sp = " "
 	VDTWrite2 /O=1 "strp " + num2str(channel) + sp + num2str(step) + sp + num2str(Iset) + endl	
 end
@@ -226,7 +236,7 @@ Function getStrobeParameters (channel)
 	//retrun: #Imax Repeat<CR><LF> 
 	variable channel
 	string reply
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "?strobe " + num2str(channel) + endl
 	delay (40)
 	VDTRead2 /O=1 /T=endl reply
@@ -239,7 +249,7 @@ Function getStrpParameters (channel)
 	//return: #Iset1 Tset1 <CR><LF>... 
 	variable channel
 	string reply
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "?strp " + num2str(channel) + endl
 	delay (40)
 	VDTRead2 /O=1 /T=endl reply
@@ -268,7 +278,7 @@ Function getLoadV (channel)
 	//return: #CHLno:vvvvv<CR><LF> [in mV]
 	//Note: As the controller polls the load voltage in a 20ms interval, this feature is proper for NORMAL mode or slow Strobe mode only. 
 	variable channel
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string reply
 	VDTWrite2 /O=1 "LoadVoltage " + num2str(channel) + endl
 	delay (40)
@@ -279,7 +289,7 @@ end
 //Shows the deviceInfo
 Function getDevInfo ()
 	//Format: DEVICEINFO<LF><CR> 
-	string endl = "/n/r"
+	string endl = "\n\r"
 	string reply
 	VDTWrite2 /O=1 "DeviceInfo" + endl
 //	delay (40)
@@ -290,21 +300,21 @@ end
 //Reset Device
 Function reset ()
 	//Format: Reset<LF><CR> ( Soft Reset )
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "Reset" + endl
 end
 
 //Restore Factory Default 
 Function restore ()
 	//Format: RESTOREDEF<LF><CR> 
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "restoredef" + endl
 end
 
 //Store All settings to NV memory
 Function store ()
 	//Format: STORE<LF><CR>
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "store" + endl
 end
 
@@ -313,11 +323,12 @@ Function pwm (pwmLevel)
 	//Format: FanPWM PWMLevel<LF><CR>
 	//Range pwmLevel  -> 0 - 10   	(5 = 50%)
 	variable pwmLevel
-	string endl = "/n/r"
+	string endl = "\n\r"
 	VDTWrite2 /O=1 "FanPWM " + num2str(pwmLevel) + endl
 end
 
 Function prueba (channel, Imax, Iset)
+	//Format: ECHOON<LF><CR>
 	//Format: MODE CHLno mode<LF><CR>
 	//Format: NORMAL CHLno Imax Iset<LF><CR>	
 	//Format: CURRENT CHLno Iset<LF><CR>
@@ -326,22 +337,33 @@ Function prueba (channel, Imax, Iset)
 	variable Imax
 	variable Iset
 	variable mode = 1
-	string endl = "/r"
+	string endl = "\n\r"
+	string reply
 	string sp = " "
 	string cmd 
+	cmd = "echoon"
+	VDTWrite2 /O=1 cmd
 	
-	cmd = "MODE " + num2str(channel) + sp + num2str(mode) + endl
+	cmd = "MODE " + num2str(channel) + sp + num2str(mode) + sp + endl
 	VDTWrite2 /O=1 cmd
 	delay (40)
+	//VDTRead2 /O=4 reply
+	//print reply
 	
-	cmd = "NORMAL " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + endl
+	cmd = "NORMAL " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + sp + endl
 	VDTWrite2 /O=1 cmd
 	delay(40)
+	//VDTRead2 /O=1 reply
+	//print reply
 	
-	cmd = "CURRENT "+num2str(channel) + sp + num2str(Iset) + endl	
+	cmd = "CURRENT "+num2str(channel) + sp + num2str(Iset) + sp + endl	
 	VDTWrite2 /O=1 cmd	
+	delay (40)
+	VDTRead2 /O=2 reply
+	print reply
 	
 	//Functions written to use Hyper-terminal
+// echoon
 //	mode 1 1 
 // normal 1 100 50 
 // current 1 10
