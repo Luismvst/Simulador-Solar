@@ -30,10 +30,14 @@ Function init_SolarPanel()
 			genDFolders(path)
 			genDFolders(path + ":PapeleraDeVariables")			
 			genDFolders(path + ":LedController")
-			Newpath/Q/O/Z path4, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT"
-			Newpath/Q/O/Z  path3, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF (false)"
-			Newpath/Q/O/Z  path2, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
-			Newpath/Q/O/Z  path1, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
+			genDFolders(path + ":LoadedWaves")
+			//PATHS will be created at the same time as the panel does. But when the buttons or something gets killed by the destruction
+			//of the own panel, i want paths to be destroyed too.
+			Newpath/Q/O/Z  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
+			Newpath/Q/O/Z  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
+			Newpath/Q/O/Z  path_EQEref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF (false)"
+			Newpath/Q/O/Z  path_EQEdut, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT"			
+			
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
 			
@@ -70,6 +74,14 @@ Function/S selectComLeds()
 	string com = "COM" + num2str (comNum)
 	return com
 End
+
+Function Displayed ()
+	string path = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	//string waves = wavelist("*", 
+	SetDataFolder savedatafolder
+end
 
 Function Solar_Panel()
 	
@@ -166,6 +178,7 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 	return 0
 End
 
+//*************************************************************************************************************//
 Function SliderProc_SimSolar(sa) : SliderControl
 	STRUCT WMSliderAction &sa
 	
@@ -241,6 +254,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 
 	return 0
 End
+//*************************************************************************************************************//
 
 Function ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
@@ -295,7 +309,9 @@ End
 
 Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
-
+	string path = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
 	switch( pa.eventCode )
 		case 2: // mouse up
 			Variable popNum = pa.popNum
@@ -306,27 +322,35 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
-				case "popupSub6":	//Cargar Sstd
+				///***********/////
+				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
+				case "popupSub1_1":	//Cargar Sstd
 					PopupMenu popupSub6,help={popStr}
 					//LOADFILE
+					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
+				//	Load_Wave(popStr)
+					LoadWave/H/P=path_Sref/O popStr	
 				break
-				case "popupSub7":	//Cargar Slamp
+				case "popupSub1_2":	//Cargar Slamp
 					PopupMenu popupSub7,help={popStr}
 					//LOADFILE
+					LoadWave/H/P=path_Slamp/O popStr
 				break
-				case "popupSub8":	//Cargar EQEref	
+				case "popupSub1_3":	//Cargar EQEref	
 					PopupMenu popupSub8,help={popStr}	
-					//LOADFILE		
+					//LOADFILE
+					LoadWave/H/P=path_EQEref/O popStr		
 				break
-				case "popupSub9":	//Cargar EQEdut
+				case "popupSub1_4":	//Cargar EQEdut
 					PopupMenu popupSub9,help={popStr}	
 					//LOADFILE		
+					LoadWave/H/P=path_EQEdut/O popStr
 				break
 			endswitch
 		case -1: // control being killed
 			break
 	endswitch
-
+	SetDataFolder savedatafolder
 	return 0
 End
 
@@ -376,8 +400,7 @@ End
 
 Window SS() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(207,53,1272,724) as "SolarSimulatorPanel"
-	ShowTools/A
+	NewPanel /W=(173,176,1238,847) as "SolarSimulatorPanel"
 	SetDrawLayer UserBack
 	SetDrawEnv fstyle= 1
 	DrawText 675,71,"   Max \rCurrent"
@@ -385,6 +408,7 @@ Window SS() : Panel
 	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
 	DrawLine 619,639,619,24
+	DrawText 126,318,"Cargar SSTD"
 	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider0,help={"Current in mA"}
 	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
@@ -424,18 +448,21 @@ Window SS() : Panel
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub6,pos={127.00,320.00},size={80.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BSTD"
-	PopupMenu popupSub6,help={"Directory specified in the function init_SolarPanel -> pathX"}
-	PopupMenu popupSub6,mode=0,value= #"indexedfile ( path1, -1, \"????\")"
-	PopupMenu popupSub7,pos={232.00,317.00},size={86.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BLAMP"
-	PopupMenu popupSub7,mode=0,value= #"indexedfile ( path2, -1, \"????\")"
-	PopupMenu popupSub8,pos={356.00,321.00},size={94.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BREF"
-	PopupMenu popupSub8,mode=0,value= #"indexedfile ( path3, -1, \"????\")"
-	PopupMenu popupSub9,pos={475.00,325.00},size={97.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BDUT"
-	PopupMenu popupSub9,mode=0,value= #"indexedfile ( path4, -1, \"????\")"
+	PopupMenu popupSub6,pos={123.00,320.00},size={80.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BSTD"
+	PopupMenu popupSub6,help={"AMG173GLOBAL.ibw"}
+	PopupMenu popupSub6,mode=0,value= #"indexedfile ( path_Sref, -1, \"????\")"
+	PopupMenu popupSub7,pos={204.00,321.00},size={86.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BLAMP"
+	PopupMenu popupSub7,mode=0,value= #"indexedfile ( path_Slamp, -1, \"????\")"
+	PopupMenu popupSub8,pos={292.00,321.00},size={94.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BREF"
+	PopupMenu popupSub8,help={"UPM2367n2_4th_EQE.ibw"}
+	PopupMenu popupSub8,mode=0,value= #"indexedfile ( path_EQEref, -1, \"????\")"
+	PopupMenu popupSub9,pos={387.00,321.00},size={97.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BDUT"
+	PopupMenu popupSub9,help={"HEy.ibws"}
+	PopupMenu popupSub9,mode=0,value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
-	Display/W=(0,16,513,308)/HOST=#  sa vs sa
+	Display/W=(81,0,594,292)/HOST=#  sa vs sa
 	SetDataFolder fldrSav0
 	ModifyGraph mode=3
 	ModifyGraph lSize=2
@@ -453,3 +480,5 @@ Window SS() : Panel
 	RenameWindow #,G0
 	SetActiveSubwindow ##
 EndMacro
+//CHange the help files of dropdown popups to the following onne (all of them ) when finished window Execution
+//PopupMenu popupSub6, help={"Change directory path in function init_SolarPanel()"}
