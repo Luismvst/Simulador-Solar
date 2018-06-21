@@ -14,7 +14,6 @@ Function init_Leds(COM)
 	DFRef dfr = $path
 	SetDatafolder dfr
 	string Device = "LedController"
-	variable/G Imax, Iset
 	init_OpenSerial(com, Device)
 	SetDataFolder saveDFR
 end
@@ -325,35 +324,4 @@ Function pwm (pwmLevel)
 	variable pwmLevel
 	string endl = "\n\r"
 	VDTWrite2 /O=1 "FanPWM " + num2str(pwmLevel) + endl
-end
-
-Function prueba (channel, Imax, Iset)
-	//Format: ECHOON<LF><CR>
-	//Format: MODE CHLno mode<LF><CR>
-	//Format: NORMAL CHLno Imax Iset<LF><CR>	
-	//Format: CURRENT CHLno Iset<LF><CR>
-	
-	variable channel
-	variable Imax
-	variable Iset
-	variable mode = 1
-	string endl = "\n\r"
-	string reply
-	string sp = " "
-	string cmd 
-	
-	cmd = "MODE " + num2str(channel) + sp + num2str(mode) + sp + endl
-	VDTWrite2 /O=1 cmd
-	
-	cmd = "NORMAL " + num2str(channel) + sp + num2str(Imax) + sp + num2str(Iset) + sp + endl
-	VDTWrite2 /O=1 cmd
-	
-	cmd = "CURRENT "+num2str(channel) + sp + num2str(Iset) + sp + endl	
-	VDTWrite2 /O=1 cmd	
-	
-	//Functions written to use Hyper-terminal
-// echoon
-//	mode 1 1 
-// normal 1 100 50 
-// current 1 10
 end

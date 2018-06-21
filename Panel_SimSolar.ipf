@@ -8,7 +8,12 @@ Menu "S.Solar"
 	
 End
 Function init_SolarPanel2()
-	Execute "SS()"
+	if (ItemsinList (WinList ("SS", ";", "")) > 0) 
+		DoWindow /F SS
+		return 0
+	else
+		Execute "SS()"
+	endif
 end
 
 Function init_SolarPanel()
@@ -23,7 +28,12 @@ Function init_SolarPanel()
 			//Abort "Execution aborted.... Restart IGOR"
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
-			genDFolders(path + ":PapeleraDeVariables")
+			genDFolders(path + ":PapeleraDeVariables")			
+			genDFolders(path + ":LedController")
+			Newpath/Q/O/Z path4, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT"
+			Newpath/Q/O/Z  path3, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF (false)"
+			Newpath/Q/O/Z  path2, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
+			Newpath/Q/O/Z  path1, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
 			
@@ -41,11 +51,12 @@ Function init_SolarPanel()
 	endif 
 	string/G COM = selectComLeds ()
 	variable/G channel = 1
-	if (strlen (com) != 0) 			
-		//Check if message displayed about conflict ports is okey... I dont know if it is too agressive!
+	if (strlen (com) == 0) 
+		DoAlert 0, "There is no COM connected"
+	else 
 		init_Leds(com)
-	endif
-	Solar_Panel ()	
+	endif	
+	Solar_Panel ()
 	SetDataFolder saveDFR
 end
 
@@ -64,26 +75,15 @@ Function Solar_Panel()
 	
 	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
-	if(!DatafolderExists(path))
-		string smsg = "You have to initialize first.\n"
-		smsg += "Do you want to initialize?\n"
-		DoAlert /T="Unable to open the program" 1, smsg
-		if (V_flag == 2)		//Clicked <"NO">
-			//Abort "Execution aborted.... Restart IGOR"
-		elseif (V_flag == 1)	//Clicked <"YES">
-			genDFolders(path)
-			genDFolders(path + ":PapeleraDeVariables")
-			//init() everything. Estrategia ir haciendo
-			//cosas avisando a la gente de qué debe hacer
-			
-			//GetData se hace aquí, y dentro de cada initX()
-		endif
-	endif
 	SetDataFolder path
-	make /N=1 /O  root:SolarSimulator:PapeleradeVariables:ss
-	wave ss = root:SolarSimulator:PapeleradeVariables:ss
+	make /N=1 /O  root:SolarSimulator:PapeleradeVariables:sa
+	wave sa = root:SolarSimulator:PapeleradeVariables:sa
 	string nameDisplay 
+	
+	variable/G root:SolarSimulator:LedController:Imax
+	variable/G root:SolarSimulator:LedController:Iset
 	nvar Imax = root:SolarSimulator:LedController:Imax
+	nvar Iset = root:SolarSimulator:LedController:Iset
 	nvar channel = root:SolarSimulator:channel
 	PauseUpdate; Silent 1		// building window...
 	
@@ -306,6 +306,22 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
+				case "popupSub6":	//Cargar Sstd
+					PopupMenu popupSub6,help={popStr}
+					//LOADFILE
+				break
+				case "popupSub7":	//Cargar Slamp
+					PopupMenu popupSub7,help={popStr}
+					//LOADFILE
+				break
+				case "popupSub8":	//Cargar EQEref	
+					PopupMenu popupSub8,help={popStr}	
+					//LOADFILE		
+				break
+				case "popupSub9":	//Cargar EQEdut
+					PopupMenu popupSub9,help={popStr}	
+					//LOADFILE		
+				break
 			endswitch
 		case -1: // control being killed
 			break
@@ -368,7 +384,7 @@ Window SS() : Panel
 	SetDrawEnv fstyle= 1
 	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
-	DrawLine 515,636,515,21
+	DrawLine 619,639,619,24
 	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider0,help={"Current in mA"}
 	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
@@ -396,23 +412,30 @@ Window SS() : Panel
 	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
 	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
-	PopupMenu popupSub0,pos={20.00,280.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
+	PopupMenu popupSub0,pos={20.00,320.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub1,pos={20.00,300.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
+	PopupMenu popupSub1,pos={20.00,340.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
 	PopupMenu popupSub1,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub2,pos={20.00,320.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
+	PopupMenu popupSub2,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
 	PopupMenu popupSub2,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub3,pos={20.00,340.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
+	PopupMenu popupSub3,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
 	PopupMenu popupSub3,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub4,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
+	PopupMenu popupSub4,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub5,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
+	PopupMenu popupSub5,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub6,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #6"
-	PopupMenu popupSub6,mode=2,popvalue="No",value= #"\"Yes;No\""
+	PopupMenu popupSub6,pos={127.00,320.00},size={80.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BSTD"
+	PopupMenu popupSub6,help={"Directory specified in the function init_SolarPanel -> pathX"}
+	PopupMenu popupSub6,mode=0,value= #"indexedfile ( path1, -1, \"????\")"
+	PopupMenu popupSub7,pos={232.00,317.00},size={86.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BLAMP"
+	PopupMenu popupSub7,mode=0,value= #"indexedfile ( path2, -1, \"????\")"
+	PopupMenu popupSub8,pos={356.00,321.00},size={94.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BREF"
+	PopupMenu popupSub8,mode=0,value= #"indexedfile ( path3, -1, \"????\")"
+	PopupMenu popupSub9,pos={475.00,325.00},size={97.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BDUT"
+	PopupMenu popupSub9,mode=0,value= #"indexedfile ( path4, -1, \"????\")"
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
-	Display/W=(0,0,513,271)/HOST=#  ss vs ss
+	Display/W=(0,16,513,308)/HOST=#  sa vs sa
 	SetDataFolder fldrSav0
 	ModifyGraph mode=3
 	ModifyGraph lSize=2
