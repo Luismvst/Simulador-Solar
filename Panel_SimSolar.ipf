@@ -53,13 +53,13 @@ Function init_SolarPanel()
 		DoWindow /F SSPanel
 		return 0
 	endif 
-	string/G COM = selectComLeds ()
+//	string/G COM = selectComLeds ()
 	variable/G channel = 1
-	if (strlen (com) == 0) 
-		DoAlert 0, "There is no COM connected"
-	else 
-		init_Leds(com)
-	endif	
+//	if (strlen (com) == 0) 
+//		DoAlert 0, "There is no COM connected"
+//	else 
+//		init_Leds(com)
+//	endif	
 	Solar_Panel ()
 	SetDataFolder saveDFR
 end
@@ -81,86 +81,6 @@ Function Displayed ()
 	SetDataFolder path
 	//string waves = wavelist("*", 
 	SetDataFolder savedatafolder
-end
-
-Function Solar_Panel()
-	
-	string path = "root:SolarSimulator"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
-	make /N=1 /O  root:SolarSimulator:PapeleradeVariables:sa
-	wave sa = root:SolarSimulator:PapeleradeVariables:sa
-	string nameDisplay 
-	
-	variable/G root:SolarSimulator:LedController:Imax
-	variable/G root:SolarSimulator:LedController:Iset
-	nvar Imax = root:SolarSimulator:LedController:Imax
-	nvar Iset = root:SolarSimulator:LedController:Iset
-	nvar channel = root:SolarSimulator:channel
-	PauseUpdate; Silent 1		// building window...
-	
-	//Display 
-//	DoWindow /K SolarSimulator;DelayUpdate
-//	Display /K=1 /W=(168.75,43.25,840.5,569.25) ss
-//	DoWindow /C SolarSimulator;DelayUpdate
-//	nameDisplay = "SolarSimulator"
-//	ModifyGraph  /W=$nameDisplay mirror=1, tick=2, zero=2, minor = 1, mode=3, standoff=0
-//	ModifyGraph /W=$nameDisplay lsize=2
-//	Label /W=$nameDisplay bottom "Voltage (V)"
-//	Label /W=$nameDisplay left "Intensity (A)"	
-//	ControlBar /W=$nameDisplay 128
-//	ControlBar/W=$nameDisplay  /R 152
-//	ControlBar /W=$nameDisplay /L 71
-//	ModifyGraph  mirror=1, tick=2, zero=2, minor = 1, mode=3, standoff=0
-//	ModifyGraph  lsize=2, wbRGB=(50000,54528,32768)	//Green
-//	Label bottom "Voltage (V)"
-//	Label left "Intensity (A)"	
-//	ControlBar 128
-//	ControlBar  /R 152
-//	ControlBar /L 71
-//	SetDrawLayer /W=SSPanel UserFront
-	//Panel
-	DoWindow /K SSPanel;DelayUpdate
-	NewPanel /K=0 /W=(730,63,1133,581) as "SolarSimulatorPanel"
-	DoWindow /C SSPanel
-	
-	Sliders(Imax)
-	
-	//Text
-	SetDrawEnv fstyle= 1
-	DrawText 40,61,"   Max \rCurrent"
-	SetDrawEnv fstyle= 1
-	DrawText 99,62,"   Set  \rCurrent "
-	
-	//Buttons
-	
-	Button buttonApplyCurrent,pos={141.00,143.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
-	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
-	Button buttonApplyCurrent,fColor=(1,16019,65535)
-	Button buttonSetParameters,pos={43.00,174.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
-	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
-	Button buttonSetParameters,fColor=(40000,20000,65535)
-	Button buttonMode1,pos={290.00,42.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
-	Button buttonMode1,fSize=12,fColor=(65535,49157,16385)
-	Button buttonMode0,pos={290.00,82.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
-	Button buttonMode0,fSize=12,fColor=(32792,65535,1)
-	Button buttonInit,pos={25.00,224.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
-	Button buttonInit,fSize=12,fColor=(52428,1,20971)
-	//PopUps
-	PopupMenu popupchannel,pos={284.00,11.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
-	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
-	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
-	
-
-	//ValDisplay
-//	ValDisplay valdisp0,pos={36.00,148.00},size={39.00,17.00}
-//	ValDisplay valdisp0,limits={0,0,0},barmisc={0,100}
-//	ValDisplay valdisp0,value= #"root:SolarSimulator:LedController:Imax"
-//	ValDisplay valdisp1,pos={97.00,147.00},size={39.00,17.00}
-//	ValDisplay valdisp1,limits={0,0,0},barmisc={0,100}
-//	ValDisplay valdisp1,value= #"root:SolarSimulator:LedController:Iset"
-	
-	
 end
 
 Function CheckProc_SimSolar(cba) : CheckBoxControl
@@ -378,10 +298,10 @@ Function Sliders (Imax)
 		tick = -5
 	endif
 	//Slider	
-	Slider slider0,pos={50.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
+	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider0,help={"Current in mA"}
 	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= tick
-	Slider slider1,pos={100.00,70.00},size={26.00,66.00},proc=SliderProc_SimSolar
+	Slider slider1,pos={734.00,81.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider1,help={"Current in mA"}
 	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= tick
 	
@@ -389,18 +309,43 @@ Function Sliders (Imax)
 	//Conservo este set variable por si acaso quiero hacer algo con él. Sino borrar.
 //	SetVariable setvarmaxcurrent,pos={32.00,187.00},size={140.00,18.00},title="Max. Current"
 //	SetVariable setvarmaxcurrent,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-	SetVariable setvarimax,pos={40.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
+//	SetVariable setvarimax,pos={40.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
+//	SetVariable setvarimax,fColor=(65535,65535,65535)
+//	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
+//	SetVariable setvariset,pos={90.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
+//	SetVariable setvariset,fColor=(65535,65535,65535)
+//	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
+	SetVariable setvarimax,pos={675.00,151.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
 	SetVariable setvarimax,fColor=(65535,65535,65535)
 	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-	SetVariable setvariset,pos={90.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
+	SetVariable setvariset,pos={723.00,152.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
 	SetVariable setvariset,fColor=(65535,65535,65535)
-	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
+	SetVariable setvariset,limits={0,100,1},value= root:SolarSimulator:LedController:Iset
 	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
 End
 
-Window SS() : Panel
+Function Solar_Panel()
+	
+	string path = "root:SolarSimulator"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	make /N=1 /O  root:SolarSimulator:PapeleradeVariables:sa
+	wave sa = root:SolarSimulator:PapeleradeVariables:sa
+	string nameDisplay 
+	
+	variable/G root:SolarSimulator:LedController:Imax
+	variable/G root:SolarSimulator:LedController:Iset
+	nvar Imax = root:SolarSimulator:LedController:Imax
+	nvar Iset = root:SolarSimulator:LedController:Iset
+	nvar channel = root:SolarSimulator:channel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(173,176,1238,847) as "SolarSimulatorPanel"
+	
+	//Panel
+	DoWindow/K SSPanel; DelayUpdate
+	NewPanel /K=0 /W=(150,105,1215,776) as "SSPanel"
+	DoWindow /C SSPanel
+	
+	//Text
 	SetDrawLayer UserBack
 	SetDrawEnv fstyle= 1
 	DrawText 675,71,"   Max \rCurrent"
@@ -408,7 +353,101 @@ Window SS() : Panel
 	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
 	DrawLine 619,639,619,24
-	DrawText 126,318,"Cargar SSTD"
+	DrawText 43,313,"Cargar S\\BSTD"
+	DrawText 179,314,"Cargar S\\BLAMP"
+	DrawText 169,357,"Cargar EQE\\BREF"
+	DrawText 319,355,"Cargar EQE\\BDUT"
+	
+	//Sliders
+//	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
+//	Slider slider0,help={"Current in mA"}
+//	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
+//	Slider slider1,pos={734.00,81.00},size={26.00,66.00},proc=SliderProc_SimSolar
+//	Slider slider1,help={"Current in mA"}
+//	Slider slider1,limits={0,100,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
+	Sliders(Imax)
+	
+	//Buttons
+	Button buttonApplyCurrent,pos={777.00,152.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
+	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
+	Button buttonApplyCurrent,fColor=(1,16019,65535)
+	Button buttonSetParameters,pos={675.00,179.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
+	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
+	Button buttonSetParameters,fColor=(40000,20000,65535)
+	Button buttonMode,pos={891.00,106.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
+	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
+	Button buttonMode1,pos={892.00,145.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
+	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
+	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
+	Button buttonInit,fSize=12,fColor=(52428,1,20971)
+	//PopUps
+	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
+	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
+	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
+	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
+	PopupMenu popupSub0,mode=1,popvalue="Yes",value= #"\"Yes;No\""
+	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
+	PopupMenu popupSub1,mode=1,popvalue="Yes",value= #"\"Yes;No\""
+	PopupMenu popupSub2,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
+	PopupMenu popupSub2,mode=1,popvalue="Yes",value= #"\"Yes;No\""
+	PopupMenu popupSub3,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
+	PopupMenu popupSub3,mode=2,popvalue="No",value= #"\"Yes;No\""
+	PopupMenu popupSub4,pos={20.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
+	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
+	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
+	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
+	PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
+	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
+	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
+	
+	//Display 
+	String fldrSav0= GetDataFolder(1)
+	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
+	Display/W=(0,0,594,292)/HOST=#  sa vs sa
+	SetDataFolder fldrSav0
+	ModifyGraph mode=3
+	ModifyGraph lSize=2
+	ModifyGraph tick=2
+	ModifyGraph zero=2
+	ModifyGraph mirror=1
+	ModifyGraph minor=1
+	ModifyGraph standoff=0
+	Label left "Eje y (..)"
+	Label bottom "Eje X (..)"
+	SetAxis left*,1
+	SetAxis bottom*,1
+	SetDrawLayer UserFront
+	SetDrawEnv save
+	RenameWindow #,G0
+	SetActiveSubwindow ##
+	
+	
+	//ValDisplay
+	
+	
+end
+
+Window SS() : Panel
+	PauseUpdate; Silent 1		// building window...
+	NewPanel /W=(150,105,1215,776) as "SolarSimulatorPanel"
+	ShowTools/A
+	SetDrawLayer UserBack
+	SetDrawEnv fstyle= 1
+	DrawText 675,71,"   Max \rCurrent"
+	SetDrawEnv fstyle= 1
+	DrawText 728,72,"   Set  \rCurrent "
+	SetDrawEnv linethick= 1.5
+	DrawLine 619,639,619,24
+	DrawText 43,313,"Cargar S\\BSTD"
+	DrawText 179,314,"Cargar S\\BLAMP"
+	DrawText 169,357,"Cargar EQE\\BREF"
+	DrawText 319,355,"Cargar EQE\\BDUT"
 	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider0,help={"Current in mA"}
 	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
@@ -436,33 +475,30 @@ Window SS() : Panel
 	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
 	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
-	PopupMenu popupSub0,pos={20.00,320.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
+	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub1,pos={20.00,340.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
+	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
 	PopupMenu popupSub1,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub2,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
+	PopupMenu popupSub2,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
 	PopupMenu popupSub2,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub3,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
+	PopupMenu popupSub3,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
 	PopupMenu popupSub3,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub4,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
+	PopupMenu popupSub4,pos={20.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub5,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
+	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub6,pos={123.00,320.00},size={80.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BSTD"
-	PopupMenu popupSub6,help={"AMG173GLOBAL.ibw"}
-	PopupMenu popupSub6,mode=0,value= #"indexedfile ( path_Sref, -1, \"????\")"
-	PopupMenu popupSub7,pos={204.00,321.00},size={86.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar S\\BLAMP"
-	PopupMenu popupSub7,mode=0,value= #"indexedfile ( path_Slamp, -1, \"????\")"
-	PopupMenu popupSub8,pos={292.00,321.00},size={94.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BREF"
-	PopupMenu popupSub8,help={"UPM2367n2_4th_EQE.ibw"}
-	PopupMenu popupSub8,mode=0,value= #"indexedfile ( path_EQEref, -1, \"????\")"
-	PopupMenu popupSub9,pos={387.00,321.00},size={97.00,21.00},proc=PopMenuProc_SimSolar,title="Cargar EQE\\BDUT"
-	PopupMenu popupSub9,help={"HEy.ibws"}
-	PopupMenu popupSub9,mode=0,value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+	PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
+	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
+	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
 	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
-	Display/W=(81,0,594,292)/HOST=#  sa vs sa
+	Display/W=(0,0,594,292)/HOST=#  sa vs sa
 	SetDataFolder fldrSav0
 	ModifyGraph mode=3
 	ModifyGraph lSize=2
@@ -482,3 +518,13 @@ Window SS() : Panel
 EndMacro
 //CHange the help files of dropdown popups to the following onne (all of them ) when finished window Execution
 //PopupMenu popupSub6, help={"Change directory path in function init_SolarPanel()"}
+
+//The older popups. I want to keep them
+//PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+//PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
+//PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+//PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+//PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
+//PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
