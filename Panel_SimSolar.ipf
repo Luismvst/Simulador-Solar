@@ -98,7 +98,6 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 	return 0
 End
 
-//*************************************************************************************************************//
 Function SliderProc_SimSolar(sa) : SliderControl
 	STRUCT WMSliderAction &sa
 	
@@ -106,28 +105,6 @@ Function SliderProc_SimSolar(sa) : SliderControl
 		case -1: // control being killed
 			break
 		default:
-			if( sa.eventCode & 1 ) // value set 
-				Variable curval = sa.curval
-				nvar Iset = root:SolarSimulator:LedController:Iset
-				nvar Imax = root:SolarSimulator:LedController:Imax
-				//This was not necesary
-				if(Imax<Iset)
-						//To ensure: Iset <= Imax
-						Iset=Imax
-				elseif (Imax==0)
-						Iset=0
-				endif
-				
-				if (stringmatch (sa.ctrlname, "slider0"))
-					//This makes the second slider to be syncronized to the first one in possible top values.
-					Sliders (Imax)
-				endif
-			elseif (sa.eventCode & 4 ) //Fix an error on sliders, if maximun level has changed to 0
-			//I dont like this. Need a revision
-//				if (Iset == 0 && Imax > Iset + 1 )
-//					Iset=Iset+1
-//				endif
-			endif
 			break
 	endswitch
 
@@ -141,30 +118,6 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
-			Variable dval = sva.dval
-			String sval = sva.sval
-			nvar Iset = root:SolarSimulator:LedController:Iset
-			nvar Imax = root:SolarSimulator:LedController:Imax
-			if (Iset>Imax)
-				Iset = Imax
-			elseif (Imax == 0)
-				Iset = 0
-			
-			endif
-			if (stringmatch (sva.ctrlname, "setvarimax"))
-				//We try to adjust the Imax limit for sliders ( so it is only modified if you change imax )
-				//The funcition sliders avoid to roll it with the wheel, so i do this temporarily
-				//Sliders (Imax)
-				variable tick
-				if (Imax < 6)
-					tick = -1
-				else
-					tick = -5
-				endif
-				Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= tick
-				Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= tick
-				SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
-			endif
 			break
 		case -1: // control being killed
 			break
@@ -174,7 +127,6 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 
 	return 0
 End
-//*************************************************************************************************************//
 
 Function ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
@@ -242,30 +194,30 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
-				///***********/////
-				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
-				case "popupSub1_1":	//Cargar Sstd
-					PopupMenu popupSub6,help={popStr}
-					//LOADFILE
-					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-				//	Load_Wave(popStr)
-					LoadWave/H/P=path_Sref/O popStr	
-				break
-				case "popupSub1_2":	//Cargar Slamp
-					PopupMenu popupSub7,help={popStr}
-					//LOADFILE
-					LoadWave/H/P=path_Slamp/O popStr
-				break
-				case "popupSub1_3":	//Cargar EQEref	
-					PopupMenu popupSub8,help={popStr}	
-					//LOADFILE
-					LoadWave/H/P=path_EQEref/O popStr		
-				break
-				case "popupSub1_4":	//Cargar EQEdut
-					PopupMenu popupSub9,help={popStr}	
-					//LOADFILE		
-					LoadWave/H/P=path_EQEdut/O popStr
-				break
+//				///***********/////
+//				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
+//				case "popupSub1_1":	//Cargar Sstd
+//					PopupMenu popupSub6,help={popStr}
+//					//LOADFILE
+//					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
+//				//	Load_Wave(popStr)
+//					LoadWave/H/P=path_Sref/O popStr	
+//				break
+//				case "popupSub1_2":	//Cargar Slamp
+//					PopupMenu popupSub7,help={popStr}
+//					//LOADFILE
+//					LoadWave/H/P=path_Slamp/O popStr
+//				break
+//				case "popupSub1_3":	//Cargar EQEref	
+//					PopupMenu popupSub8,help={popStr}	
+//					//LOADFILE
+//					LoadWave/H/P=path_EQEref/O popStr		
+//				break
+//				case "popupSub1_4":	//Cargar EQEdut
+//					PopupMenu popupSub9,help={popStr}	
+//					//LOADFILE		
+//					LoadWave/H/P=path_EQEdut/O popStr
+//				break
 			endswitch
 		case -1: // control being killed
 			break
@@ -286,42 +238,6 @@ Function Disable_All ()
 			setMode (channel, 0)
 		endfor
 	endif
-End
-
-Function Sliders (Imax)
-	
-	variable Imax 
-	variable tick 
-	if (Imax < 6)
-		tick = -1
-	else
-		tick = -5
-	endif
-	//Slider	
-	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider0,help={"Current in mA"}
-	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= tick
-	Slider slider1,pos={734.00,81.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider1,help={"Current in mA"}
-	Slider slider1,limits={0,Imax,1},variable= root:SolarSimulator:LedController:Iset,ticks= tick
-	
-	//SetVar
-	//Conservo este set variable por si acaso quiero hacer algo con él. Sino borrar.
-//	SetVariable setvarmaxcurrent,pos={32.00,187.00},size={140.00,18.00},title="Max. Current"
-//	SetVariable setvarmaxcurrent,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-//	SetVariable setvarimax,pos={40.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
-//	SetVariable setvarimax,fColor=(65535,65535,65535)
-//	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-//	SetVariable setvariset,pos={90.00,144.00},size={44.00,18.00},proc=SetVarProc_SimSol, title=" "
-//	SetVariable setvariset,fColor=(65535,65535,65535)
-//	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:LedController:Iset
-	SetVariable setvarimax,pos={675.00,151.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
-	SetVariable setvarimax,fColor=(65535,65535,65535)
-	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-	SetVariable setvariset,pos={723.00,152.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
-	SetVariable setvariset,fColor=(65535,65535,65535)
-	SetVariable setvariset,limits={0,100,1},value= root:SolarSimulator:LedController:Iset
-	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
 End
 
 Function Solar_Panel()
@@ -435,8 +351,7 @@ end
 
 Window SS() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(150,105,1215,776) as "SolarSimulatorPanel"
-	ShowTools/A
+	NewPanel /W=(210,85,1275,756) as "SolarSimulatorPanel"
 	SetDrawLayer UserBack
 	SetDrawEnv fstyle= 1
 	DrawText 675,71,"   Max \rCurrent"
@@ -446,8 +361,8 @@ Window SS() : Panel
 	DrawLine 619,639,619,24
 	DrawText 43,313,"Cargar S\\BSTD"
 	DrawText 179,314,"Cargar S\\BLAMP"
-	DrawText 169,357,"Cargar EQE\\BREF"
-	DrawText 319,355,"Cargar EQE\\BDUT"
+	DrawText 168,358,"Cargar EQE\\BREF"
+	DrawText 325,358,"Cargar EQE\\BDUT"
 	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
 	Slider slider0,help={"Current in mA"}
 	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
@@ -496,6 +411,10 @@ Window SS() : Panel
 	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
 	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
+	PopupMenu popupSub09,pos={121.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub09,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
+	PopupMenu popupSub10,pos={287.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub10,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
 	Display/W=(0,0,594,292)/HOST=#  sa vs sa
