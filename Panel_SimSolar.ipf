@@ -130,16 +130,18 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 4: //Mouse wheel up
 			strswitch (sva.ctrlname)
 				case "setvar0":
-					body +=2
+					body +=1
 					SetVariable setvar0, bodyWidth=body
+					gaus (body)
 				break
 			endswitch
 		break
 		case 5:
 			strswitch (sva.ctrlname)
 				case "setvar0":
-					body-=2
+					body-=1
 					SetVariable setvar0, bodyWidth=body
+					gaus (body)
 				break
 			endswitch
 		break
@@ -187,10 +189,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					svar com = root:SolarSimulator:com
 					init_Leds (com)
 				break
-				case "buttonCargarOnda":					
-					//LOADFILE
-//					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-					//LoadWave /P=path_EQEdut/O 
+				case "buttonCargarOnda":			
 					Load_Wave()
 			endswitch
 			
@@ -479,3 +478,17 @@ EndMacro
 //PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
 //PopupMenu popupSub10,pos={287.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 //PopupMenu popupSub10,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+
+Function gaus(num)
+	variable num
+	if (stringmatch (wavelist("*", ";", ""), "led"))
+		Removefromgraph  /W=SS#SSGraph fit 
+	endif
+	make/O/N=10 led
+	make /O fit
+	wave led, fit
+	led[5]=num
+	CurveFit/Q  gauss led /D 
+	SetAxis /W=SS#SSGrap /A
+	//Appendtograph /W=SS#SSGraph fit 
+end
