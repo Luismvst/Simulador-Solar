@@ -68,7 +68,7 @@ Function Solar_Panel()
 	PauseUpdate; Silent 1		// building window...
 	
 	DoWindow /K SSPanel;DelayUpdate
-	NewPanel /K=0 /W=(730,63,1133,581) as "SolarSimulatorPanel"
+	NewPanel /K=0 /W=(790,93,1193,412) as "SolarSimulatorPanel"
 	DoWindow /C SSPanel
 	
 	Sliders(Imax)
