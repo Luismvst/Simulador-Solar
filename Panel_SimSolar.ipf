@@ -113,12 +113,36 @@ End
 
 Function SetVarProc_SimSol(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
-
+	nvar body 
 	switch( sva.eventCode )
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
-			break
+			strswitch (sva.ctrlname)
+				case "setvar0":			
+					if (body<0)
+						body=0
+					endif		
+					SetVariable setvar0, bodyWidth=body
+				break
+			endswitch
+		break
+		case 4: //Mouse wheel up
+			strswitch (sva.ctrlname)
+				case "setvar0":
+					body +=2
+					SetVariable setvar0, bodyWidth=body
+				break
+			endswitch
+		break
+		case 5:
+			strswitch (sva.ctrlname)
+				case "setvar0":
+					body-=2
+					SetVariable setvar0, bodyWidth=body
+				break
+			endswitch
+		break
 		case -1: // control being killed
 			break
 		case 6:
@@ -147,7 +171,6 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Imax = 100
 					Iset = 50
 					setNormalParameters (channel, Imax, Iset)
-					Sliders(Imax) //To refresh the sliders
 				break
 				case "buttonMode1":
 					//prueba (channel, 100, 60)
@@ -164,6 +187,11 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					svar com = root:SolarSimulator:com
 					init_Leds (com)
 				break
+				case "buttonCargarOnda":					
+					//LOADFILE
+//					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
+					//LoadWave /P=path_EQEdut/O 
+					Load_Wave()
 			endswitch
 			
 			break
@@ -226,6 +254,37 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	return 0
 End
 
+Function Load_Wave ()
+	string fich_name
+	//DoWindow /F SSGraph
+	LoadWave /P=path_EQEdut/O 
+	string wavenames = S_wavenames
+	if (V_flag)	//This avoid problems if we cancel the fich-loading ( have you load somethg or not? )
+		fich_name = S_FileName
+		if (strlen(wavenames) == 0) //The fich has no name. Error 
+			print "Error in the fich-loading"
+		else
+			if (ItemsInList(WinList("SS",";",""))>0)
+				string tlist=TraceNameList("SS#SSGraph",";",1)
+				wave loadedwave = $(StringFromList(0, wavenames))
+				variable dimtam = DimSize(loadedwave, 0)
+				SetScale/I x 0,100,"s", loadedwave	// Set wave's X scaling
+				SetAxis/W=SS#SSGraph /A //Autoscale ... for now
+				AppendtoGraph /W=SS#SSGraph loadedwave
+			elseif (ItemsInList(WinList("SSPanel",";",""))>0)
+				string tlist1=TraceNameList("SSPanel#SSGraph",";",1)
+				wave loadedwave = $(StringFromList(0, wavenames))
+				variable dimtam1 = DimSize(loadedwave, 0)
+				SetScale/I x 0,100,"s", loadedwave	// Set wave's X scaling
+				SetAxis/W=SSPanel#SSGraph /A //Autoscale ... for now
+				AppendtoGraph /W=SSPanel#SSGraph loadedwave
+			endif
+		endif
+	else 
+		return -1
+	endif
+End
+
 Function Disable_All ()
 	string smsg = "Do you want to disable all channels?\n"
 	DoAlert /T="Disable before Exit" 1, smsg
@@ -263,10 +322,10 @@ Function Solar_Panel()
 	
 	//Text
 	SetDrawLayer UserBack
-	SetDrawEnv fstyle= 1
-	DrawText 675,71,"   Max \rCurrent"
-	SetDrawEnv fstyle= 1
-	DrawText 728,72,"   Set  \rCurrent "
+//	SetDrawEnv fstyle= 1
+//	DrawText 675,71,"   Max \rCurrent"
+//	SetDrawEnv fstyle= 1
+//	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
 	DrawLine 619,639,619,24
 	DrawText 43,313,"Cargar S\\BSTD"
@@ -274,28 +333,21 @@ Function Solar_Panel()
 	DrawText 169,357,"Cargar EQE\\BREF"
 	DrawText 319,355,"Cargar EQE\\BDUT"
 	
-	//Sliders
-//	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
-//	Slider slider0,help={"Current in mA"}
-//	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
-//	Slider slider1,pos={734.00,81.00},size={26.00,66.00},proc=SliderProc_SimSolar
-//	Slider slider1,help={"Current in mA"}
-//	Slider slider1,limits={0,100,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
-	Sliders(Imax)
-	
 	//Buttons
-	Button buttonApplyCurrent,pos={777.00,152.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
-	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
-	Button buttonApplyCurrent,fColor=(1,16019,65535)
-	Button buttonSetParameters,pos={675.00,179.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
-	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
-	Button buttonSetParameters,fColor=(40000,20000,65535)
-	Button buttonMode,pos={891.00,106.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
-	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
-	Button buttonMode1,pos={892.00,145.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
-	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
-	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
-	Button buttonInit,fSize=12,fColor=(52428,1,20971)
+//	Button buttonApplyCurrent,pos={777.00,152.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
+//	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
+//	Button buttonApplyCurrent,fColor=(1,16019,65535)
+//	Button buttonSetParameters,pos={675.00,179.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
+//	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
+//	Button buttonSetParameters,fColor=(40000,20000,65535)
+//	Button buttonMode,pos={891.00,106.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
+//	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
+//	Button buttonMode1,pos={892.00,145.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
+//	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
+//	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
+//	Button buttonInit,fSize=12,fColor=(52428,1,20971)
+	Button buttonCargarOnda,pos={157.00,398.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
+	Button buttonCargarOnda,fColor=(16385,65535,41303)
 	//PopUps
 	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
@@ -312,15 +364,15 @@ Function Solar_Panel()
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
-	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
-	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
-	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
-	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
+//	PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
+//	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+//	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
+//	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+//	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
 	
 	//Display 
 	String fldrSav0= GetDataFolder(1)
@@ -340,7 +392,7 @@ Function Solar_Panel()
 	SetAxis bottom*,1
 	SetDrawLayer UserFront
 	SetDrawEnv save
-	RenameWindow #,G0
+	RenameWindow #,SSGraph
 	SetActiveSubwindow ##
 	
 	
@@ -351,30 +403,15 @@ end
 
 Window SS() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(210,85,1275,756) as "SolarSimulatorPanel"
+	NewPanel /W=(99,178,1164,849) as "SolarSimulatorPanel"
+	ShowTools/A
 	SetDrawLayer UserBack
-	SetDrawEnv fstyle= 1
-	DrawText 675,71,"   Max \rCurrent"
-	SetDrawEnv fstyle= 1
-	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
 	DrawLine 619,639,619,24
 	DrawText 43,313,"Cargar S\\BSTD"
 	DrawText 179,314,"Cargar S\\BLAMP"
 	DrawText 168,358,"Cargar EQE\\BREF"
 	DrawText 325,358,"Cargar EQE\\BDUT"
-	Slider slider0,pos={686.00,80.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider0,help={"Current in mA"}
-	Slider slider0,limits={0,1000,1},variable= root:SolarSimulator:LedController:Imax,ticks= -5
-	Slider slider1,pos={734.00,81.00},size={26.00,66.00},proc=SliderProc_SimSolar
-	Slider slider1,help={"Current in mA"}
-	Slider slider1,limits={0,100,1},variable= root:SolarSimulator:LedController:Iset,ticks= -5
-	SetVariable setvarimax,pos={675.00,151.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
-	SetVariable setvarimax,fColor=(65535,65535,65535)
-	SetVariable setvarimax,limits={0,1000,1},value= root:SolarSimulator:LedController:Imax
-	SetVariable setvariset,pos={723.00,152.00},size={44.00,18.00},proc=SetVarProc_SimSol,title=" "
-	SetVariable setvariset,fColor=(65535,65535,65535)
-	SetVariable setvariset,limits={0,100,1},value= root:SolarSimulator:LedController:Iset
 	Button buttonApplyCurrent,pos={777.00,152.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
 	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
 	Button buttonApplyCurrent,fColor=(1,16019,65535)
@@ -402,19 +439,12 @@ Window SS() : Panel
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
-	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
-	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
-	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
-	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
-	PopupMenu popupSub09,pos={121.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub09,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
-	PopupMenu popupSub10,pos={287.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSub10,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+	Button buttonCargarOnda,pos={157.00,398.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
+	Button buttonCargarOnda,fColor=(16385,65535,41303)
+	SetVariable setvar0,pos={266.00,500.00},size={94.00,20.00},bodyWidth=60,proc=SetVarProc_SimSol
+	SetVariable setvar0,labelBack=(16386,65535,16385),fSize=13
+	SetVariable setvar0,valueBackColor=(26205,52428,1)
+	SetVariable setvar0,limits={0,1000,50},value= root:SolarSimulator:COM,live= 1
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
 	Display/W=(0,0,594,292)/HOST=#  sa vs sa
@@ -432,7 +462,7 @@ Window SS() : Panel
 	SetAxis bottom*,1
 	SetDrawLayer UserFront
 	SetDrawEnv save
-	RenameWindow #,G0
+	RenameWindow #,SSGraph
 	SetActiveSubwindow ##
 EndMacro
 //CHange the help files of dropdown popups to the following onne (all of them ) when finished window Execution
@@ -447,3 +477,5 @@ EndMacro
 //PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
 //PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 //PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+//PopupMenu popupSub10,pos={287.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//PopupMenu popupSub10,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
