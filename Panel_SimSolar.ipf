@@ -119,32 +119,27 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 2: // Enter key
 		case 3: // Live update
 			strswitch (sva.ctrlname)
-				case "setvar0":			
-					if (body<0)
-						body=0
-					endif		
-					SetVariable setvar0, bodyWidth=body
+				// sva.dval -> variable value
+				case "setvarLedRojo":			
+					gaus (sva.dval)		
+					//SetVariable setvarLedRojo, bodyWidth=body
 				break
 			endswitch
 		break
-		case 4: //Mouse wheel up
-			strswitch (sva.ctrlname)
-				case "setvar0":
-					body +=1
-					SetVariable setvar0, bodyWidth=body
-					gaus (body)
-				break
-			endswitch
-		break
-		case 5:
-			strswitch (sva.ctrlname)
-				case "setvar0":
-					body-=1
-					SetVariable setvar0, bodyWidth=body
-					gaus (body)
-				break
-			endswitch
-		break
+//		case 4: // Mouse wheel up
+//			strswitch (sva.ctrlname)
+//				case "setvarLedRojo":
+//				
+//				break
+//			endswitch
+//		break
+//		case 5: // Mouse wheel down
+//			strswitch (sva.ctrlname)
+//				case "setvarLedRojo":
+//					
+//				break
+//			endswitch
+//		break
 		case -1: // control being killed
 			break
 		case 6:
@@ -263,20 +258,20 @@ Function Load_Wave ()
 		if (strlen(wavenames) == 0) //The fich has no name. Error 
 			print "Error in the fich-loading"
 		else
-			if (ItemsInList(WinList("SS",";",""))>0)
-				string tlist=TraceNameList("SS#SSGraph",";",1)
+			if (ItemsInList(WinList("SSPanel",";",""))>0)
+			//	string tlist=TraceNameList("SS#SSGraph",";",1)
 				wave loadedwave = $(StringFromList(0, wavenames))
-				variable dimtam = DimSize(loadedwave, 0)
-				SetScale/I x 0,100,"s", loadedwave	// Set wave's X scaling
-				SetAxis/W=SS#SSGraph /A //Autoscale ... for now
-				AppendtoGraph /W=SS#SSGraph loadedwave
-			elseif (ItemsInList(WinList("SSPanel",";",""))>0)
-				string tlist1=TraceNameList("SSPanel#SSGraph",";",1)
-				wave loadedwave = $(StringFromList(0, wavenames))
-				variable dimtam1 = DimSize(loadedwave, 0)
-				SetScale/I x 0,100,"s", loadedwave	// Set wave's X scaling
-				SetAxis/W=SSPanel#SSGraph /A //Autoscale ... for now
-				AppendtoGraph /W=SSPanel#SSGraph loadedwave
+//				SetAxis/W=SS#SSGraph /A //Autoscale ... for now
+				//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
+				if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
+					variable delta = deltax(loadedwave)
+					variable start = leftx (loadedwave)
+					SetScale /P x, start*1000, delta*1000, loadedwave
+					Draw(1, loadedwave)
+				else
+					
+					Draw(0, loadedwave)
+				endif
 			endif
 		endif
 	else 
@@ -296,6 +291,22 @@ Function Disable_All ()
 			setMode (channel, 0)
 		endfor
 	endif
+End
+
+Function Draw (position, draw)//, [others])
+	variable position
+	wave draw
+	
+	if (position == 0)
+		AppendtoGraph /W=SSPanel#SSGraph draw
+	else
+		AppendtoGraph/R /W=SSPanel#SSGraph draw
+		Label/W=SSPanel#SSGraph right "Spectrum"
+		ModifyGraph /W=SSPanel#SSGraph minor=1
+		SetAxis/A/W=SSPanel#SSGraph
+	endif
+	ModifyGraph/W=SSPanel#SSGraph tick=2, zero=2,  standoff=0
+	SetColorGraph ("SSPanel#SSGraph")
 End
 
 Function Solar_Panel()
@@ -372,23 +383,27 @@ Function Solar_Panel()
 //	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 //	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
 //	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
-	
+	//SetVariable
+	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
+	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:body,live= 1
 	//Display 
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
 	Display/W=(0,0,594,292)/HOST=#  sa vs sa
 	SetDataFolder fldrSav0
-	ModifyGraph mode=3
-	ModifyGraph lSize=2
+//	ModifyGraph mode=3
+//	ModifyGraph lSize=2
 	ModifyGraph tick=2
 	ModifyGraph zero=2
 	ModifyGraph mirror=1
 	ModifyGraph minor=1
 	ModifyGraph standoff=0
-	Label left "Eje y (..)"
-	Label bottom "Eje X (..)"
+	Label left "%"
+	Label bottom "nm"
+	//Label right "Spectrum"
 	SetAxis left*,1
-	SetAxis bottom*,1
+	SetAxis bottom*,2000
+	//SetAxis right*, 1
 	SetDrawLayer UserFront
 	SetDrawEnv save
 	RenameWindow #,SSGraph
@@ -402,27 +417,16 @@ end
 
 Window SS() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(99,178,1164,849) as "SolarSimulatorPanel"
-	ShowTools/A
+	NewPanel /W=(68,226,1133,897) as "SSPanel"
 	SetDrawLayer UserBack
 	SetDrawEnv linethick= 1.5
 	DrawLine 619,639,619,24
 	DrawText 43,313,"Cargar S\\BSTD"
 	DrawText 179,314,"Cargar S\\BLAMP"
-	DrawText 168,358,"Cargar EQE\\BREF"
-	DrawText 325,358,"Cargar EQE\\BDUT"
-	Button buttonApplyCurrent,pos={777.00,152.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
-	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
-	Button buttonApplyCurrent,fColor=(1,16019,65535)
-	Button buttonSetParameters,pos={675.00,179.00},size={97.00,22.00},proc=ButtonProc_SimSolar,title="Parameters"
-	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
-	Button buttonSetParameters,fColor=(40000,20000,65535)
-	Button buttonMode,pos={891.00,106.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Normal Mode"
-	Button buttonMode,fSize=12,fColor=(65535,49157,16385)
-	Button buttonMode1,pos={892.00,145.00},size={107.00,30.00},proc=ButtonProc_SimSolar,title="Disable Mode"
-	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
-	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
-	Button buttonInit,fSize=12,fColor=(52428,1,20971)
+	DrawText 169,357,"Cargar EQE\\BREF"
+	DrawText 319,355,"Cargar EQE\\BDUT"
+	Button buttonCargarOnda,pos={157.00,398.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
+	Button buttonCargarOnda,fColor=(16385,65535,41303)
 	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
 	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
@@ -438,12 +442,8 @@ Window SS() : Panel
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	Button buttonCargarOnda,pos={157.00,398.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
-	Button buttonCargarOnda,fColor=(16385,65535,41303)
-	SetVariable setvar0,pos={266.00,500.00},size={94.00,20.00},bodyWidth=60,proc=SetVarProc_SimSol
-	SetVariable setvar0,labelBack=(16386,65535,16385),fSize=13
-	SetVariable setvar0,valueBackColor=(26205,52428,1)
-	SetVariable setvar0,limits={0,1000,50},value= root:SolarSimulator:COM,live= 1
+	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
+	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:body,live= 1
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
 	Display/W=(0,0,594,292)/HOST=#  sa vs sa
@@ -455,8 +455,8 @@ Window SS() : Panel
 	ModifyGraph mirror=1
 	ModifyGraph minor=1
 	ModifyGraph standoff=0
-	Label left "Eje y (..)"
-	Label bottom "Eje X (..)"
+	Label left "%"
+	Label bottom "nm"
 	SetAxis left*,1
 	SetAxis bottom*,1
 	SetDrawLayer UserFront
@@ -481,14 +481,17 @@ EndMacro
 
 Function gaus(num)
 	variable num
-	if (stringmatch (wavelist("*", ";", ""), "led"))
+	if (stringmatch (wavelist("*", ";", ""), "*fit*"))
 		Removefromgraph  /W=SS#SSGraph fit 
 	endif
-	make/O/N=10 led
-	make /O fit
+	make/O/N=200 led
+	make/O/N=200/D fit
 	wave led, fit
-	led[5]=num
-	CurveFit/Q  gauss led /D 
-	SetAxis /W=SS#SSGrap /A
-	//Appendtograph /W=SS#SSGraph fit 
+	led[100]=num
+	CurveFit/Q  gauss, led /D=fit	
+//	CurveFit/Q  gauss, led /D
+	Appendtograph /W=SS#SSGraph fit
+	//SetAxis /W=SS#SSGraph /A
 end
+
+//function setcolorGraph(winStr)
