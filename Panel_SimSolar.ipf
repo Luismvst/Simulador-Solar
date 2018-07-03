@@ -4,7 +4,7 @@
 
 Menu "S.Solar"
 	"Init 1/ç", /Q, init_SolarPanel()
-	"Init 2/´", /Q, init_SolarPanel2()
+	//"Init 2/´", /Q, init_SolarPanel2()
 	
 End
 Function init_SolarPanel2()
@@ -113,7 +113,6 @@ End
 
 Function SetVarProc_SimSol(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
-	nvar body 
 	switch( sva.eventCode )
 		case 1: // mouse up
 		case 2: // Enter key
@@ -121,8 +120,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
 				case "setvarLedRojo":			
-					gaus (sva.dval)		
-					//SetVariable setvarLedRojo, bodyWidth=body
+					//gaus (sva.dval)		
 				break
 			endswitch
 		break
@@ -184,8 +182,12 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					svar com = root:SolarSimulator:com
 					init_Leds (com)
 				break
-				case "buttonCargarOnda":			
-					Load_Wave()
+				case "buttonCargarOnda":
+					//path_Sref
+					//path_Slamp
+					//path_EQEref
+					//path_EQEdut						
+					Load_Wave("path_EQEref")
 			endswitch
 			
 			break
@@ -248,10 +250,13 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	return 0
 End
 
-Function Load_Wave ()
+Function Load_Wave (way)
+	string way
 	string fich_name
+	//stringlist ( pathlist ("*", ";", "") , way)
+	
 	//DoWindow /F SSGraph
-	LoadWave /P=path_EQEdut/O 
+	LoadWave /P=path_Sref/O 
 	string wavenames = S_wavenames
 	if (V_flag)	//This avoid problems if we cancel the fich-loading ( have you load somethg or not? )
 		fich_name = S_FileName
@@ -293,6 +298,7 @@ Function Disable_All ()
 	endif
 End
 
+//It will be added new features to the Draw Function to be functional for this procedure
 Function Draw (position, draw)//, [others])
 	variable position
 	wave draw
@@ -356,7 +362,7 @@ Function Solar_Panel()
 //	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
 //	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
 //	Button buttonInit,fSize=12,fColor=(52428,1,20971)
-	Button buttonCargarOnda,pos={157.00,398.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
+	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
 	Button buttonCargarOnda,fColor=(16385,65535,41303)
 	//PopUps
 	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
@@ -374,15 +380,15 @@ Function Solar_Panel()
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-//	PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
-//	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
-//	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
-//	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
-//	GroupBox group0,pos={639.00,16.00},size={392.00,299.00},title="Leds"
+	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubSref,value= #"indexedfile ( path_Sref, -1, \"????\")"
+	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubSlamp,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+	PopupMenu popupSubREF,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubDUT,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT,popvalue=" ",value= #"QEList(2)"
+
 	//SetVariable
 	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
 	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:body,live= 1
@@ -479,19 +485,26 @@ EndMacro
 //PopupMenu popupSub10,pos={287.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 //PopupMenu popupSub10,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
 
-Function gaus(num)
-	variable num
-	if (stringmatch (wavelist("*", ";", ""), "*fit*"))
-		Removefromgraph  /W=SS#SSGraph fit 
-	endif
-	make/O/N=200 led
-	make/O/N=200/D fit
-	wave led, fit
-	led[100]=num
-	CurveFit/Q  gauss, led /D=fit	
+//Function gaus(num)
+//	variable num
+//	//if (stringmatch (wavelist("*", ";", ""), "*fit*"))
+//	if (stringmatch (traceNameList ("SSPanel#SSGraph", ";", 0), "*fit*"))
+//		Removefromgraph  /W=SSPanel#SSGraph fit 
+//	endif
+//	make/O/N=200 led
+//	//make/O/N=200/D fit
+//	wave led//, fit
+//	led[100]=num
 //	CurveFit/Q  gauss, led /D
-	Appendtograph /W=SS#SSGraph fit
-	//SetAxis /W=SS#SSGraph /A
-end
+////	CurveFit/Q  gauss, led /D=fit // /D
+////	Appendtograph /W=SSPanel#SSGraph fit
+//	//SetAxis /W=SS#SSGraph /A
+//end
 
 //function setcolorGraph(winStr)
+//	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+//	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
+//	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
