@@ -7,14 +7,14 @@ Menu "S.Solar"
 	//"Init 2/´", /Q, init_SolarPanel2()
 	
 End
-Function init_SolarPanel2()
-	if (ItemsinList (WinList ("SS", ";", "")) > 0) 
-		DoWindow /F SS
-		return 0
-	else
-		Execute "SS()"
-	endif
-end
+//Function init_SolarPanel2()
+//	if (ItemsinList (WinList ("SS", ";", "")) > 0) 
+//		DoWindow /F SS
+//		return 0
+//	else
+//		Execute "SS()"
+//	endif
+//end
 
 Function init_SolarPanel()
 
@@ -33,11 +33,10 @@ Function init_SolarPanel()
 			genDFolders(path + ":LoadedWaves")
 			//PATHS will be created at the same time as the panel does. But when the buttons or something gets killed by the destruction
 			//of the own panel, i want paths to be destroyed too.
-			Newpath/Q/O/Z  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
-			Newpath/Q/O/Z  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
-			Newpath/Q/O/Z  path_EQEref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF (false)"
-			Newpath/Q/O/Z  path_EQEdut, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT"			
-			
+//			Newpath/Q/O/Z  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
+//			Newpath/Q/O/Z  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
+//			Newpath/Q/O/Z  path_EQEref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF (false)"
+//			Newpath/Q/O/Z  path_EQEdut, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT"					
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
 			
@@ -182,12 +181,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					svar com = root:SolarSimulator:com
 					init_Leds (com)
 				break
-				case "buttonCargarOnda":
-					//path_Sref
-					//path_Slamp
-					//path_EQEref
-					//path_EQEdut						
-					Load_Wave("path_EQEref")
+				case "buttonCargarOnda":					
+					Load_Wave(loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
 			endswitch
 			
 			break
@@ -220,28 +215,23 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 				break
 //				///***********/////
 //				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
-//				case "popupSub1_1":	//Cargar Sstd
-//					PopupMenu popupSub6,help={popStr}
-//					//LOADFILE
-//					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-//				//	Load_Wave(popStr)
-//					LoadWave/H/P=path_Sref/O popStr	
-//				break
-//				case "popupSub1_2":	//Cargar Slamp
-//					PopupMenu popupSub7,help={popStr}
-//					//LOADFILE
-//					LoadWave/H/P=path_Slamp/O popStr
-//				break
-//				case "popupSub1_3":	//Cargar EQEref	
-//					PopupMenu popupSub8,help={popStr}	
-//					//LOADFILE
-//					LoadWave/H/P=path_EQEref/O popStr		
-//				break
-//				case "popupSub1_4":	//Cargar EQEdut
-//					PopupMenu popupSub9,help={popStr}	
-//					//LOADFILE		
-//					LoadWave/H/P=path_EQEdut/O popStr
-//				break
+				case "popupSubSref":	//Cargar Sref
+					//LOADFILE
+					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
+					Load_Wave(fname=popStr, loadpath="path_Sref")
+				break
+				case "popupSubSlamp":	//Cargar Slamp
+					//LOADFILE
+					Load_Wave(fname=popStr, loadpath="path_Slamp")
+				break
+				case "popupSubREF":	//Cargar EQEref		
+					//LOADFILE
+					Load_Wave(fname=popStr, loadpath="path_Slamp")
+				break
+				case "popupSubDUT":	//Cargar EQEdut	
+					//LOADFILE	
+					Load_Wave(fname=popStr, loadpath="path_lamp")	
+				break
 			endswitch
 		case -1: // control being killed
 			break
@@ -250,23 +240,49 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	return 0
 End
 
-Function Load_Wave (way)
-	string way
+Function Load_Wave ([loadpath, id, fname] )
+	//Path is necessary when you want to load smthg from folder. 
+	//Id is necessary to know which SubCell is loading each wave. If there's no ID, it become general
+	//fname is necessary if you want to load an specific file (from dropdown for example)
+	string loadpath
+	variable id
+	string fname
+	
+	string current = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder current
+	
+	if (paramisdefault(loadpath))
+		//Path let you choose the file to load.
+		//path = "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
+		loadpath = "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor"
+	endif
+	if (paramisdefault(id))
+		//This is global data loaded
+		id = -1
+	endif
+	if (paramisdefault(fname))
+			fname = ""	
+	endif
+	
 	string fich_name
 	//stringlist ( pathlist ("*", ";", "") , way)
-	
-	//DoWindow /F SSGraph
-	LoadWave /P=path_Sref/O 
+	if (id >= 0 && id<=5) 
+		gendfolders(current + ":Subcell" + num2str(id))
+		SetDataFolder current + ":Subcell" + num2str(id)
+	endif
+	NewPath /O path_loadwave, loadpath
+	LoadWave /P=path_loadwave /O fname 	
 	string wavenames = S_wavenames
-	if (V_flag)	//This avoid problems if we cancel the fich-loading ( have you load somethg or not? )
+	if (V_flag)	//This avoid problems if we cancel the fich-loading ( have you load smthg or not? )
 		fich_name = S_FileName
 		if (strlen(wavenames) == 0) //The fich has no name. Error 
-			print "Error in the fich-loading"
+			print "Error in the fich-loading"						
+			return -1
 		else
 			if (ItemsInList(WinList("SSPanel",";",""))>0)
-			//	string tlist=TraceNameList("SS#SSGraph",";",1)
+				string tlist=TraceNameList("SSPanel#SSGraph",";",1)
 				wave loadedwave = $(StringFromList(0, wavenames))
-//				SetAxis/W=SS#SSGraph /A //Autoscale ... for now
 				//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
 				if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
 					variable delta = deltax(loadedwave)
@@ -280,8 +296,10 @@ Function Load_Wave (way)
 			endif
 		endif
 	else 
+		SetDataFolder savedatafolder
 		return -1
 	endif
+	SetDataFolder savedatafolder
 End
 
 Function Disable_All ()
@@ -296,7 +314,14 @@ Function Disable_All ()
 			setMode (channel, 0)
 		endfor
 	endif
+	//Posibilidad al cerrar el programa:
+	//Kill loadedwaves... (luis cell programm)
+	KillPath /A
 End
+
+//ComingSoon//
+//Function WhatToDraw()
+//End
 
 //It will be added new features to the Draw Function to be functional for this procedure
 Function Draw (position, draw)//, [others])
@@ -314,6 +339,25 @@ Function Draw (position, draw)//, [others])
 	ModifyGraph/W=SSPanel#SSGraph tick=2, zero=2,  standoff=0
 	SetColorGraph ("SSPanel#SSGraph")
 End
+
+Function Check_Enable (option)
+	variable option
+	if (option==0)
+		//Toca ogrganizar esto para que sea mas limpio
+		CheckBox check0, value= 0,mode=1
+		CheckBox check1,pos={464.00,382.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+		CheckBox check1,value= 0,mode=1
+		CheckBox check2,pos={465.00,405.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+		CheckBox check2,value= 0,mode=1
+		CheckBox check3,pos={467.00,426.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+		CheckBox check3,value= 0,mode=1
+		CheckBox check4,pos={467.00,447.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+		CheckBox check4,value= 0,mode=1
+		CheckBox check5,pos={467.00,466.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+		CheckBox check5,value= 0,mode=1
+	endif
+end
+	
 
 Function Solar_Panel()
 	
@@ -365,9 +409,9 @@ Function Solar_Panel()
 	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
 	Button buttonCargarOnda,fColor=(16385,65535,41303)
 	//PopUps
-	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
-	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
-	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
+//	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
+//	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
+//	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
 	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue="Yes",value= #"\"Yes;No\""
 	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
@@ -380,15 +424,30 @@ Function Solar_Panel()
 	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSref,value= #"indexedfile ( path_Sref, -1, \"????\")"
-	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSlamp,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+//	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSubSref,value= #"indexedfile ( path_Sref, -1, \"????\")"
+//	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSubSlamp,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
 	PopupMenu popupSubREF,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF,popvalue=" ",value= #"QElist(1)"
 	PopupMenu popupSubDUT,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT,popvalue=" ",value= #"QEList(2)"
-
+	//Dejo para otro día el qelist funcionamiento y las indexions of sref y slamp, junto al loadwave bueno
+	
+	//CheckBox
+	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+	CheckBox check0,value= 0,mode=1
+	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+	CheckBox check1,value= 0,mode=1
+	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+	CheckBox check2,value= 0,mode=1
+	CheckBox check3,pos={465.00,420.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+	CheckBox check3,value= 0,mode=1
+	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+	CheckBox check4,value= 0,mode=1
+	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
+	CheckBox check5,value= 0,mode=1
+	
 	//SetVariable
 	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
 	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:body,live= 1
@@ -417,6 +476,7 @@ Function Solar_Panel()
 	
 	
 	//ValDisplay
+	//**Value of J. We will see
 	
 	
 end
