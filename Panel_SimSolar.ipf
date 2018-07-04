@@ -293,7 +293,7 @@ Function Load_Wave ([loadpath, id, fname] )
 				if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
 					variable delta = deltax(loadedwave)
 					variable start = leftx (loadedwave)
-					SetScale /P x, start*1000, delta*1000, loadedwave
+					SetScale /P x, 350, 5, loadedwave
 					Draw(position = 1, trace = loadedwave)
 				else					
 					Draw(position = 0, trace = loadedwave)
@@ -416,10 +416,21 @@ Function Led_Control (ledwave)
 	SetDataFolder path
 	variable delta = deltax(ledwave)
 	variable start = leftx (ledwave)
-	SetScale /P x, 350, 5, ledwave
-	Draw (position = 1, trace = ledwave, color = 1)
+	variable ending = rightx (ledwave)
+	print delta, start, ending
+	variable aux = DimSize (ledwave, 0)
+	print (ending - start)/aux
+		
+	//SetScale /P x, 350, , ledwave
+	//Draw (position = 1, trace = ledwave, color = 1)
 	SetDataFolder savedatafolder
 	
+End
+//LedControl es unap rueba para el escalado de las ondas y asñí poder dibujarlas a escala igualtodas sin cambiar
+//Sus datos. Introducimos una nueva manera de hacer las gráficas.
+//Piensa luis piensa
+Function Scaling ()
+
 End
 Function Solar_Panel()
 	
