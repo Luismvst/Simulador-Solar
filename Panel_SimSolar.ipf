@@ -88,10 +88,14 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 	switch( cba.eventCode )
 		case 2: // mouse up
 			Variable checked = cba.checked
-			
-			break
+			string check_name = cba.ctrlname
+			variable num = str2num (check_name[5])
+			if (num>=0 && num<=5)
+				Check_Enable(num, checked)
+			endif
+		break
 		case -1: // control being killed
-			break
+		break
 	endswitch
 
 	return 0
@@ -118,7 +122,9 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 3: // Live update
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
-				case "setvarLedRojo":			
+				case "setvarLedRojo":	
+					wave ledwave = root:SolarSimulator:LedController:LED850
+					Led_Control(ledwave)		
 					//gaus (sva.dval)		
 				break
 			endswitch
@@ -288,10 +294,9 @@ Function Load_Wave ([loadpath, id, fname] )
 					variable delta = deltax(loadedwave)
 					variable start = leftx (loadedwave)
 					SetScale /P x, start*1000, delta*1000, loadedwave
-					Draw(1, loadedwave)
-				else
-					
-					Draw(0, loadedwave)
+					Draw(position = 1, trace = loadedwave)
+				else					
+					Draw(position = 0, trace = loadedwave)
 				endif
 			endif
 		endif
@@ -324,41 +329,98 @@ End
 //End
 
 //It will be added new features to the Draw Function to be functional for this procedure
-Function Draw (position, draw)//, [others])
-	variable position
-	wave draw
-	
+Function Draw ([position, trace, autoescale, color])//, [others])
+	variable position		//0 -> Left, 1 -> Right
+	wave trace					//Name of the wave to be drawn
+	variable autoescale		//0 -> No , 1 -> Yes
+	variable color			//0 -> Choose random color,  1 -> red, 2 -> green, 3 -> blue, 4 -> black, 5 -> white
+	if (paramisdefault(position))
+		position = 0
+	endif
+	if (paramisdefault(trace))
+		trace = Nan
+	endif
+	if (paramisdefault(autoescale))
+		autoescale = 0
+	endif
+	if (paramisdefault(color))
+		color = 0
+	endif
+	string tlist=TraceNameList("SSPanel#SSGraph",";",1)
+	if (stringmatch (tlist, "*" + NameOfWave(trace) + "*"))
+		//i dont know why just "trace" does not work with the command removefromgraph...
+		RemoveFromGraph /W=SSPanel#SSGraph $NameOfWave(trace)
+	endif
 	if (position == 0)
-		AppendtoGraph /W=SSPanel#SSGraph draw
+		AppendtoGraph /W=SSPanel#SSGraph trace
 	else
-		AppendtoGraph/R /W=SSPanel#SSGraph draw
+		AppendtoGraph/R /W=SSPanel#SSGraph trace
 		Label/W=SSPanel#SSGraph right "Spectrum"
 		ModifyGraph /W=SSPanel#SSGraph minor=1
+	endif
+	if (autoescale)
 		SetAxis/A/W=SSPanel#SSGraph
 	endif
 	ModifyGraph/W=SSPanel#SSGraph tick=2, zero=2,  standoff=0
-	SetColorGraph ("SSPanel#SSGraph")
+	if (color == 0)
+		SetColorGraph ("SSPanel#SSGraph")
+	else
+		switch (color)
+		case 1: 
+			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 0, 0)
+		break
+		case 2:
+			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0, 65535, 0)
+		break
+		case 3:
+			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,65535)
+		break
+		case 4:
+			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 65535, 65535)
+		break
+		case 5:
+			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,0)
+		break
+		default: 
+			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(20000, 20000, 20000)
+		endswitch
+	endif		
 End
 
-Function Check_Enable (option)
-	variable option
-	if (option==0)
-		//Toca ogrganizar esto para que sea mas limpio
-		CheckBox check0, value= 0,mode=1
-		CheckBox check1,pos={464.00,382.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-		CheckBox check1,value= 0,mode=1
-		CheckBox check2,pos={465.00,405.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-		CheckBox check2,value= 0,mode=1
-		CheckBox check3,pos={467.00,426.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-		CheckBox check3,value= 0,mode=1
-		CheckBox check4,pos={467.00,447.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-		CheckBox check4,value= 0,mode=1
-		CheckBox check5,pos={467.00,466.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-		CheckBox check5,value= 0,mode=1
-	endif
+Function Check_Enable (id, checked)
+	variable id, checked
+	string path = "root:SolarSimulator"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	variable i
+	string checkX
+	for (i=0;i<6; i++)
+		checkX = "check" + num2str(i)
+		if (id != i)
+			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
+		elseif (checked)			
+			//I dont know why color does not change when checked. 
+			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
+		else
+			CheckBox $checkX, value = 0
+		endif
+	endfor
+	SetDataFolder savedatafolder
 end
 	
+Function Led_Control (ledwave)
 
+	wave ledwave
+	string path = "root:SolarSimulator:LedController"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	variable delta = deltax(ledwave)
+	variable start = leftx (ledwave)
+	SetScale /P x, 350, 5, ledwave
+	Draw (position = 1, trace = ledwave, color = 1)
+	SetDataFolder savedatafolder
+	
+End
 Function Solar_Panel()
 	
 	string path = "root:SolarSimulator"
@@ -370,6 +432,7 @@ Function Solar_Panel()
 	
 	variable/G root:SolarSimulator:LedController:Imax
 	variable/G root:SolarSimulator:LedController:Iset
+	variable/G :LedController:LedLevel
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	nvar channel = root:SolarSimulator:channel
@@ -435,22 +498,16 @@ Function Solar_Panel()
 	//Dejo para otro día el qelist funcionamiento y las indexions of sref y slamp, junto al loadwave bueno
 	
 	//CheckBox
-	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-	CheckBox check0,value= 0,mode=1
-	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-	CheckBox check1,value= 0,mode=1
-	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-	CheckBox check2,value= 0,mode=1
-	CheckBox check3,pos={465.00,420.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-	CheckBox check3,value= 0,mode=1
-	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-	CheckBox check4,value= 0,mode=1
-	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title=""
-	CheckBox check5,value= 0,mode=1
+	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+	CheckBox check3,pos={465.00,420.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 	
 	//SetVariable
 	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
-	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:body,live= 1
+	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel,live= 1
 	//Display 
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
