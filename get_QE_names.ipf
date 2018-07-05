@@ -18,7 +18,7 @@ function/S QElist(ref)
 		//If you don´t want to show the Reference QE in the list, check if folder is of Ref. QE
 		notref= (cmpstr(QErefoptions(run),"_none_")==0)	
 		//notref=1	//if you want to see ref QEsions(run),"_none_")==0)			
-		DFREF QEDFR=$("root:"+run+":QE")
+		DFREF QEDFR=$("root:"+run+":EQE")
 		if ((DataFolderRefStatus(QEDFR)==1) && notref) //If folder exists and is not a reference folder
 //			print run, DataFolderRefStatus(QEDFR)
 			//This code selects waves with some ending. Will need to update the endings that work for us
@@ -37,7 +37,7 @@ function/S QElist(ref)
 //			print  QE1list
 		endif
 	endfor	
-	return QE1list
+	return trimstring(QE1list)
 end
 
 function/s folderList()

@@ -4,6 +4,8 @@
 
 Menu "S.Solar"
 	"Init 1/ç", /Q, init_SolarPanel()
+	"Initialize", /Q, init_SolarPanel(init=1)
+	
 	//"Init 2/´", /Q, init_SolarPanel2()
 	
 End
@@ -16,11 +18,15 @@ End
 //	endif
 //end
 
-Function init_SolarPanel()
-
+Function init_SolarPanel([init])
+	
+	variable init
+	if (paramisdefault (init))
+		init=0
+	endif
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator"
-	if(!DatafolderExists(path))
+	if(!DatafolderExists(path) || init == 1)
 		string smsg = "You have to initialize first.\n"
 		smsg += "Do you want to initialize?\n"
 		DoAlert /T="Unable to open the program" 1, smsg
@@ -28,15 +34,12 @@ Function init_SolarPanel()
 			//Abort "Execution aborted.... Restart IGOR"
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
-			genDFolders(path + ":PapeleraDeVariables")			
+			genDFolders(path + ":Storage")			
 			genDFolders(path + ":LedController")
 			genDFolders(path + ":LoadedWaves")
 			//PATHS will be created at the same time as the panel does. But when the buttons or something gets killed by the destruction
 			//of the own panel, i want paths to be destroyed too.
-//			Newpath/Q/O/Z  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
-//			Newpath/Q/O/Z  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
-//			Newpath/Q/O/Z  path_EQEref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF (false)"
-//			Newpath/Q/O/Z  path_EQEdut, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT"					
+							
 			//init() everything. Estrategia ir haciendo
 			//cosas avisando a la gente de qué debe hacer
 			
@@ -112,22 +115,23 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
+			wave LedLevel = root:SolarSimulator:LedController:LedLevel
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
 				case "setvarLed1":	
 					wave ledwave = root:SolarSimulator:LedController:LED470
-					nvar ledlevel = root:SolarSimulator:LedController:LedLevel1
-					Led_Control(ledwave, ledlevel)
+//					nvar ledlevel = root:SolarSimulator:LedController:LedLevel1
+					Led_Control(ledwave, ledlevel[0])
 				break
 				case "setvarLed2":
 					wave ledwave = root:SolarSimulator:LedController:LED850
-					nvar ledlevel = root:SolarSimulator:LedController:LedLevel2
-					Led_Control(ledwave, ledlevel)
+//					nvar ledlevel = root:SolarSimulator:LedController:LedLevel2
+					Led_Control(ledwave, ledlevel[1])
 				break
 				case "setvarLed3":
 					wave ledwave = root:SolarSimulator:LedController:LED1540
-					nvar ledlevel = root:SolarSimulator:LedController:LedLevel3
-					Led_Control(ledwave, ledlevel)
+//					nvar ledlevel = root:SolarSimulator:LedController:LedLevel3
+					Led_Control(ledwave, ledlevel[2])
 				break
 			endswitch
 		break
@@ -193,7 +197,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Load_Wave()
 				break
 				case "buttonLoadLed":
-					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
+					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
+//					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
 				break
 			endswitch
 			
@@ -212,45 +217,69 @@ End
 
 Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
-	string path = "root:SolarSimulator:LoadedWaves"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
 	switch( pa.eventCode )
 		case 2: // mouse up
 			Variable popNum = pa.popNum
 			String popStr = pa.popStr
+			String paName = pa.ctrlname
 			
 			strswitch (pa.ctrlname)
 				case "popupchannel":
 					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
-//				///***********/////
 //				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				case "popupSubSref":	//Cargar Sref
-					//LOADFILE
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
+					Load_Wave(fname=popStr)//, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-					//LOADFILE
 					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
 				break
-				case "popupSubREF":	//Cargar EQEref		
-					//LOADFILE
+				case "popupSubREF0":	//Cargar EQEref	
 					Load_Wave(fname=popStr)
 				break
-				case "popupSubDUT":	//Cargar EQEdut	
-					//LOADFILE	
+				case "popupSubDUT0":	//Cargar EQEdut	
 					Load_Wave(fname=popStr)	
 				break
 			endswitch
+			if (stringmatch(paName, "popupSub*") && str2num(paName[8])>=0 && str2num(paName[8])<=5)
+				wave popValues = root:SolarSimulator:Storage:popValues
+				Pop_Action (str2num(paName[8]), popValues)
+			endif
+					
 		case -1: // control being killed
 			break
 	endswitch
-	SetDataFolder savedatafolder
 	return 0
 End
+
+Function Pop_Action (popNum, popValues)
+	variable popNum
+	wave popValues
+	variable i
+	string checkX
+	string popupX
+	string popupY
+	
+	popValues[popNum] = !popValues[popNum]
+	for (i=0; i<1; i++)
+		checkX = "check" + num2str(i)
+		popupX = "popupSubREF" + num2str(i)
+		popupY = "popupSubDUT" + num2str(i)
+		if (popValues[i])
+			CheckBox $checkX, 	disable = 0
+			PopupMenu $popupX,	disable = 0
+			PopupMenu $popupY,	disable = 0	
+			popValues[i]=0
+		else
+			CheckBox $checkX, 	disable = 1
+			PopupMenu $popupX,	disable = 1
+			PopupMenu $popupY,	disable = 1
+		endif
+		
+	endfor
+end
 
 Function LoadLed (path)
 	string path
@@ -422,6 +451,7 @@ Function Check_Enable (id, checked)
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path
 	variable i
+	//*********Coming Soon: refresh*************//
 	variable refresh //Selected 
 	string checkX
 	for (i=0;i<6; i++)
@@ -474,28 +504,61 @@ Function newDelta (wav, newstart)
 	return newdelta	
 End
 
+Function/S translate (popValues)
+	wave popValues
+	string popVal = ""
+	variable i 
+	for (i = 0; i<6; i++)
+		switch(popValues[i])
+		case 1: 	
+			popVal += "Yes;"
+		break
+		case 0:
+			popVal += "No;"
+		break
+		endswitch
+	endfor
+	return trimstring (popVal)
+end
+
 Function Solar_Panel()
 	
 	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path
-	make /N=1 /O  root:SolarSimulator:PapeleradeVariables:sa
-	wave sa = root:SolarSimulator:PapeleradeVariables:sa
+	make /N=1 /O  root:SolarSimulator:Storage:sa
+	wave sa = root:SolarSimulator:Storage:sa
+	wave sa = root:SolarSimulator:Storage:sa
 	string nameDisplay 
+	
+	make /N=6 /O  :Storage:popvalues
+	wave popValues = :Storage:popvalues
+	popValues = {1, 1, 1, 0, 0, 0}
+	string popVal = translate (popValues)
 	
 	variable/G root:SolarSimulator:LedController:Imax
 	variable/G root:SolarSimulator:LedController:Iset
-	variable/G :LedController:LedLevel1
-	variable/G :LedController:LedLevel2
-	variable/G :LedController:LedLevel3
+//	variable/G :LedController:LedLevel1
+//	variable/G :LedController:LedLevel2
+//	variable/G :LedController:LedLevel3
+	make /N=3 /O :Storage:LedLevel
+	wave LedLevel = :Storage:LedLevel
+	LedLevel = { 0, 0, 0 }
+	
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
+	Imax = 10; Iset = 0
 	nvar channel = root:SolarSimulator:channel
+	channel = 1
 	PauseUpdate; Silent 1		// building window...
 	
 //	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
 //	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
 //	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS"
+	
+	Newpath/Q/O  path_Sref, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref"
+	Newpath/Q/O  path_Slamp, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp"
+	NewPath/Q/O 	path_SLeds, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds"
 	
 	//Panel
 	DoWindow/K SSPanel; DelayUpdate
@@ -536,28 +599,49 @@ Function Solar_Panel()
 //	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 //	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
 //	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
-	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
-	PopupMenu popupSub0,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
-	PopupMenu popupSub1,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub2,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
-	PopupMenu popupSub2,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub3,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
-	PopupMenu popupSub3,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub4,pos={20.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
-	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
-	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
-	
+
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSref,value= #"indexedfile ( path_Sref, -1, \"????\")"
 	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSlamp,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
 	
-	PopupMenu popupSubREF1,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
+	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
+	PopupMenu popupSub1,mode=1,popvalue=stringfromlist(1,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub2,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
+	PopupMenu popupSub2,mode=1,popvalue=stringfromlist(2,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub3,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
+	PopupMenu popupSub3,mode=2,popvalue=stringfromlist(3,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub4,pos={20.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
+	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
+	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""
+	
+	PopupMenu popupSubREF0,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF0,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubDUT0,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT0,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubREF1,pos={125.00,380.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF1,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT1,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT1,pos={290.00,380.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT1,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubREF2,pos={125.00,400.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF2,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubDUT2,pos={290.00,400.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT2,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubREF3,pos={125.00,420.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF3,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubDUT3,pos={290.00,420.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT3,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubREF4,pos={125.00,440.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF4,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubDUT4,pos={290.00,440.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT4,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubREF5,pos={125.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF5,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubDUT5,pos={290.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT5,popvalue=" ",value= #"QEList(2)"
 	//Dejo para otro día el qelist funcionamiento y las indexions of sref y slamp, junto al loadwave bueno
 	
 	//CheckBox
@@ -573,14 +657,14 @@ Function Solar_Panel()
 //	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel,live= 1
 	
 	SetVariable setvarLed1,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
-	SetVariable setvarLed1,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel1,live= 1
+	SetVariable setvarLed1,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel[0],live= 1
 	SetVariable setvarLed2,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
-	SetVariable setvarLed2,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel2,live= 1
+	SetVariable setvarLed2,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel[1],live= 1
 	SetVariable setvarLed3,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
-	SetVariable setvarLed3,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel3,live= 1
+	SetVariable setvarLed3,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel[2],live= 1
 	//Display 
 	String fldrSav0= GetDataFolder(1)
-	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
+	SetDataFolder root:SolarSimulator:Storage:
 	Display/W=(0,0,594,292)/HOST=#  sa vs sa
 	SetDataFolder fldrSav0
 //	ModifyGraph mode=3
@@ -637,7 +721,7 @@ Window SS() : Panel
 	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
 	
 	String fldrSav0= GetDataFolder(1)
-	SetDataFolder root:SolarSimulator:PapeleraDeVariables:
+	SetDataFolder root:SolarSimulator:Storage:
 	Display/W=(0,0,594,292)/HOST=#  sa vs sa
 	SetDataFolder fldrSav0
 	ModifyGraph mode=3
