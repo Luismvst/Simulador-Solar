@@ -115,22 +115,22 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
-			wave LedLevel = root:SolarSimulator:LedController:LedLevel
+			wave LedLevel = root:SolarSimulator:Storage:LedLevel
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
 				case "setvarLed1":	
 					wave ledwave = root:SolarSimulator:LedController:LED470
-//					nvar ledlevel = root:SolarSimulator:LedController:LedLevel1
+//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
 					Led_Control(ledwave, ledlevel[0])
 				break
 				case "setvarLed2":
 					wave ledwave = root:SolarSimulator:LedController:LED850
-//					nvar ledlevel = root:SolarSimulator:LedController:LedLevel2
+//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel2
 					Led_Control(ledwave, ledlevel[1])
 				break
 				case "setvarLed3":
 					wave ledwave = root:SolarSimulator:LedController:LED1540
-//					nvar ledlevel = root:SolarSimulator:LedController:LedLevel3
+//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
 					Led_Control(ledwave, ledlevel[2])
 				break
 			endswitch
@@ -243,9 +243,16 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					Load_Wave(fname=popStr)	
 				break
 			endswitch
-			if (stringmatch(paName, "popupSub*") && str2num(paName[8])>=0 && str2num(paName[8])<=5)
+			if (stringmatch(paName, "popupSub*")   && str2num(paName[8])>=0 && str2num(paName[8])<=5 )
 				wave popValues = root:SolarSimulator:Storage:popValues
-				Pop_Action (str2num(paName[8]), popValues)
+				variable num = str2num(paName[8])
+				if ( cmpstr (popStr,"Yes") == 0)
+//					popValues[str2num(paName[8])]=1
+					popValues[num]=1
+				elseif ( cmpstr (popStr, "No") == 0 )
+					popValues[num]=0
+				endif
+				Pop_Action (num, popValues)
 			endif
 					
 		case -1: // control being killed
@@ -257,28 +264,22 @@ End
 Function Pop_Action (popNum, popValues)
 	variable popNum
 	wave popValues
-	variable i
 	string checkX
 	string popupX
 	string popupY
 	
-	popValues[popNum] = !popValues[popNum]
-	for (i=0; i<1; i++)
-		checkX = "check" + num2str(i)
-		popupX = "popupSubREF" + num2str(i)
-		popupY = "popupSubDUT" + num2str(i)
-		if (popValues[i])
-			CheckBox $checkX, 	disable = 0
-			PopupMenu $popupX,	disable = 0
-			PopupMenu $popupY,	disable = 0	
-			popValues[i]=0
-		else
-			CheckBox $checkX, 	disable = 1
-			PopupMenu $popupX,	disable = 1
-			PopupMenu $popupY,	disable = 1
-		endif
-		
-	endfor
+	checkX = "check" + num2str(popNum)
+	popupX = "popupSubREF" + num2str(popNum)
+	popupY = "popupSubDUT" + num2str(popNum)
+	if (popValues[popNum])
+		CheckBox $checkX, 	disable = 0
+		PopupMenu $popupX,	disable = 0
+		PopupMenu $popupY,	disable = 0	
+	else
+		CheckBox $checkX, 	disable = 1
+		PopupMenu $popupX,	disable = 1
+		PopupMenu $popupY,	disable = 1
+	endif	
 end
 
 Function LoadLed (path)
@@ -454,15 +455,25 @@ Function Check_Enable (id, checked)
 	//*********Coming Soon: refresh*************//
 	variable refresh //Selected 
 	string checkX
+	string valdisp1
+	string valdisp2
 	for (i=0;i<6; i++)
 		checkX = "check" + num2str(i)
+		valdisp1 = "valdispJREF" + num2str(i)
+		valdisp2 = "valdispJ" + num2str(i)
 		if (id != i)
 			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
+			ValDisplay $valdisp1, disable = 2
+			ValDisplay $valdisp2, disable = 2
 		elseif (checked)			
 			//I dont know why color does not change when checked. 
 			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
+			ValDisplay $valdisp1, disable = 0
+			ValDisplay $valdisp2, disable = 0
 		else
 			CheckBox $checkX, value = 0
+			ValDisplay $valdisp1, disable = 2
+			ValDisplay $valdisp2, disable = 2
 		endif
 	endfor
 	SetDataFolder savedatafolder
@@ -538,13 +549,13 @@ Function Solar_Panel()
 	
 	variable/G root:SolarSimulator:LedController:Imax
 	variable/G root:SolarSimulator:LedController:Iset
-//	variable/G :LedController:LedLevel1
-//	variable/G :LedController:LedLevel2
-//	variable/G :LedController:LedLevel3
+//	variable/G :Storage:LedLevel1
+//	variable/G :Storage:LedLevel2
+//	variable/G :Storage:LedLevel3
 	make /N=3 /O :Storage:LedLevel
 	wave LedLevel = :Storage:LedLevel
 	LedLevel = { 0, 0, 0 }
-	
+	variable i
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	Imax = 10; Iset = 0
@@ -572,12 +583,13 @@ Function Solar_Panel()
 //	SetDrawEnv fstyle= 1
 //	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
-	DrawLine 619,639,619,24
+	DrawLine 672,639,672,24
 	DrawText 43,313,"Cargar S\\BSTD"
 	DrawText 179,314,"Cargar S\\BLAMP"
 	DrawText 169,357,"Cargar EQE\\BREF"
 	DrawText 319,355,"Cargar EQE\\BDUT"
-	
+	DrawText 491,353,"Jsc\\BREF\\BOBJETIVO"
+	DrawText 574,355,"Jsc\\BREF\\BMEDIDO"
 	//Buttons
 //	Button buttonApplyCurrent,pos={777.00,152.00},size={45.00,21.00},proc=ButtonProc_SimSolar,title="Apply"
 //	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
@@ -654,14 +666,47 @@ Function Solar_Panel()
 	
 	//SetVariable
 //	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
-//	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel,live= 1
+//	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel,live= 1
 	
 	SetVariable setvarLed1,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
-	SetVariable setvarLed1,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel[0],live= 1
+	SetVariable setvarLed1,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
 	SetVariable setvarLed2,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
-	SetVariable setvarLed2,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel[1],live= 1
+	SetVariable setvarLed2,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
 	SetVariable setvarLed3,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
-	SetVariable setvarLed3,limits={0,1,0.1},value= root:SolarSimulator:LedController:LedLevel[2],live= 1
+	SetVariable setvarLed3,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
+	
+	//ValDisplay
+	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF2,pos={488.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF3,pos={488.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF4,pos={488.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF5,pos={488.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ0,pos={573.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	
+	//Functions to initialize panel
+	for (i = 0; i<6; i++)
+		Pop_Action (i, popValues)
+	endfor 
+	Check_Enable (-1, 0)
+	
 	//Display 
 	String fldrSav0= GetDataFolder(1)
 	SetDataFolder root:SolarSimulator:Storage:
@@ -686,8 +731,6 @@ Function Solar_Panel()
 	SetActiveSubwindow ##
 	
 	
-	//ValDisplay
-	//**Value of J. We will see
 	
 	
 end
