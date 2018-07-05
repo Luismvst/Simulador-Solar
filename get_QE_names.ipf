@@ -10,7 +10,7 @@ function/S QElist(ref)
 	//	Wave/Z QEname=iodfr:QEnames
 	//	Wave/Z QElong=iodfr:QElong
 	string runs=folderList()		//Get list of folders under root
-	string run, QE1list="_none_"
+	string run, QE1list=" "
 	variable i, notref
 	//Look for QE waves in every folder
 	for(i=0;(i<itemsinlist(runs,","));i+=1)
