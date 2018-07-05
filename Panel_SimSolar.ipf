@@ -267,7 +267,8 @@ Function Pop_Action (popNum, popValues)
 	string checkX
 	string popupX
 	string popupY
-	
+	string valdisp1
+	string valdisp2
 	checkX = "check" + num2str(popNum)
 	popupX = "popupSubREF" + num2str(popNum)
 	popupY = "popupSubDUT" + num2str(popNum)
@@ -277,9 +278,43 @@ Function Pop_Action (popNum, popValues)
 		PopupMenu $popupY,	disable = 0	
 	else
 		CheckBox $checkX, 	disable = 1
-		PopupMenu $popupX,	disable = 1
-		PopupMenu $popupY,	disable = 1
+		PopupMenu $popupX,	disable = 2
+		PopupMenu $popupY,	disable = 2
 	endif	
+end
+
+
+Function Check_Enable (id, checked)
+	variable id, checked
+	string path = "root:SolarSimulator"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	variable i
+	//*********Coming Soon: refresh*************//
+	variable refresh //Selected 
+	string checkX
+	string valdisp1
+	string valdisp2
+	for (i=0;i<6; i++)
+		checkX = "check" + num2str(i)
+		valdisp1 = "valdispJREF" + num2str(i)
+		valdisp2 = "valdispJ" + num2str(i)
+		if (id != i)
+			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
+			ValDisplay $valdisp1, disable = 2
+			ValDisplay $valdisp2, disable = 2
+		elseif (checked)			
+			//I dont know why color does not change when checked. 
+			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
+			ValDisplay $valdisp1, disable = 0
+			ValDisplay $valdisp2, disable = 0
+		else
+			CheckBox $checkX, value = 0
+			ValDisplay $valdisp1, disable = 2
+			ValDisplay $valdisp2, disable = 2
+		endif
+	endfor
+	SetDataFolder savedatafolder
 end
 
 Function LoadLed (path)
@@ -446,38 +481,6 @@ Function Draw ([position, trace, autoescale, color])//, [others])
 	endif		
 End
 
-Function Check_Enable (id, checked)
-	variable id, checked
-	string path = "root:SolarSimulator"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
-	variable i
-	//*********Coming Soon: refresh*************//
-	variable refresh //Selected 
-	string checkX
-	string valdisp1
-	string valdisp2
-	for (i=0;i<6; i++)
-		checkX = "check" + num2str(i)
-		valdisp1 = "valdispJREF" + num2str(i)
-		valdisp2 = "valdispJ" + num2str(i)
-		if (id != i)
-			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
-			ValDisplay $valdisp1, disable = 2
-			ValDisplay $valdisp2, disable = 2
-		elseif (checked)			
-			//I dont know why color does not change when checked. 
-			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
-			ValDisplay $valdisp1, disable = 0
-			ValDisplay $valdisp2, disable = 0
-		else
-			CheckBox $checkX, value = 0
-			ValDisplay $valdisp1, disable = 2
-			ValDisplay $valdisp2, disable = 2
-		endif
-	endfor
-	SetDataFolder savedatafolder
-end
 	
 //Muestra con Draw solo lo tickeado por checkthings
 //Function Select_Desplay ()
