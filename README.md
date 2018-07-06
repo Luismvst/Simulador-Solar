@@ -17,6 +17,8 @@ Autor: Luis Martínez de Velasco Sánchez-Tembleque
 
 NºMatrícula:51747
 
+Realizado en: Instituto de Energía Solar
+
 Escuela Técnica Superior de Ingeniería y Diseño Industrial 
 
 Universidad Politécnica de Madrid
