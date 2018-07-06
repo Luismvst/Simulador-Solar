@@ -197,15 +197,17 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Load_Wave()
 				break
 				case "buttonLoadLed":
-//					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
-					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
+					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
+//					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
 				break
 			endswitch
 			
 			break
 		case -1: // control being killed
 			strswitch (ba.ctrlname)	
-				case "buttonMode0":		//Button Disable being killed
+				case "buttonClean":		//Button Disable being killed
+				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
+				//When killed, it wont reinitialize, but it will do the rest actions.
 //					Disable_All()					
 				break
 			endswitch
@@ -231,10 +233,12 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 //				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				case "popupSubSref":	//Cargar Sref
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
+//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
+					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
+//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
+					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
@@ -420,21 +424,30 @@ Function Load_Wave ([loadpath, id, fname] )
 	SetDataFolder savedatafolder
 End
 
-Function Disable_All ()
-	string smsg = "Do you want to disable all channels?\n"
-	DoAlert /T="Disable before Exit" 1, smsg
-	if (V_flag == 2)		//Clicked <"NO">
-	//Abort "Execution aborted.... Restart IGOR"
-		return 0
-	elseif (V_flag == 1)	//Clicked <"YES">
-		variable channel			
-		for (channel=1;channel<13;channel+=1)	//12 channels
-			setMode (channel, 0)
-		endfor
-	endif
-	//Posibilidad al cerrar el programa:
-	//Kill loadedwaves... (luis cell programm)
-	KillPath /A
+Function Disable_All (option)
+	variable option
+	switch (option)
+		case 0:
+			string smsg = "Do you want to disable all channels?\n"
+			DoAlert /T="Disable before Exit" 1, smsg
+			if (V_flag == 2)		//Clicked <"NO">
+			//Abort "Execution aborted.... Restart IGOR"
+				return 0
+			elseif (V_flag == 1)	//Clicked <"YES">
+				variable channel			
+				for (channel=1;channel<13;channel+=1)	//12 channels
+					setMode (channel, 0)	//Disable
+				endfor
+			endif
+		//it does not have break, becouse it will be disabling gradually
+		case 1:
+			//Posibilidad al cerrar el programa:
+			//Kill loadedwaves... (luis cell programm)
+			string folders = getFolder ("root:SolarSimulator")
+			KillPath /A
+		case 2:
+			
+	endswitch	
 End
 
 //ComingSoon//
@@ -543,6 +556,7 @@ Function isScaled (wav)
 	variable start = leftx (wav)
 	variable delta = deltax (wav)
 	variable ending = rightx (wav)
+	//Aprox will be able to scale waves that are loaded without an appropriate scale 
 	if (  (delta > 3 && delta < 7) && (start>15 && start<400) )
 		return 1
 	else 
@@ -610,13 +624,13 @@ Function Solar_Panel()
 	PauseUpdate; Silent 1		// building window...
 	
 	//Paths
-	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
-	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
-	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS"
+//	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
+//	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
+//	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS"
 	
-//	Newpath/Q/O  path_Sref, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref"
-//	Newpath/Q/O  path_Slamp, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp"
-//	NewPath/Q/O 	path_SLeds, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds"
+	Newpath/Q/O  path_Sref, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref"
+	Newpath/Q/O  path_Slamp, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp"
+	NewPath/Q/O 	path_SLeds, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds"
 	
 	//Panel
 	DoWindow/K SSPanel; DelayUpdate

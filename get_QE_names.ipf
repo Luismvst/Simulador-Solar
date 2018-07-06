@@ -49,6 +49,41 @@ function/s folderList()
 	return thelist
 end
 
+//Under Development
+Function /S getPath (fname, [path])
+	string fname		//Folder Name
+	string path 		//Starting iteration #datafolderdir
+	if (paramisdefault(path))
+		path = "root"
+	endif
+	string thelist
+	String fldrSav=GetDataFolder (1)
+//	SetDataFolder path
+	thelist = getFolder(path)
+	if (stringmatch(thelist, "*" + fname + "*"))
+		return path+fname
+	else	
+		variable num = ItemsinList (thelist, ",")
+		variable i
+		for (i = 0; i<num; i++)
+			getPath(fname, path = path + ":" + stringfromlist (i, thelist, ","))
+		endfor
+	endif
+	SetDataFolder fldrSav
+	return path+":"+fname
+End
+
+Function /S getFolder (path)
+	//GetFolders Under the folder path given
+	string path
+	String fldrSav=GetDataFolder (1)
+	SetDataFolder path
+	string thelist = StringByKey("FOLDERS", DataFolderDir(1))
+	thelist=SortList(RemoveFromList("Packages", thelist,","),",")	
+	SetDataFolder fldrSav
+	return thelist
+end
+
 function/S QErefoptions(reflab)
 	string reflab
 	wave/Z/T refQEnames=root:Packages:DataSummary:refQEnames  //Wave with list of ref QE available
