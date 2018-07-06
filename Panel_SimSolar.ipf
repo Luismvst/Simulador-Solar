@@ -402,14 +402,14 @@ Function Load_Wave ([loadpath, id, fname] )
 				string tlist=TraceNameList("SSPanel#SSGraph",";",1)
 				wave loadedwave = $(StringFromList(0, wavenames))
 				//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
-				if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
-					//variable delta = deltax(loadedwave)
+				//if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
+				if (isScaled(loadedwave))
+					Draw(position = 0, trace = loadedwave)
+				else
 					variable newstart = 350
 					variable delta = newDelta (loadedwave, newstart)
 					SetScale /P x, newstart, delta, loadedwave
 					Draw(position = 1, trace = loadedwave)
-				else					
-					Draw(position = 0, trace = loadedwave)
 				endif
 			endif
 		endif
@@ -536,6 +536,18 @@ Function newDelta (wav, newstart)
 	variable rows = DimSize (wav, 0)
 	variable newdelta = (newending - newstart)/rows
 	return newdelta	
+End
+
+Function isScaled (wav)
+	wave wav
+	variable start = leftx (wav)
+	variable delta = deltax (wav)
+	variable ending = rightx (wav)
+	if (  (delta > 3 && delta < 7) && (start>15 && start<400) )
+		return 1
+	else 
+		return 0
+	endif
 End
 
 Function/S translate (popValues)
