@@ -197,8 +197,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Load_Wave()
 				break
 				case "buttonLoadLed":
-					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
 //					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
+					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
 				break
 			endswitch
 			
@@ -572,32 +572,44 @@ Function Solar_Panel()
 	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path
+	
+	//Initial wave for #GraphPanel
 	make /N=1 /O  root:SolarSimulator:Storage:sa
 	wave sa = root:SolarSimulator:Storage:sa
 	wave sa = root:SolarSimulator:Storage:sa
 	string nameDisplay 
 	
+	//Disable/Enable Dropdowns things on the panel
 	make /N=6 /O  :Storage:popvalues
 	wave popValues = :Storage:popvalues
 	popValues = {1, 1, 1, 0, 0, 0}
-	string popVal = translate (popValues)
+	string popVal = translate (popValues)//Yes;No; Selection
 	
+	//Display traces on graph depending on the checkbox selected
+	make /N=10 /O :Storage:Checkwave
+	wave checkwave = :Storage:checkwave
+	checkwave = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	
+	//Values of LedCurrents
 	variable/G root:SolarSimulator:LedController:Imax
 	variable/G root:SolarSimulator:LedController:Iset
-//	variable/G :Storage:LedLevel1
-//	variable/G :Storage:LedLevel2
-//	variable/G :Storage:LedLevel3
-	make /N=3 /O :Storage:LedLevel
-	wave LedLevel = :Storage:LedLevel
-	LedLevel = { 0, 0, 0 }
-	variable i
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	Imax = 10; Iset = 0
+	
+	//Increase power of leds
+	make /N=3 /O :Storage:LedLevel
+	wave LedLevel = :Storage:LedLevel
+	LedLevel = { 0, 0, 0 }
+
+	variable i
+	
+	//It has been created  when Leds Procedure initialize. 
 	nvar channel = root:SolarSimulator:channel
 	channel = 1
 	PauseUpdate; Silent 1		// building window...
 	
+	//Paths
 	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
 	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
 	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS"
@@ -743,10 +755,7 @@ Function Solar_Panel()
 	Check_Enable (-1, 0)
 	
 	//Display 
-	String fldrSav0= GetDataFolder(1)
-	SetDataFolder root:SolarSimulator:Storage:
-	Display/W=(0,0,594,292)/HOST=#  sa vs sa
-	SetDataFolder fldrSav0
+	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
 	ModifyGraph tick=2
@@ -759,15 +768,20 @@ Function Solar_Panel()
 	//Label right "Spectrum"
 	SetAxis left*,1
 	SetAxis bottom*,2000
-	//SetAxis right*, 1
+	
 	SetDrawLayer UserFront
 	SetDrawEnv save
 	RenameWindow #,SSGraph
-	SetActiveSubwindow ##
-	
-	
-	
-	
+	SetActiveSubwindow ##	
+end
+
+//Reconstruction of graphPanel when something is removed (for check_Drawing_options )
+Function prue()
+	ModifyGraph /W=SSPanel#SSGraph  tick=2
+	ModifyGraph /W=SSPanel#SSGraph  zero=2
+	ModifyGraph /W=SSPanel#SSGraph  mirror=1
+	ModifyGraph /W=SSPanel#SSGraph  minor=1
+	ModifyGraph /W=SSPanel#SSGraph  standoff=0
 end
 
 Window SS() : Panel
