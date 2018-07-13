@@ -40,6 +40,7 @@ function/S QElist(ref)
 	return trimstring(QE1list)
 end
 
+
 function/s folderList()
 	String fldrSav= GetDataFolder(1)
 	SetDataFolder root:
@@ -61,7 +62,7 @@ Function /S getPath (fname, [path])
 //	SetDataFolder path
 	thelist = getFolder(path)
 	if (stringmatch(thelist, "*" + fname + "*"))
-		return path+fname
+		return path+":"+fname
 	else	
 		variable num = ItemsinList (thelist, ",")
 		variable i
