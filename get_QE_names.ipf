@@ -55,28 +55,30 @@ function/s folderList()
 	return thelist
 end
 
-//Under Development
-Function /S getPath (fname, [path])
+//Under Development 
+Function /S getQEPath (fname)
 	string fname		//Folder Name
-	string path 		//Starting iteration #datafolderdir
-	if (paramisdefault(path))
-		path = "root"
-	endif
-	string thelist
+	string path 
+	string list, list2
+	variable num
 	String fldrSav=GetDataFolder (1)
-//	SetDataFolder path
-	thelist = getFolder(path)
-	if (stringmatch(thelist, "*" + fname + "*"))
-		return path+":"+fname
-	else	
-		variable num = ItemsinList (thelist, ",")
-		variable i
-		for (i = 0; i<num; i++)
-			getPath(fname, path = path + ":" + stringfromlist (i, thelist, ","))
-		endfor
-	endif
+	SetDataFolder root:
+	list = getFolder("root:")
+	num = ItemsinList (list, ",")
+	variable i
+	for (i = 0; i<num; i++)
+		path = "root:" + stringfromlist (i, list, ",") + ":EQE:"
+		if (datafolderexists(path))
+			SetDataFolder path
+		else	
+			continue
+		endif
+		list2 = wavelist (fname, ";", "")
+		if (strlen(list2) != 0)
+			return path + list2
+		endif
+	endfor
 	SetDataFolder fldrSav
-	return path+":"+fname
 End
 
 Function /S getFolder (path)
