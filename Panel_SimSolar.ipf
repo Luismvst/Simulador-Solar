@@ -18,6 +18,7 @@ Function init_SolarPanel([init])
 	if (paramisdefault (init))
 		init=0
 	endif
+	
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator"
 	if(!DatafolderExists(path) || init == 1)
@@ -45,15 +46,16 @@ Function init_SolarPanel([init])
 	DFRef dfr = $path
 	SetDatafolder dfr
 	//Check if this is right becouse i dont know if it is 
-	//good to reinitialize leds or something to reset some values... /* check */ 
+	//good to reinitialize leds or something to reset some values... 
+	//* check *//
 	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
 		SetDrawLayer /W=SSPanel  Progfront
 		DoWindow /F SSPanel
 		return 0
 	endif 
 	//ComNum
-	string/G COM = selectComLeds ()
-	
+	//string/G COM = selectComLeds ()
+	string/G COM = "COM1" //Connected by serial port
 	if (strlen (com) == 0) 
 		DoAlert 0, "There is no COM connected"
 	else 
@@ -71,35 +73,41 @@ Function TurnOn_Leds(Iset)
 	setMode (1, 1)
 	setMode (2, 1)
 	setMode (3, 1)
-	setNormalParameters (1, 1000, Iset)
-	setNormalParameters (2, 1000, Iset)
-	setNormalParameters (3, 1000, Iset)
+//	setNormalParameters (1, 1000, Iset)
+//	setNormalParameters (2, 1000, Iset)
+//	setNormalParameters (3, 1000, Iset)
+	setNormalCurrent (1, Iset)
+	setNormalCurrent (2, Iset)
+	setNormalCurrent (3, Iset)
+	
 End
 
 Function TurnOff_Leds()
 	variable channel	
-	for (channel=1;channel<4;channel+=1)	//12 channels
+	for (channel=1;channel<4;channel+=1)	//12 channels, 3 used
 		setMode (channel, 0)	//Disable
 	endfor
 End
 
-Function/S selectComLeds([comNum])
-	variable comNum
-	string com
-	if (paramisdefault(comNum))
-		comNum=1
-		Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB"
-		DoPrompt "Choose the COM Port",comNum
-		if (V_Flag)	
-			return ""		// user canceled
-		endif
-		com = "COM" + num2str (comNum)
-		return com
-	else
-		com = "COM" + num2str (comNum)
-		return com
-	endif
-End
+//PopUp that let you choose the COM Port
+//
+//Function/S selectComLeds([comNum])
+//	variable comNum
+//	string com
+//	if (paramisdefault(comNum))
+//		comNum=1
+//		Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB"
+//		DoPrompt "Choose the COM Port",comNum
+//		if (V_Flag)	
+//			return ""		// user canceled
+//		endif
+//		com = "COM" + num2str (comNum)
+//		return com
+//	else
+//		com = "COM" + num2str (comNum)
+//		return com
+//	endif
+//End
 
 Function CheckProc_SimSolar(cba) : CheckBoxControl
 	STRUCT WMCheckboxAction &cba
@@ -243,8 +251,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Load_Wave()
 				break
 				case "buttonLoadLed":
-//					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
-					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
+					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
+//					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
 				break
 				case "buttonRemoveLed":
 					wave ledwave1 = root:SolarSimulator:LedController:ledwave1
@@ -261,7 +269,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":		//Button Disable being killed
 				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
 				//When killed, it wont reinitialize, but it will do the rest actions.
-//					Disable_All()					
+					Disable_All(1)					
 				break
 			endswitch
 			break
@@ -286,11 +294,11 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 //				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				case "popupSubSref":	//Cargar Sref
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
+//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
+//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
 				break
 				default: 
@@ -508,16 +516,9 @@ Function Disable_All (option)
 			endif
 		//it does not have break, becouse it will be disabling gradually
 		case 1:
-			//Posibilidad al cerrar el programa:
-			//Kill loadedwaves... (luis cell programm)
-			for (channel=1;channel<13;channel+=1)	//12 channels
-					setMode (channel, 0)	//Disable
-				endfor
-			string folders = getFolder ("root:SolarSimulator")
-			KillPath /A
-		case 2:
-			
-		break
+			//string folders = getFolder ("root:SolarSimulator")
+			KillDataFolder root:SolarSimulator:LoadedWaves
+			genDFolders("root:SolarSimulator:LoadedWaves")
 	endswitch	
 End
 
