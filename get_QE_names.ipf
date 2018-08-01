@@ -23,6 +23,11 @@ function/S QElist(ref)
 //			print run, DataFolderRefStatus(QEDFR)
 			//This code selects waves with some ending. Will need to update the endings that work for us
 			switch (ref)
+			case 0:
+				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_XExt",","),";")
+				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_Ext",","),";")
+				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_EQE",","),";")
+				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_RM",","),";")
 			case 1:
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_XExt",","),";")
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_Ext",","),";")
