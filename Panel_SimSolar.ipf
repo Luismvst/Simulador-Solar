@@ -168,23 +168,23 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
 				case "setvarLed1":	
-					wave ledwave = root:SolarSimulator:LedController:LED470
+					wave ledwave1 = root:SolarSimulator:LedController:LED470
 //					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
-					Led_Control(ledwave, ledlevel[0])
+					Led_Control(ledwave1, ledlevel[0])
 					Iset = Imax * LedLevel[0]	
 					setNormalCurrent (channel, Iset)
 									
 				break
 				case "setvarLed2":
-					wave ledwave = root:SolarSimulator:LedController:LED850
+					wave ledwave2 = root:SolarSimulator:LedController:LED850
 //					nvar ledlevel = root:SolarSimulator:Storage:LedLevel2
-					Led_Control(ledwave, ledlevel[1])
+					Led_Control(ledwave2, ledlevel[1])
 					Iset = Imax * LedLevel[0]
 				break
 				case "setvarLed3":
-					wave ledwave = root:SolarSimulator:LedController:LED1540
+					wave ledwave3 = root:SolarSimulator:LedController:LED1540
 //					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
-					Led_Control(ledwave, ledlevel[2])
+					Led_Control(ledwave3, ledlevel[2])
 					Iset = Imax * LedLevel[0]
 				break
 			endswitch
@@ -251,7 +251,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					//Load_Wave()
 				break
 				case "buttonLoadLed":
-					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
+//					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
 //					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
 				break
 				case "buttonRemoveLed":
@@ -651,6 +651,7 @@ End
 //	SetDataFolder savedatafolder
 //End
 
+//*********************
 Function Led_Control (ledwave, ledlevel)
 	wave ledwave
 	variable ledlevel
@@ -662,9 +663,9 @@ Function Led_Control (ledwave, ledlevel)
 		variable delta = newDelta ( ledwave, start)
 		SetScale /P x, start, delta, ledwave
 	endif
-	Duplicate/O ledwave, ledwave1
-	ledwave1 = ledwave1 * ledlevel / waveMax (ledwave) 
-	Draw (position = 0, trace = ledwave1, color = 1)
+	Duplicate/O ledwave, ledwaveSc
+	ledwaveSc = ledwaveSc * ledlevel / waveMax (ledwave) 
+	Draw (position = 0, trace = ledwaveSc, color = 1)
 	SetDataFolder savedatafolder	
 End
 
