@@ -248,7 +248,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 //					init_Leds (com)
 //				break
 				case "buttonCargarOnda":					
-					Load_Wave()
+					//Load_Wave()
 				break
 				case "buttonLoadLed":
 					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
@@ -269,7 +269,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":		//Button Disable being killed
 				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
 				//When killed, it wont reinitialize, but it will do the rest actions.
-					Disable_All(1)					
+//					Disable_All(1)					
 				break
 			endswitch
 			break
@@ -293,12 +293,14 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 				break
 //				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				case "popupSubSref":	//Cargar Sref
+//					Load (popStr)
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
+					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
+//					Load (popStr)
+					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
 				break
 				default: 
@@ -312,14 +314,16 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 							elseif ( cmpstr (popStr, "No") == 0 )
 								popValues[num]=0
 							endif
-							Pop_Action (num, popValues)
+							Pop_Action (num, popValues)							
 						endif
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
 							num = str2num(paName[11])	
-							Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT")
+							Load (popStr, id = num )							
+							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT")
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
 							num = str2num(paName[11])
-							Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF")
+							Load (popStr, id = num )
+							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF")
 						endif
 						
 					endif
@@ -425,6 +429,56 @@ Function Clean ()
 	SetDataFolder savedatafolder
 end
 
+Function Load (fname, [id])
+	//Id is necessary to know which SubCell is loading each wave (0-5). If there's no ID, it become general
+	//fname is necessary if you want to load an specific file (from dropdown for example)
+	string fname	
+	variable id
+	if (paramisdefault(id))
+		//This is global data loaded (espectre or smthg else)
+		id = -1
+	endif
+	string current = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder current
+	variable flag= 0
+	string wavenames
+	string sdf
+	string fich_name
+	if (id >= 0 && id<=5) 
+		gendfolders(current + ":Subcell" + num2str(id))
+		sdf= current + ":Subcell" + num2str(id) + ":"
+		//if(itemsinlist(wavelist
+	elseif (id == -1 && stringmatch (fname,"*XT*") )
+		gendfolders(current + ":Spectre")
+		sdf= current + ":SimulatorSpectre:"
+	elseif (id == -1 && stringmatch (fname,"*AM*") )
+		gendfolders(current + ":SpectreRef")
+		sdf= current + ":SpectreRef:" 
+	endif 
+	string wavepath = stringfromlist (0, getQEpath (fname))
+	wave originwave = $wavepath
+	string destwave = (sdf + fname) 
+	Duplicate /O originwave, $destwave
+	
+	if (ItemsInList(WinList("SSPanel",";",""))>0)
+		string tlist=TraceNameList("SSPanel#SSGraph",";",1)
+		wave loadedwave = $destwave
+		//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
+		//if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
+		if (isScaled(loadedwave))
+			Draw(position = 0, trace = loadedwave)
+		else
+			variable newstart = 350
+			variable delta = newDelta (loadedwave, newstart)
+			SetScale /P x, newstart, delta, loadedwave
+			Draw(position = 1, trace = loadedwave)
+		endif
+	endif
+			
+	Setdatafolder savedatafolder
+end
+
 Function Load_Wave ([loadpath, id, fname] )
 	//Path is necessary when you want to load smthg from folder. 
 	//Id is necessary to know which SubCell is loading each wave (0-5). If there's no ID, it become general
@@ -454,7 +508,6 @@ Function Load_Wave ([loadpath, id, fname] )
 	endif
 	
 	string fich_name
-	//stringlist ( pathlist ("*", ";", "") , way)
 	if (id >= 0 && id<=5) 
 		gendfolders(current + ":Subcell" + num2str(id))
 		SetDataFolder current + ":Subcell" + num2str(id)
