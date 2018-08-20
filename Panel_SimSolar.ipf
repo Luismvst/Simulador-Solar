@@ -60,7 +60,7 @@ Function init_SolarPanel([init])
 		DoAlert 0, "There is no COM connected"
 	else 
 		//We initiate leds and ledworking mode
-		init_Leds(com)
+		//init_Leds(com)
 	endif	
 	Init_SolarVar()
 	Solar_Panel ()
@@ -295,12 +295,12 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 				case "popupSubSref":	//Cargar Sref
 //					Load (popStr)
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
+//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
 				break
 				case "popupSubSlamp":	//Cargar Slamp
 //					Load (popStr)
-					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
+//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
 				break
 				default: 
