@@ -1,33 +1,31 @@
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-//Terminar de cambiar load para que cuando carguemos algo desajustado no haya problemas
+//Usar check enable para que cuando marcamos aparezcan esas gráficas en específico y no otras.
+//Terminar de cambiar load para que cuando carguemos algo desajustado no haya problemas (SCALING)
 //Gausianas de leds poderlas ver a la vez.
 //Elegir el com tras crear el panel y no vieversa. con un dropdown de los normales.
+//Realizar una funcion de color para colorear por orden los traces. Sencilla.
 
 Menu "S.Solar"
-	"Init ",/Q, Init_SP ()
+	"Display /ç",/Q, Init_SP (val = 1)
+	"Init ", /Q, Init_SP ()
 End
 
 //This function does load from the current experiment waves
-Function Load (fname, [id, dut])
-	//Id is necessary to know which SubCell is loading each wave (0-5). If there's no ID, it become general
-	//fname is necessary to load and display it from the dropdown
+Function Load (fname, id)
+	//Id is necessary to know which SubCell wave is going to be used displaying it on the graph
+	//fname is necessary to load and display it from the dropdown on the graph
 	string fname	
 	variable id
-	variable dut
-	if (paramisdefault(id))
-		//This is global data loaded (espectre or smthg else)
-		id = -1
-	endif
-	if (paramisdefault(dut))
-		//this is to make a difference between the reference subcell and the dut subcell.
-		//dut = -1 means it is not a dut
-		dut=-1
-	endif
+	
 	string current = "root:SolarSimulator:LoadedWaves"
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder current
+	
+	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
+	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
+	wave wavelamp, wavespectre;
 	
 	variable flag= 0
 	string wavenames
@@ -46,14 +44,22 @@ Function Load (fname, [id, dut])
 //	endif 
 	string wavepath = stringfromlist (0, getQEpath (fname))
 	wave originwave = $wavepath
-	string destwave 
-	if (dut == 0)
-		destwave = "wavesubref"+num2str(id)
-		Duplicate /O originwave, $destwave
-	elseif (dut == 1)
-		destwave = "wavesubdut"+num2str(id)
-		Duplicate /O originwave, $destwave
-	endif		 
+	string destwavename
+	
+	if ( mod (id, 2) && id<12)
+		destwavename = "wavesubdut"+num2str(id)	
+	elseif ( !mod (id, 2) && id<12)
+		destwavename = "wavesubref"+num2str(id)		
+	elseif (id == 12 )
+		destwavename = "wavelamp"
+	elseif (id == 13 )
+		destwavename = "wavespectre"
+	endif
+	//This is necessary becouse duplicate function creates the new wave in the dfr of the originwave
+	destwavename = current + ":" + destwavename
+	wave destwave = $destwavename
+	Duplicate /O originwave, destwave
+	
 	
 //	if (ItemsInList(WinList("SSPanel",";",""))>0)
 //		string tlist=TraceNameList("SSPanel#SSGraph",";",1)
@@ -113,6 +119,7 @@ Function Draw ([position, trace, autoescale, color])//, [others])
 		SetColorGraph ("SSPanel#SSGraph")
 	else
 //		switch (color)
+
 //		case 1: 
 //			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 0, 0)
 //		break
@@ -289,12 +296,15 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 		//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 
 				case "popupSubSref":	//Cargar Sref
+					Load (popStr, 12)
+				
 //					Load (popStr)
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
 //					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
 				break
 				case "popupSubSlamp":	//Cargar Slamp
+					Load (popStr, 13)
 //					Load (popStr)
 //					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
 //					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
@@ -314,10 +324,11 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 						endif
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
 							num = str2num(paName[11])	
-//							Load (popStr, id = num )							
+							Load (popStr, num +1 )						
 							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT")
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
 							num = str2num(paName[11])
+							Load (popStr, num  )
 //							Load (popStr, id = num )
 							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF")
 						endif
@@ -345,7 +356,13 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	return 0
 end
 
-Function Init_SP ()
+Function Init_SP ([val])
+	variable val
+	if (ItemsinList (WinList("SSPanel", ";", "")) > 0 && val == 1)
+		SetDrawLayer /W=SSPanel  Progfront
+		DoWindow /F SSPanel
+		return 0
+	endif 
 	init_solarVar ()
 	Solar_Panel ()
 End
@@ -371,23 +388,23 @@ Function Init_SolarVar ()
 	
 	SetDataFolder root:SolarSimulator
 	//Initial wave for #GraphPanel
-	make /N=1 /O		root:SolarSimulator:Storage:sa
+//	make /N=1 /O		root:SolarSimulator:Storage:sa
 	//reference to draw in the scene before even give them the value of the selected subcell in the panel.
 	//They will be all drawn in the graqph but not showed until we give them a value. Otherwise, it is nan 
-	make /O 	root:SolarSimulator:LoadedWave:wavesubdut0
-	make /O 	root:SolarSimulator:LoadedWave:wavesubdut1
-	make /O 	root:SolarSimulator:LoadedWave:wavesubdut2
-	make /O 	root:SolarSimulator:LoadedWave:wavesubdut3
-	make /O 	root:SolarSimulator:LoadedWave:wavesubdut4
-	make /O 	root:SolarSimulator:LoadedWave:wavesubdut5
-	make /O 	root:SolarSimulator:LoadedWave:wavesubref0
-	make /O 	root:SolarSimulator:LoadedWave:wavesubref1
-	make /O 	root:SolarSimulator:LoadedWave:wavesubref2
-	make /O 	root:SolarSimulator:LoadedWave:wavesubref3
-	make /O 	root:SolarSimulator:LoadedWave:wavesubref4
-	make /O 	root:SolarSimulator:LoadedWave:wavesubref5
-	make /O 	root:SolarSimulator:LoadedWave:wavelamp
-	make /O 	root:SolarSimulator:LoadedWave:wavespectre
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut0 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut1 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut2 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut3 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut4 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut5 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref0 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref1 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref2 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref3 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref4 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref5 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavelamp = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavespectre = Nan
 	
 	
 		
@@ -433,8 +450,8 @@ Function Solar_Panel()
 	SetDataFolder path
 	
 	//Initial wave for #GraphPanel
-	wave sa = root:SolarSimulator:Storage:sa
-	string nameDisplay 
+//	wave sa = root:SolarSimulator:Storage:sa
+//	string nameDisplay 
 	
 	//Disable/Enable Dropdowns things on the panel
 	wave popValues = :Storage:popvalues
@@ -455,9 +472,6 @@ Function Solar_Panel()
 	
 	//It has been created  when Leds Procedure initialize. 
 	nvar channel = root:SolarSimulator:channel
-	
-	//Waves drawn in the graph
-	wave //me quede aqui
 	
 	PauseUpdate; Silent 1		// building window...
 	
@@ -633,10 +647,33 @@ Function Solar_Panel()
 	SetDrawEnv save
 	RenameWindow #,SSGraph
 	SetActiveSubwindow ##	
+	
+	//Waves drawn in the graph
+	SetDataFolder root:SolarSimulator:LoadedWaves
+	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
+	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
+	wave wavelamp, wavespectre;
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
+	AppendtoGraph /W=SSPanel#SSGraph wavelamp
+	AppendtoGraph /W=SSPanel#SSGraph wavespectre
+	SetDataFolder root:SolarSimulator
+	
 end
 
 //DropDown "Yes-No" Selection
 Function/S translate (popValues)
+	//popValues is a boolean array. 1 is translated into "Yes" and 0 is translated into "No" int he dropdown
 	wave popValues
 	string popVal = ""
 	variable i 
@@ -655,6 +692,8 @@ end
 
 //CheckBoxes Panel "Disable-Enable" drop action
 Function Pop_Action (popNum, popValues)
+	//popNum is the numeric reference to the selected popup in the Panel
+	//popValues is the boolean array that carries the FMS information
 	variable popNum
 	wave popValues
 	string checkX
@@ -677,6 +716,8 @@ Function Pop_Action (popNum, popValues)
 end
 
 Function Check_Enable (id, checked)
+	//id is the selected box that we want to enable or disable
+	//checked is the state that the selected checkbox has got
 	variable id, checked
 	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
@@ -709,30 +750,8 @@ Function Check_Enable (id, checked)
 	SetDataFolder savedatafolder
 end
 
-//Display 
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
-//	ModifyGraph mode=3
-//	ModifyGraph lSize=2
-	ModifyGraph tick=2
-	ModifyGraph zero=2
-	ModifyGraph mirror=1
-	ModifyGraph minor=1
-	ModifyGraph standoff=0
-	Label left "%"
-	Label bottom "nm"
-	//Label right "Spectrum"
-	SetAxis left*,1
-	SetAxis bottom*,2000
-	
-	SetDrawLayer UserFront
-	SetDrawEnv save
-	RenameWindow #,SSGraph
-	SetActiveSubwindow ##	
-end
-
 //Reconstruction of Display
 Function Clean ()
-	
 	SetDataFolder root:SolarSimulator
 	KillWindow SSPanel#SSGraph
 	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
