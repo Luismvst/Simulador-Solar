@@ -166,3 +166,17 @@ function/S QErefoptions(reflab)
 			break
 	endswitch
 end
+
+Function /S QESpectreNames(num)
+	variable num
+	string list
+	String fldrSav= GetDataFolder(1)
+	if (num == 1)
+		SetDataFolder root:Spectre:SRef			
+	elseif (num == 2)
+		SetDataFolder root:Spectre:SLamp		
+	endif	
+	list = wavelist ("*", ";", "")
+	SetDataFolder fldrSav
+	return list
+end
