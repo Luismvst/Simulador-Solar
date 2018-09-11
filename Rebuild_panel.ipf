@@ -31,20 +31,21 @@ Function Load (fname, id)
 	string wavenames
 	string sdf
 	string fich_name
-//	if (id >= 0 && id<=5) 
-//		gendfolders(current + ":Subcell" + num2str(id))
-//		sdf= current + ":Subcell" + num2str(id) + ":"
-//		//if(itemsinlist(wavelist
-//	elseif (id == -1 && stringmatch (fname,"*XT*") )
-//		gendfolders(current + ":Spectre")
-//		sdf= current + ":SimulatorSpectre:"
-//	elseif (id == -1 && stringmatch (fname,"*AM*") )
-//		gendfolders(current + ":SpectreRef")
-//		sdf= current + ":SpectreRef:" 
-//	endif 
-	string wavepath = stringfromlist (0, getQEpath (fname))
-	wave originwave = $wavepath
 	string destwavename
+	string wavepath
+	
+	if (id<12) 
+		wavepath = stringfromlist (0, getQEpath (fname))	
+	endif
+	switch (id)
+	case 12:			
+		wavepath = "root:Spectre:SRef:"+fname
+		break
+	case 13:
+		wavepath = "root:Spectre:SLamp:"+fname
+		break
+	endswitch
+	wave originwave = $wavepath
 	
 	if ( mod (id, 2) && id<12)
 		destwavename = "wavesubdut"+num2str(id)	
@@ -60,22 +61,10 @@ Function Load (fname, id)
 	wave destwave = $destwavename
 	Duplicate /O originwave, destwave
 	
-	
-//	if (ItemsInList(WinList("SSPanel",";",""))>0)
-//		string tlist=TraceNameList("SSPanel#SSGraph",";",1)
-//		wave loadedwave = $destwave
-//		//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
-//		//if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
-//		if (isScaled(loadedwave))
-//			Draw(position = 0, trace = loadedwave)
-//		else
-//			variable newstart = 350
-//			variable delta = newDelta (loadedwave, newstart)
-//			SetScale /P x, newstart, delta, loadedwave
-//			Draw(position = 1, trace = loadedwave)
-//		endif
-//	endif
-			
+	if (!isScaled(destwave))
+		Scale (destwave)
+//		SetScale /I x, 0, 2000 , destwave
+	endif			
 	Setdatafolder savedatafolder
 end
 
@@ -218,8 +207,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					//Load_Wave()
 				break
 //				case "buttonLoadLed":
-//					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
-//					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
+//					
 //				break
 //				case "buttonRemoveLed":
 //					wave ledwave1 = root:SolarSimulator:LedController:ledwave1
@@ -292,22 +280,15 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
-//				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
-		//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
-
+				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
+				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
 					Load (popStr, 12)
 				
-//					Load (popStr)
-					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
-//					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
+					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)					
 				break
 				case "popupSubSlamp":	//Cargar Slamp
 					Load (popStr, 13)
-//					Load (popStr)
-//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
-//					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
@@ -325,12 +306,11 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
 							num = str2num(paName[11])	
 							Load (popStr, num +1 )						
-							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT")
+							
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
 							num = str2num(paName[11])
 							Load (popStr, num  )
-//							Load (popStr, id = num )
-							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF")
+							
 						endif
 						
 					endif
@@ -383,6 +363,10 @@ Function Init_SolarVar ()
 			genDFolders(path + ":Storage")			
 			genDFolders(path + ":LedController")
 			genDFolders(path + ":LoadedWaves")
+			genDFolders("root:Spectre")
+			//Here we have to load Sstd and Slamp manually 
+			genDFolders("root:Spectre:Sref")
+			genDFolders("root:Spectre:Slamp")
 		endif
 	endif
 	
@@ -405,9 +389,11 @@ Function Init_SolarVar ()
 	make /O 	root:SolarSimulator:LoadedWaves:wavesubref5 = Nan
 	make /O 	root:SolarSimulator:LoadedWaves:wavelamp = Nan
 	make /O 	root:SolarSimulator:LoadedWaves:wavespectre = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:waveled470 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:waveled850 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:waveled1540 = Nan
 	
-	
-		
+			
 	//Disable/Enable Dropdowns things on the panel
 	make /N=6 /O  :Storage:popvalues
 	wave popValues = :Storage:popvalues
@@ -429,6 +415,10 @@ Function Init_SolarVar ()
 	make /N=3 /O :Storage:LedLevel
 	wave LedLevel = :Storage:LedLevel
 	LedLevel = {0, 0, 0}
+	make /O led470 = Nan
+	make /O led850 = Nan
+	make /O led1540 = Nan
+	 
 	
 	//LedChannel
 	variable/G root:SolarSimulator:channel
@@ -465,14 +455,20 @@ Function Solar_Panel()
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	
+	//Leds
+	wave led470 = root:Spectre:SLeds:LED470
+	wave led850 = root:Spectre:SLeds:LED850
+	wave led1540 = root:Spectre:SLeds:LED1540
+	
 	//Increase power of leds
 	wave LedLevel = :Storage:LedLevel
-
+	
+	//Loops
 	variable i
 	
 	//It has been created  when Leds Procedure initialize. 
 	nvar channel = root:SolarSimulator:channel
-	
+		
 	PauseUpdate; Silent 1		// building window...
 	
 	//Paths
@@ -525,15 +521,22 @@ Function Solar_Panel()
 	
 	Button buttonClean,pos={328.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
 	Button buttonClean,fColor=(65535,65532,16385)
+	
 	//PopUps
 //	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 //	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
 //	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
 
+//	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSubSref,mode=100,value= #"indexedfile ( path_Sref, -1, \"????\")"
+//	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSref,mode=100,value= #"indexedfile ( path_Sref, -1, \"????\")"
+	PopupMenu popupSubSref,mode=100,value= #"QEWaveList(1)"
 	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"QEWaveList(2)"
+
 	
 	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
@@ -629,7 +632,7 @@ Function Solar_Panel()
 	Check_Enable (-1, 0)
 	
 	//Display 
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
+	Display/W=(0,0,594,292)/HOST=#  :LoadedWaves:wavesubdut0 vs :LoadedWaves:wavesubdut0 
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
 	ModifyGraph tick=2
@@ -653,6 +656,7 @@ Function Solar_Panel()
 	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
 	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
 	wave wavelamp, wavespectre;
+	wave waveled470, waveled850, waveled1540;
 	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
 	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
 	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
@@ -665,8 +669,15 @@ Function Solar_Panel()
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
-	AppendtoGraph /W=SSPanel#SSGraph wavelamp
-	AppendtoGraph /W=SSPanel#SSGraph wavespectre
+//	AppendtoGraph /W=SSPanel#SSGraph waveled470
+//	AppendtoGraph /W=SSPanel#SSGraph waveled850
+//	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
+	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
+	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
+	Label/W=SSPanel#SSGraph right "Spectrum"
+	ModifyGraph /W=SSPanel#SSGraph minor=1
+//	AppendtoGraph /W=SSPanel#SSGraph wavelamp
+//	AppendtoGraph /W=SSPanel#SSGraph wavelamp
 	SetDataFolder root:SolarSimulator
 	
 end
@@ -754,7 +765,7 @@ end
 Function Clean ()
 	SetDataFolder root:SolarSimulator
 	KillWindow SSPanel#SSGraph
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
+	Display/W=(0,0,594,292)/HOST=#  :LoadedWaves:wavesubdut0 vs :LoadedWaves:wavesubdut0 
 	RenameWindow #,SSGraph	
 	ModifyGraph /W=SSPanel#SSGraph  tick=2
 	ModifyGraph /W=SSPanel#SSGraph  zero=2
@@ -767,5 +778,79 @@ Function Clean ()
 	SetAxis left*,1
 	SetAxis bottom*,2000
 	SetDrawLayer UserFront
-	SetDrawEnv save
+	
+//	//Waves drawn in the graph
+	SetDataFolder root:SolarSimulator:LoadedWaves
+	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
+	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
+	wave wavelamp, wavespectre;
+	wave waveled470, waveled850, waveled1540;
+	
+	wavesubdut0=Nan; wavesubdut1=Nan; wavesubdut2=Nan; wavesubdut3=Nan; wavesubdut4=Nan; wavesubdut5=Nan;
+	wavesubref0=Nan; wavesubref1=Nan; wavesubref2=Nan; wavesubref3=Nan; wavesubref4=Nan; wavesubref5=Nan;
+	wavelamp=Nan; wavespectre=Nan;
+	
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
+//	AppendtoGraph /W=SSPanel#SSGraph waveled470
+//	AppendtoGraph /W=SSPanel#SSGraph waveled850
+//	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
+	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
+	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
+	Label/W=SSPanel#SSGraph right "Spectrum"
+	ModifyGraph /W=SSPanel#SSGraph minor=1
+	SetDataFolder root:SolarSimulator
 end
+
+//Different Functions for Scaling . We will use them maybe in the future,
+//but now these functions are useless.
+Function newDeltaStart (wav, newstart)
+	wave wav
+	variable newstart
+	variable start = leftx (wav)					
+	variable ending = rightx (wav)
+	variable newending = newstart/start*ending
+	variable rows = DimSize (wav, 0)
+	variable newdelta = (newending - newstart)/rows
+	return newdelta	
+End
+
+Function newDeltaEnding (wav, newending)
+	wave wav
+	variable newending
+	variable start = leftx (wav)					
+	variable ending = rightx (wav)
+	variable newstart = newending*start/ending
+	variable rows = DimSize (wav, 0)
+	variable newdelta = (newending - newstart)/rows
+	return newdelta	
+End
+
+Function isScaled (wav)
+	wave wav
+	variable start = leftx (wav)
+	variable delta = deltax (wav)
+	variable ending = rightx (wav)
+	//Aprox will be able to scale waves that are loaded without an appropriate scale 
+	if (  (delta > 1 && delta < 7) && (start>=0 && start<400) )
+		return 1
+	else 
+		return 0
+	endif
+End
+
+Function Scale (wav)
+	wave wav
+	SetScale /I x, 0, 2000 , wav
+end
+	

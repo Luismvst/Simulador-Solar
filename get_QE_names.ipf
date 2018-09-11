@@ -167,7 +167,7 @@ function/S QErefoptions(reflab)
 	endswitch
 end
 
-Function /S QESpectreNames(num)
+Function /S QEWaveList(num)
 	variable num
 	string list
 	String fldrSav= GetDataFolder(1)
