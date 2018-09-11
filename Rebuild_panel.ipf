@@ -825,8 +825,8 @@ Function Clean ()
 	SetDataFolder root:SolarSimulator
 end
 
-//Different Functions for Scaling . We will use them maybe in the future,
-//but now these functions are useless.
+//Different Functions for Scaling . We will use them maybe in the future
+//Get Delta from start parameter
 Function newDeltaStart (wav, newstart)
 	wave wav
 	variable newstart
@@ -838,6 +838,7 @@ Function newDeltaStart (wav, newstart)
 	return newdelta	
 End
 
+//Get delta from End parameter
 Function newDeltaEnding (wav, newending)
 	wave wav
 	variable newending
@@ -849,6 +850,7 @@ Function newDeltaEnding (wav, newending)
 	return newdelta	
 End
 
+//is this wave scaled as i want?
 Function isScaled (wav)
 	wave wav
 	variable start = leftx (wav)
@@ -862,6 +864,7 @@ Function isScaled (wav)
 	endif
 End
 
+//Generates the different led waves gradient from the input values ( 0% --- 100% )
 Function Led_Gauss (num)
 	variable num	
 	string path = "root:SolarSimulator:Storage"
