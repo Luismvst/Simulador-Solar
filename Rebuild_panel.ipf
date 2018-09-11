@@ -62,8 +62,8 @@ Function Load (fname, id)
 	Duplicate /O originwave, destwave
 	
 	if (!isScaled(destwave))
-		Scale (destwave)
-//		SetScale /I x, 0, 2000 , destwave
+		SetScale /I x, 0, 2000 , destwave	
+
 	endif			
 	Setdatafolder savedatafolder
 end
@@ -146,23 +146,21 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 				// sva.dval -> variable value
 //Everything about led controll and allthat stuff is going to be changed soon,
 				
-//				case "setvarLed1":	
-//					wave ledwave1 = root:SolarSimulator:LedController:LED470
-////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
-//					Led_Control(ledwave1, ledlevel[0])
+				case "setvarLed470":	
+//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
+					Led_Gauss(470)
 //					Iset = Imax * LedLevel[0]	
 //					setNormalCurrent (channel, Iset)
-//									
-//				break
-//				case "setvarLed2":
-//					wave ledwave2 = root:SolarSimulator:LedController:LED850
-////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel2
-//					Led_Control(ledwave2, ledlevel[1])
+									
+				break
+				case "setvarLed850":
+					Led_Gauss(850)
 //					Iset = Imax * LedLevel[0]
-//				break
-//				case "setvarLed3":
+				break
+				case "setvarLed1540":
+					Led_Gauss(1540)
 //					wave ledwave3 = root:SolarSimulator:LedController:LED1540
-////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
+//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
 //					Led_Control(ledwave3, ledlevel[2])
 //					Iset = Imax * LedLevel[0]
 				break
@@ -205,6 +203,10 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			strswitch (ba.ctrlname)
 				case "buttonCargarOnda":					
 					//Load_Wave()
+				break
+				case "buttonLog":
+					print "Log_"
+					//print the structure with the current data adquisitio
 				break
 //				case "buttonLoadLed":
 //					
@@ -415,9 +417,9 @@ Function Init_SolarVar ()
 	make /N=3 /O :Storage:LedLevel
 	wave LedLevel = :Storage:LedLevel
 	LedLevel = {0, 0, 0}
-	make /O led470 = Nan
-	make /O led850 = Nan
-	make /O led1540 = Nan
+	make /O :Storage:led470 = Nan
+	make /O :Storage:led850 = Nan
+	make /O :Storage:led1540 = Nan
 	 
 	
 	//LedChannel
@@ -456,9 +458,18 @@ Function Solar_Panel()
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	
 	//Leds
-	wave led470 = root:Spectre:SLeds:LED470
-	wave led850 = root:Spectre:SLeds:LED850
-	wave led1540 = root:Spectre:SLeds:LED1540
+//	wave led470 = root:Spectre:SLeds:LED470
+//	wave led850 = root:Spectre:SLeds:LED850
+//	wave led1540 = root:Spectre:SLeds:LED1540
+	
+	SetDataFolder :Storage
+	Copy ("root:Spectre:SLeds:led470", "led470")
+	Copy ("root:Spectre:SLeds:led850", "led850")
+	Copy ("root:Spectre:SLeds:led1540", "led1540")
+	SetDataFolder path
+	wave led470 = :storage:led470
+	wave led850 = :storage:led850
+	wave led1540 = :storage:led1540
 	
 	//Increase power of leds
 	wave LedLevel = :Storage:LedLevel
@@ -512,12 +523,14 @@ Function Solar_Panel()
 //	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
 //	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
 //	Button buttonInit,fSize=12,fColor=(52428,1,20971)
-	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
-	Button buttonCargarOnda,fColor=(16385,65535,41303)
-	Button buttonLoadLed,pos={504.00,495.00},size={108.00,23.00},proc=ButtonProc_SimSolar,title="Cargar LedSpectre"
+//	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
+//	Button buttonCargarOnda,fColor=(16385,65535,41303)
+	Button buttonLoadLed,pos={504.00,495.00},size={103.00,15.00},proc=ButtonProc_SimSolar,title="Cargar LedSpectre"
 	Button buttonLoadLed,fColor=(65535,16385,16385)
 	Button buttonRemoveLed,pos={504.00,524.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Remove Led\rFrom Graph"
 	Button buttonRemoveLed,fColor=(51664,44236,58982)
+	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG"
+	Button buttonLog,fColor=(16385,65535,41303)
 	
 	Button buttonClean,pos={328.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
 	Button buttonClean,fColor=(65535,65532,16385)
@@ -592,12 +605,12 @@ Function Solar_Panel()
 //	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
 //	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel,live= 1
 	
-	SetVariable setvarLed1,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
-	SetVariable setvarLed1,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
-	SetVariable setvarLed2,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
-	SetVariable setvarLed2,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
-	SetVariable setvarLed3,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
-	SetVariable setvarLed3,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
+	SetVariable setvarLed470,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
+	SetVariable setvarLed470,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
+	SetVariable setvarLed850,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
+	SetVariable setvarLed850,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
+	SetVariable setvarLed1540,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
+	SetVariable setvarLed1540,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
 	
 	//ValDisplay
 	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
@@ -669,9 +682,9 @@ Function Solar_Panel()
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
-//	AppendtoGraph /W=SSPanel#SSGraph waveled470
-//	AppendtoGraph /W=SSPanel#SSGraph waveled850
-//	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
+	AppendtoGraph /W=SSPanel#SSGraph waveled470
+	AppendtoGraph /W=SSPanel#SSGraph waveled850
+	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
 	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
 	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
 	Label/W=SSPanel#SSGraph right "Spectrum"
@@ -842,15 +855,58 @@ Function isScaled (wav)
 	variable delta = deltax (wav)
 	variable ending = rightx (wav)
 	//Aprox will be able to scale waves that are loaded without an appropriate scale 
-	if (  (delta > 1 && delta < 7) && (start>=0 && start<400) )
+	if (  (delta > 2 && delta < 7) && (start>=0 && start<400) )
 		return 1
 	else 
 		return 0
 	endif
 End
 
-Function Scale (wav)
-	wave wav
-	SetScale /I x, 0, 2000 , wav
-end
+Function Led_Gauss (num)
+	variable num	
+	string path = "root:SolarSimulator:Storage"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	wave led470, led850, led1540;
+	wave ledlevel
+	SetDataFolder "root:SolarSimulator:LoadedWaves"
+	wave waveled470, waveled850, waveled1540;	
 	
+	//Originally led850 spectrum is not scaled equally as the others
+	if (!isScaled(led850))
+		CopyScales led470, led850
+	endif
+	
+	switch (num)
+	case 470:
+		Duplicate/O led470, waveled470
+		waveled470 = led470 * ledlevel[0] / waveMax (led470) 
+		break
+	case 850:
+		Duplicate/O led850, waveled850
+		waveled850 = led850 * ledlevel[1] / waveMax (led850)
+		break
+	case 1540:
+		Duplicate/O led1540, waveled1540
+		waveled1540 = led1540 * ledlevel[2] / waveMax (led1540)  
+		break
+	endswitch
+	
+	SetDataFolder savedatafolder	
+End
+
+//Function Based on what does Load() do.
+Function Copy (origin_path, dest_wavename)
+	//To copy we need the origin_wave_path of the desire wave to be copied, and the name of the dest_wave_name
+	//The dest_wave is created in the CURRENT DATA FOLDER 
+	string origin_path
+	string dest_wavename
+	string dest_path
+	string current = GetDataFolder (1)
+	wave originwave = $origin_path
+	//This is necessary becouse duplicate function creates the new wave in the dfr of the originwave
+	dest_path = current + dest_wavename
+	wave destwave = $dest_path
+	Duplicate /O originwave, destwave
+	
+End
