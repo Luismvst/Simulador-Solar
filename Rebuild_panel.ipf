@@ -66,15 +66,19 @@ Function Load (fname, num)
 	Duplicate /O originwave, destwave
 	
 	if (!isScaled(destwave))
-		SetScale /I x, 0, 2000 , destwave	
-
+		SetScale /I x, 0, 2000 , destwave
 	endif
+	/////////****we will see this in the future***///
+	Draw (destwave, id)
+	string realname = nameofwave (destwave)
+	ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
+	//********************************
 	Setdatafolder savedatafolder
-	Draw (destwave)
 end
 
-Function Draw (trace)
-	wave trace 
+Function Draw (trace, id)
+	wave trace
+	variable id
 	string cadena
 	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
 	if(strlen(tracelist))
@@ -85,13 +89,49 @@ Function Draw (trace)
 				 return 0
 			endif				
 		endfor
-		Appendtograph /W=SSPanel#SSGraph trace
-		ModifyGraph /W=SSPanel#SSGraph  tick=2
-		ModifyGraph /W=SSPanel#SSGraph  zero=2
-		ModifyGraph /W=SSPanel#SSGraph  mirror=1
-		ModifyGraph /W=SSPanel#SSGraph  minor=1
-		ModifyGraph /W=SSPanel#SSGraph  standoff=0	
 	endif
+		string realname = nameofwave (trace)
+		switch (id)
+		case 0:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 0)
+			break
+		case 1:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0, 65535, 0)
+			break
+		case 2:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,65535)
+			break
+		case 3:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+			break
+		case 4:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 65535, 65535)
+			break
+		case 5:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,0)
+			break
+		case 6:	//it is Spectre Slamp or Sref
+			AppendtoGraph/R /W=SSPanel#SSGraph trace
+			Label/W=SSPanel#SSGraph right "Spectrum"
+			ModifyGraph /W=SSPanel#SSGraph minor=1
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 20000)
+			break
+		case 7:	//led spectre
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+			break
+		endswitch
+			ModifyGraph /W=SSPanel#SSGraph  tick=2
+			ModifyGraph /W=SSPanel#SSGraph  zero=2
+			ModifyGraph /W=SSPanel#SSGraph  minor=1
+			ModifyGraph /W=SSPanel#SSGraph  standoff=0	
+		
 End
 Function Draw2 ([position, trace, autoescale, color])//, [others])
 	variable position		//0 -> Left, 1 -> Right
@@ -277,11 +317,14 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 //						TurnOff_Leds()
 //					endif
 //				break
+				case "checkgraph_leds":
+					Check_PlotEnable (7, checked=checked)
+					break
 				default:
 				if (stringmatch (check_name, "Check*"))
-					variable num = str2num (check_name[5])
-					if (num>=0 && num<=5)
-						Check_JscEnable(num, checked)
+					variable id = str2num (check_name[5])
+					if (id>=0 && id<=5)
+						Check_JscEnable(id, checked)
 					endif
 				endif
 				break
@@ -625,10 +668,10 @@ Function Solar_Panel()
 	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 	
-	CheckBox checkSetLeds,pos={509.00,573.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
-	CheckBox checkSetLeds,value= 0
+	CheckBox checkgraph_leds,pos={509.00,573.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
+	CheckBox checkgraph_leds,value= 0
 	
-	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Plot"
+	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="On/Off"
 	CheckBox checkgraph_spectre,value= 0
 	
 	
@@ -787,20 +830,45 @@ Function Check_PlotEnable (id[, checked])
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path
 	variable i
-	string wavesubdutX
-	string wavesubrefX
-	string waveledX
-	waveledX = "waveled" + num2str(i)
 	if (id>=0 && id <6)
+		string wavesubdutX
+		string wavesubrefX
 		wavesubdutX = "wavesubdut" + num2str(id)
 		wavesubrefX = "wavesubref" + num2str(id)
 		wave wavesubdut = $wavesubdutX
 		wave wavesubref = $wavesubrefX
 		clean()
-		Draw (wavesubdut)
-		Draw (wavesubref)	
-	elseif (id == 6)
-		
+		Draw (wavesubdut, id)
+		Draw (wavesubref, id)	
+	elseif (id >=6)
+		if (id == 7)
+			string led470, led850, led1540
+			led470 = "waveled470"
+			led850 = "waveled850"
+			led1540 = "waveled1540"
+			wave waveled470 = $led470
+			wave waveled850 = $led850
+			wave waveled1540 = $led1540		
+			if (checked)
+				Draw (waveled470, 7)
+				Draw (waveled850, 7)
+				Draw (waveled1540, 7)
+			else
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveled470
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveled850
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveled1540
+			endif
+		endif
+		if (id == 6)
+			string wavespectre, wavelamp
+			if (checked)
+				Draw ($wavelamp, 6)
+				Draw ($wavespectre, 6)
+			else
+				RemovefromGraph /Z /W=SSPanel#SSGraph $wavelamp
+				RemovefromGraph /Z /W=SSPanel#SSGraph $wavespectre
+			endif
+		endif
 	endif
 		
 	SetDataFolder savedatafolder	
@@ -1004,6 +1072,14 @@ Function num2id (num)
 		case 10:
 		case 11:
 			return 5
+		case 12:
+		case 13:
+			return 6
+		case 14:
+		case 15: 
+			return 7
+		default: 
+			return 10
 	endswitch
 End
 	
