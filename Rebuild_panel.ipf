@@ -13,10 +13,12 @@ Menu "S.Solar"
 End
 
 //This function does load from the current experiment waves
-Function Load (fname, id)
-	//Id is necessary to know which SubCell wave is going to be used displaying it on the graph
+Function Load (fname, num)
+	//num is necessary to know which position of SubCell is the wave going to be (wavesubdut"0")
 	//fname is necessary to load and display it from the dropdown on the graph
+	//
 	string fname	
+	variable num
 	variable id
 	
 	string current = "root:SolarSimulator:LoadedWaves"
@@ -34,10 +36,10 @@ Function Load (fname, id)
 	string destwavename
 	string wavepath
 	
-	if (id<12) 
+	if (num<12) 
 		wavepath = stringfromlist (0, getQEpath (fname))	
 	endif
-	switch (id)
+	switch (num)
 	case 12:			
 		wavepath = "root:Spectre:SRef:"+fname
 		break
@@ -47,13 +49,15 @@ Function Load (fname, id)
 	endswitch
 	wave originwave = $wavepath
 	
-	if ( mod (id, 2) && id<12)
+	if ( mod (num, 2) && num<12)//type: ref
+		id = num2id(num)
 		destwavename = "wavesubdut"+num2str(id)	
-	elseif ( !mod (id, 2) && id<12)
+	elseif ( !mod (num, 2) && num<12)//type: dut
+		id = num2id(num)
 		destwavename = "wavesubref"+num2str(id)		
-	elseif (id == 12 )
+	elseif (num == 12 )
 		destwavename = "wavelamp"
-	elseif (id == 13 )
+	elseif (num == 13 )
 		destwavename = "wavespectre"
 	endif
 	//This is necessary becouse duplicate function creates the new wave in the dfr of the originwave
@@ -64,11 +68,32 @@ Function Load (fname, id)
 	if (!isScaled(destwave))
 		SetScale /I x, 0, 2000 , destwave	
 
-	endif			
+	endif
 	Setdatafolder savedatafolder
+	Draw (destwave)
 end
 
-Function Draw ([position, trace, autoescale, color])//, [others])
+Function Draw (trace)
+	wave trace 
+	string cadena
+	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
+	if(strlen(tracelist))
+		variable i			
+		for (i=0; strlen(cadena)!=0; i+=1)
+			cadena = (StringFromList(i, traceList))
+			if(stringmatch(cadena, NameOfWave(trace)) )
+				 return 0
+			endif				
+		endfor
+		Appendtograph /W=SSPanel#SSGraph trace
+		ModifyGraph /W=SSPanel#SSGraph  tick=2
+		ModifyGraph /W=SSPanel#SSGraph  zero=2
+		ModifyGraph /W=SSPanel#SSGraph  mirror=1
+		ModifyGraph /W=SSPanel#SSGraph  minor=1
+		ModifyGraph /W=SSPanel#SSGraph  standoff=0	
+	endif
+End
+Function Draw2 ([position, trace, autoescale, color])//, [others])
 	variable position		//0 -> Left, 1 -> Right
 	wave trace					//Name of the wave to be drawn
 	variable autoescale		//0 -> No , 1 -> Yes
@@ -256,7 +281,7 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 				if (stringmatch (check_name, "Check*"))
 					variable num = str2num (check_name[5])
 					if (num>=0 && num<=5)
-						Check_Enable(num, checked)
+						Check_JscEnable(num, checked)
 					endif
 				endif
 				break
@@ -294,7 +319,7 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
-						variable num
+						variable num, id
 						if (str2num(paName[8])>=0 && str2num(paName[8])<=5)
 							wave popValues = root:SolarSimulator:Storage:popValues
 							num = str2num(paName[8])
@@ -306,11 +331,13 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 							Pop_Action (num, popValues)							
 						endif
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
-							num = str2num(paName[11])	
-							Load (popStr, num +1 )						
+							id = str2num(paName[11])	
+							num = id2num (id, 1) //1 for dut
+							Load (popStr, num )						
 							
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
-							num = str2num(paName[11])
+							id = str2num(paName[11])
+							num = id2num (id, 0) //0 for ref
 							Load (popStr, num  )
 							
 						endif
@@ -374,7 +401,7 @@ Function Init_SolarVar ()
 	
 	SetDataFolder root:SolarSimulator
 	//Initial wave for #GraphPanel
-//	make /N=1 /O		root:SolarSimulator:Storage:sa
+	make /N=1 /O		root:SolarSimulator:Storage:sa
 	//reference to draw in the scene before even give them the value of the selected subcell in the panel.
 	//They will be all drawn in the graqph but not showed until we give them a value. Otherwise, it is nan 
 	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut0 = Nan
@@ -442,7 +469,7 @@ Function Solar_Panel()
 	SetDataFolder path
 	
 	//Initial wave for #GraphPanel
-//	wave sa = root:SolarSimulator:Storage:sa
+	wave sa = root:SolarSimulator:Storage:sa
 //	string nameDisplay 
 	
 	//Disable/Enable Dropdowns things on the panel
@@ -601,6 +628,10 @@ Function Solar_Panel()
 	CheckBox checkSetLeds,pos={509.00,573.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
 	CheckBox checkSetLeds,value= 0
 	
+	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Plot"
+	CheckBox checkgraph_spectre,value= 0
+	
+	
 	//SetVariable
 //	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
 //	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel,live= 1
@@ -642,10 +673,10 @@ Function Solar_Panel()
 	for (i = 0; i<6; i++)
 		Pop_Action (i, popValues)
 	endfor 
-	Check_Enable (-1, 0)
+	Check_JscEnable (-1, 0)
 	
 	//Display 
-	Display/W=(0,0,594,292)/HOST=#  :LoadedWaves:wavesubdut0 vs :LoadedWaves:wavesubdut0 
+	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
 	ModifyGraph tick=2
@@ -739,7 +770,43 @@ Function Pop_Action (popNum, popValues)
 	endif	
 end
 
-Function Check_Enable (id, checked)
+//***********Check-Rules********************************************************************************************//
+//Check 0-5 Subcells 
+//Check 6 Both Spectres' Plot 
+//Check 7 Led's Plot
+
+Function Check_PlotEnable (id[, checked])
+	//id is the selected box that we want to enable or disable
+	//checked is the state that the selected checkbox has got
+	variable id
+	variable checked
+	if (paramisdefault(checked))
+		checked=1
+	endif
+	string path = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	variable i
+	string wavesubdutX
+	string wavesubrefX
+	string waveledX
+	waveledX = "waveled" + num2str(i)
+	if (id>=0 && id <6)
+		wavesubdutX = "wavesubdut" + num2str(id)
+		wavesubrefX = "wavesubref" + num2str(id)
+		wave wavesubdut = $wavesubdutX
+		wave wavesubref = $wavesubrefX
+		clean()
+		Draw (wavesubdut)
+		Draw (wavesubref)	
+	elseif (id == 6)
+		
+	endif
+		
+	SetDataFolder savedatafolder	
+End
+
+Function Check_JscEnable (id, checked)
 	//id is the selected box that we want to enable or disable
 	//checked is the state that the selected checkbox has got
 	variable id, checked
@@ -748,7 +815,7 @@ Function Check_Enable (id, checked)
 	SetDataFolder path
 	variable i
 	//*********Coming Soon: refresh*************//
-	variable refresh //Selected 
+	variable refresh //Selected
 	string checkX
 	string valdisp1
 	string valdisp2
@@ -756,72 +823,39 @@ Function Check_Enable (id, checked)
 		checkX = "check" + num2str(i)
 		valdisp1 = "valdispJREF" + num2str(i)
 		valdisp2 = "valdispJ" + num2str(i)
-		if (id != i)
+		if (id != i || !checked)
 			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
 			ValDisplay $valdisp1, disable = 2
 			ValDisplay $valdisp2, disable = 2
-		elseif (checked)			
+		elseif (checked)
 			//I dont know why color does not change when checked.
 			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
 			ValDisplay $valdisp1, disable = 0
 			ValDisplay $valdisp2, disable = 0
-		else
-			CheckBox $checkX, value = 0
-			ValDisplay $valdisp1, disable = 2
-			ValDisplay $valdisp2, disable = 2
+			//Lets draw only the correspondant EQE waves
+			Check_PlotEnable (id)
 		endif
 	endfor
 	SetDataFolder savedatafolder
 end
+//*******************************************************************************************************************//
 
 //Reconstruction of Display
 Function Clean ()
 	SetDataFolder root:SolarSimulator
 	KillWindow SSPanel#SSGraph
-	Display/W=(0,0,594,292)/HOST=#  :LoadedWaves:wavesubdut0 vs :LoadedWaves:wavesubdut0 
+	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
 	RenameWindow #,SSGraph	
 	ModifyGraph /W=SSPanel#SSGraph  tick=2
 	ModifyGraph /W=SSPanel#SSGraph  zero=2
 	ModifyGraph /W=SSPanel#SSGraph  mirror=1
 	ModifyGraph /W=SSPanel#SSGraph  minor=1
 	ModifyGraph /W=SSPanel#SSGraph  standoff=0
-	Label left "%"
-	Label bottom "nm"
-	//Label right "Spectrum"
+//	Label left "%"
+//	Label bottom "nm"
+//	Label right "Spectrum"
 	SetAxis left*,1
 	SetAxis bottom*,2000
-	SetDrawLayer UserFront
-	
-//	//Waves drawn in the graph
-	SetDataFolder root:SolarSimulator:LoadedWaves
-	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
-	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
-	wave wavelamp, wavespectre;
-	wave waveled470, waveled850, waveled1540;
-	
-	wavesubdut0=Nan; wavesubdut1=Nan; wavesubdut2=Nan; wavesubdut3=Nan; wavesubdut4=Nan; wavesubdut5=Nan;
-	wavesubref0=Nan; wavesubref1=Nan; wavesubref2=Nan; wavesubref3=Nan; wavesubref4=Nan; wavesubref5=Nan;
-	wavelamp=Nan; wavespectre=Nan;
-	
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
-//	AppendtoGraph /W=SSPanel#SSGraph waveled470
-//	AppendtoGraph /W=SSPanel#SSGraph waveled850
-//	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
-	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
-	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
-	Label/W=SSPanel#SSGraph right "Spectrum"
-	ModifyGraph /W=SSPanel#SSGraph minor=1
 	SetDataFolder root:SolarSimulator
 end
 
@@ -913,3 +947,64 @@ Function Copy (origin_path, dest_wavename)
 	Duplicate /O originwave, destwave
 	
 End
+
+Function id2num( id, type)
+	//type is 0 for ref and 1 for dut
+	//id is the subcell position (0-5)
+	//this function translate the subcell position into ref or dut position (0-11)
+	variable id, type
+	string code = num2str(id) + num2str(type)
+	strswitch(code)
+		case "00":
+			return 0 
+		case "01": 
+			return 1
+		case "10": 
+			return 2
+		case "11": 
+			return 3
+		case "20": 
+			return 4
+		case "21": 
+			return 5
+		case "30": 
+			return 6
+		case "31": 
+			return 7
+		case "40": 
+			return 8
+		case "41":
+			return 9
+		case "50": 
+			return 10
+		case "51": 
+			return 11
+	endswitch	
+End
+
+Function num2id (num)
+	//num is the global position of the wave that occupies in the panel
+	variable num
+	switch (num)
+		case 0:
+		case 1:
+			return 0
+		case 2:
+		case 3:
+			return 1
+		case 4:
+		case 5:
+			return 2
+		case 6:
+		case 7:
+			return 3
+		case 8:
+		case 9:
+			return 4
+		case 10:
+		case 11:
+			return 5
+	endswitch
+End
+	
+	
