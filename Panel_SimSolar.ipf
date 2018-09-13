@@ -16,7 +16,7 @@ Function Load (fname, num)
 	string fname	
 	variable num
 	
-	string current = "root:SolarSimulator:LoadedWaves"
+	string current = "root:SolarSimulator:GraphWaves"
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder current
 	
@@ -36,10 +36,10 @@ Function Load (fname, num)
 	endif
 	switch (num)
 	case 12:			
-		wavepath = "root:Spectre:SRef:"+fname
+		wavepath = "root:SolarSimulator:Spectre:SRef:"+fname
 		break
 	case 13:
-		wavepath = "root:Spectre:SLamp:"+fname
+		wavepath = "root:SolarSimulator:Spectre:SLamp:"+fname
 		break
 	endswitch
 	wave originwave = $wavepath
@@ -370,11 +370,12 @@ Function Init_SolarVar ()
 			genDFolders(path)
 			genDFolders(path + ":Storage")			
 			genDFolders(path + ":LedController")
-			genDFolders(path + ":LoadedWaves")
-			genDFolders("root:Spectre")
+			genDFolders(path + ":GraphWaves")
+			genDFolders(path + ":Spectre")
 			//Here we have to load Sstd and Slamp manually 
-			genDFolders("root:Spectre:Sref")
-			genDFolders("root:Spectre:Slamp")
+			genDFolders(path + ":Spectre:Sref")
+			genDFolders(path + ":Spectre:Slamp")
+			genDFolders(path + ":Spectre:Sleds")
 		endif
 	endif
 	
@@ -383,23 +384,23 @@ Function Init_SolarVar ()
 	make /N=1 /O		root:SolarSimulator:Storage:sa
 	//reference to draw in the scene before even give them the value of the selected subcell in the panel.
 	//They will be all drawn in the graqph but not showed until we give them a value. Otherwise, it is nan 
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut0 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut1 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut2 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut3 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut4 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut5 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubref0 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubref1 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubref2 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubref3 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubref4 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavesubref5 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavelamp = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:wavespectre = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:waveled470 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:waveled850 = Nan
-	make /O 	root:SolarSimulator:LoadedWaves:waveled1540 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubdut0 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubdut1 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubdut2 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubdut3 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubdut4 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubdut5 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubref0 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubref1 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubref2 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubref3 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubref4 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavesubref5 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavelamp = Nan
+	make /O 	root:SolarSimulator:GraphWaves:wavespectre = Nan
+	make /O 	root:SolarSimulator:GraphWaves:waveled470 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:waveled850 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:waveled1540 = Nan
 	
 			
 	//Disable/Enable Dropdowns things on the panel
@@ -463,15 +464,11 @@ Function Solar_Panel()
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	
-	//Leds
-//	wave led470 = root:Spectre:SLeds:LED470
-//	wave led850 = root:Spectre:SLeds:LED850
-//	wave led1540 = root:Spectre:SLeds:LED1540
-	
+	//Leds	
 	SetDataFolder :Storage
-	Copy ("root:Spectre:SLeds:led470", "led470")
-	Copy ("root:Spectre:SLeds:led850", "led850")
-	Copy ("root:Spectre:SLeds:led1540", "led1540")
+	Copy ("root:SolarSimulator:Spectre:SLeds:led470", "led470")
+	Copy ("root:SolarSimulator:Spectre:SLeds:led850", "led850")
+	Copy ("root:SolarSimulator:Spectre:SLeds:led1540", "led1540")
 	SetDataFolder path
 	wave led470 = :storage:led470
 	wave led850 = :storage:led850
@@ -678,7 +675,7 @@ Function Solar_Panel()
 	SetActiveSubwindow ##	
 	
 	//Waves drawn in the graph
-	SetDataFolder root:SolarSimulator:LoadedWaves
+	SetDataFolder root:SolarSimulator:GraphWaves
 	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
 	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
 	wave wavelamp, wavespectre;
@@ -765,7 +762,7 @@ Function Check_PlotEnable (id[, checked])
 	if (paramisdefault(checked))
 		checked=1
 	endif
-	string path = "root:SolarSimulator:LoadedWaves"
+	string path = "root:SolarSimulator:GraphWaves"
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path
 	variable i
@@ -922,7 +919,7 @@ Function Led_Gauss (num)
 	SetDataFolder path
 	wave led470, led850, led1540;
 	wave ledlevel
-	SetDataFolder "root:SolarSimulator:LoadedWaves"
+	SetDataFolder "root:SolarSimulator:GraphWaves"
 	wave waveled470, waveled850, waveled1540;	
 	
 	//Originally led850 spectrum is not scaled equally as the others

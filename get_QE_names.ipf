@@ -172,9 +172,9 @@ Function /S QEWaveList(num)
 	string list
 	String fldrSav= GetDataFolder(1)
 	if (num == 1)
-		SetDataFolder root:Spectre:SRef			
+		SetDataFolder root:SolarSimulator:Spectre:SRef			
 	elseif (num == 2)
-		SetDataFolder root:Spectre:SLamp		
+		SetDataFolder root:SolarSimulator:Spectre:SLamp		
 	endif	
 	list = wavelist ("*", ";", "")
 	SetDataFolder fldrSav
