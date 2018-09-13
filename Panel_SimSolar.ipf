@@ -1,11 +1,9 @@
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-//Elegir el com tras crear el panel y no vieversa. con un dropdown de los normales.
-
 Menu "S.Solar"
 	"Display /ç",/Q, Init_SP (val = 1)
-	"Init ", /Q, Init_SP ()
+	"Init /ñ", /Q, Init_SP ()
 End
 
 //This function does load from the current experiment waves
@@ -139,7 +137,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			wave LedLevel = root:SolarSimulator:Storage:LedLevel
 			nvar Iset = root:SolarSimulator:LedController:Iset
 			nvar Imax = root:SolarSimulator:LedController:Imax
-			nvar channel = root:SolarSimulator:channel
+			nvar channel = root:SolarSimulator:LedController:channel
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
 //Everything about led controll and allthat stuff is going to be changed soon,
@@ -195,7 +193,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 	endif
 	switch( ba.eventCode )
 		case 2: // mouse up
-			nvar channel = root:SolarSimulator:channel
+			nvar channel = root:SolarSimulator:LedController:channel
 			nvar Imax = root:SolarSimulator:LedController:Imax
 			nvar Iset = root:SolarSimulator:LedController:Iset
 			strswitch (ba.ctrlname)
@@ -282,8 +280,16 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 			String paName = pa.ctrlname
 			
 			strswitch (pa.ctrlname)
+				case "popupCom":
+					svar com = root:SolarSimulator:Ledcontroller:com					
+					if (init_leds(popStr))
+						com=popStr
+					else
+						PopupMenu popupCom, popvalue=" ", mode=1
+					endif
+				break
 				case "popupchannel":
-					nvar channel = root:SolarSimulator:channel
+					nvar channel = root:SolarSimulator:LedController:channel
 					channel = popNum
 				break
 				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
@@ -430,13 +436,13 @@ Function Init_SolarVar ()
 	 
 	
 	//LedChannel
-	variable/G root:SolarSimulator:channel
-	nvar channel = root:SolarSimulator:channel
+	variable/G root:SolarSimulator:LedController:channel
+	nvar channel = root:SolarSimulator:LedController:channel
 	channel = 1
 	
 	//ComPort
-	string/G root:SolarSimulator:COM //Connected by serial port
-	svar com = root:SolarSimulator:COM
+	string/G root:SolarSimulator:LedController:COM //Connected by serial port
+	svar com = root:SolarSimulator:LedController:COM
 	com = ""
 	
 	//**********The Solar_Panel could be launched next**********//
@@ -481,7 +487,7 @@ Function Solar_Panel()
 	variable i
 	
 	//It has been created  when Leds Procedure initialize. 
-	nvar channel = root:SolarSimulator:channel
+	nvar channel = root:SolarSimulator:LedController:channel
 		
 	PauseUpdate; Silent 1		// building window...
 	
@@ -567,9 +573,9 @@ Function Solar_Panel()
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""
 	
-	PopupMenu popupCom,pos={695.00,20.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
-	PopupMenu popupCom,mode=1,popvalue="COM1",value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
-	
+	PopupMenu popupCom,pos={142.00,502.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
+	PopupMenu popupCom,mode=1,popvalue=" ",value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
+
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
 	PopupMenu popupSubREF0,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF0,mode=100,popvalue=" ",value= #"QElist(1)"
@@ -1028,4 +1034,77 @@ Function num2id (num)
 	endswitch
 End
 	
-	
+//Tema Leds//******************
+
+//Buttons (por si hacemos un panel más adelante, tenerlo todo aquí )
+
+//				case "buttonApplyCurrent":
+//					setNormalCurrent (channel, Iset)
+//				break
+//				case "buttonSetParameters":
+//					//Defect parameters to start 
+//					Imax = 100
+//					Iset = 50
+//					setNormalParameters (channel, Imax, Iset)
+//				break
+//				case "buttonMode1":
+//					//prueba (channel, 100, 60)
+//					setMode (channel, 1)
+//					//	MODE: 	 	0 	DISABLE
+//					//				1	NORMAL
+//					//				2	STROBE 
+//				break
+//				case "buttonMode0":
+//					//Disable
+//					setMode (channel, 0)
+//				break
+//				case "buttonInit":
+//					svar com = root:SolarSimulator:com
+//					init_Leds (com)
+//				break
+
+// Tema Deslizaderas numericas
+
+//	case "setvarLed1":	
+//					wave ledwave1 = root:SolarSimulator:LedController:LED470
+////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
+//					Led_Control(ledwave1, ledlevel[0])
+//					Iset = Imax * LedLevel[0]	
+//					setNormalCurrent (channel, Iset)
+//									
+//				break
+//				case "setvarLed2":
+//					wave ledwave2 = root:SolarSimulator:LedController:LED850
+////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel2
+//					Led_Control(ledwave2, ledlevel[1])
+//					Iset = Imax * LedLevel[0]
+//				break
+//				case "setvarLed3":
+//					wave ledwave3 = root:SolarSimulator:LedController:LED1540
+////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
+//					Led_Control(ledwave3, ledlevel[2])
+//					Iset = Imax * LedLevel[0]
+
+//Switching on and off
+
+//Function TurnOn_Leds(Iset)
+//	variable Iset
+//	//Normal Mode
+//	setMode (1, 1)
+//	setMode (2, 1)
+//	setMode (3, 1)
+////	setNormalParameters (1, 1000, Iset)
+////	setNormalParameters (2, 1000, Iset)
+////	setNormalParameters (3, 1000, Iset)
+//	setNormalCurrent (1, Iset)
+//	setNormalCurrent (2, Iset)
+//	setNormalCurrent (3, Iset)
+//	
+//End
+//
+//Function TurnOff_Leds()
+//	variable channel	
+//	for (channel=1;channel<4;channel+=1)	//12 channels, 3 used
+//		setMode (channel, 0)	//Disable
+//	endfor
+//End

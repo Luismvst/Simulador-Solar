@@ -8,13 +8,10 @@ Function init_Leds(COM)
 	string com
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:SolarSimulator:LedController"
-	if(!DatafolderExists(path))
-		genDFolders (path)
-	endif
 	DFRef dfr = $path
 	SetDatafolder dfr
 	string Device = "LedController"
-	init_OpenSerial(com, Device)
+	return init_OpenSerial(com, Device)
 	SetDataFolder saveDFR
 end
 //In a future it will be merged with Mario´s InitOpenSerial() 
@@ -25,15 +22,14 @@ Function init_OpenSerial (com, Device)
 	//string reply
 	variable flag
 	string sports=getSerialPorts()
+		print "Available Ports:"
 		print sports
-	if(StringMatch(Device,"MagicBox"))	//It looks for the Word in the DeviceStr
-		DeviceCommands=" baud=1200, stopbits=1, databits=8, parity=0"
-	elseif (StringMatch(Device, "LedController"))
+	if (StringMatch(Device, "LedController"))
 		//9600 N81 (No hw flow ctrl)
 		DeviceCommands=" baud=9600, parity=0, databits=8, stopbits=1"
 	endif
 		// is the port available in the computer?
-	if (WhichListItem(com,sports)!=-1)
+	if (WhichListItem(com,sports)==-1)
 		cmd = "VDT2 /P=" + com + DeviceCommands
 		Execute cmd
 		cmd = "VDTOperationsPort2 " + com
@@ -48,7 +44,8 @@ Function init_OpenSerial (com, Device)
 		smsg+="1.- Verify is not being used by another program\r"
 		smsg+="2.- Verify the PORT is available in Device Manager (Ports COM). If not, rigth-click and scan hardware changes or disable and enable it.\r"
 		DoAlert /T="Unable to open Serial Port" 0, smsg
-		Abort "Execution aborted.... Restart IGOR"
+//		Abort "Execution aborted.... Restart IGOR"
+		flag = 0
 	endif
 	return flag 
 end
