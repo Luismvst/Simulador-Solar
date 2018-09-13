@@ -1,160 +1,196 @@
-﻿#pragma TextEncoding = "UTF-8"
+#pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-//#include "Leds"
 
-//strconstant refQEsuffix = "_Ex"
-
+//Elegir el com tras crear el panel y no vieversa. con un dropdown de los normales.
 
 Menu "S.Solar"
-	"Init 1/ç", /Q, init_SolarPanel()
-	"Initialize", /Q, init_SolarPanel(init=1)
+	"Display /�",/Q, Init_SP (val = 1)
+	"Init ", /Q, Init_SP ()
 End
 
-//Respecto al Jsc tenemos la funcion en m mainIII con qe2jsc()
-
-Function init_SolarPanel([init])
+//This function does load from the current experiment waves
+Function Load (fname, num)
+	//num is necessary to know which position of SubCell is the wave going to be (wavesubdut"0")
+	//fname is necessary to load and display it from the dropdown on the graph
+	//
+	string fname	
+	variable num
 	
-	variable init
-	if (paramisdefault (init))
-		init=0
-	endif
+	string current = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder current
 	
-	DFRef saveDFR=GetDataFolderDFR()
-	string path = "root:SolarSimulator"
-	if(!DatafolderExists(path) || init == 1)
-		string smsg = "You have to initialize first.\n"
-		smsg += "Do you want to initialize?\n"
-		DoAlert /T="Unable to open the program" 1, smsg
-		if (V_flag == 2)		//Clicked <"NO">
-			//Abort "Execution aborted.... Restart IGOR"
-		elseif (V_flag == 1)	//Clicked <"YES">
-			genDFolders(path)
-			genDFolders(path + ":Storage")			
-			genDFolders(path + ":LedController")
-			genDFolders(path + ":LoadedWaves")
-			//PATHS will be created at the same time as the panel does. But when the buttons or something gets killed by the destruction
-			//of the own panel, i want paths to be destroyed too.
-							
-			//init() everything. Estrategia ir haciendo
-			//cosas avisando a la gente de qué debe hacer
-			
-			//GetData se hace aquí, y dentro de cada initX()
-		endif
-	elseif (init == 0)
-		//Variables?
+	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
+	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
+	wave wavelamp, wavespectre;
+	
+	variable flag= 0
+	string wavenames
+	string sdf
+	string fich_name
+	string destwavename
+	string wavepath
+	
+	if (num<12) 
+		wavepath = stringfromlist (0, getQEpath (fname))	
 	endif
-	DFRef dfr = $path
-	SetDatafolder dfr
-	//Check if this is right becouse i dont know if it is 
-	//good to reinitialize leds or something to reset some values... 
-	//* check *//
-	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
-		SetDrawLayer /W=SSPanel  Progfront
-		DoWindow /F SSPanel
-		return 0
-	endif 
-	//ComNum
-	//string/G COM = selectComLeds ()
-	string/G COM = "COM1" //Connected by serial port
-	if (strlen (com) == 0) 
-		DoAlert 0, "There is no COM connected"
-	else 
-		//We initiate leds and ledworking mode
-		//init_Leds(com)
-	endif	
-	Init_SolarVar()
-	Solar_Panel ()
-	SetDataFolder saveDFR
+	switch (num)
+	case 12:			
+		wavepath = "root:Spectre:SRef:"+fname
+		break
+	case 13:
+		wavepath = "root:Spectre:SLamp:"+fname
+		break
+	endswitch
+	wave originwave = $wavepath
+	variable id = num2id(num)
+	if ( mod (num, 2) && num<12)//type: ref		
+		destwavename = "wavesubdut"+num2str(id)	
+	elseif ( !mod (num, 2) && num<12)//type: dut
+		destwavename = "wavesubref"+num2str(id)		
+	elseif (num == 12 )
+		destwavename = "wavelamp"
+	elseif (num == 13 )
+		destwavename = "wavespectre"
+	endif
+	//This is necessary becouse duplicate function creates the new wave in the dfr of the originwave
+	destwavename = current + ":" + destwavename
+	wave destwave = $destwavename
+	Duplicate /O originwave, destwave
+	
+	if (!isScaled(destwave))
+		SetScale /I x, 0, 2000 , destwave
+	endif
+	/////////****we will see this in the future***///
+	if (!Draw (destwave, id))
+		string realname = nameofwave (destwave)
+		ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
+	endif
+	//********************************
+	Setdatafolder savedatafolder
 end
 
-Function TurnOn_Leds(Iset)
-	variable Iset
-	//Normal Mode
-	setMode (1, 1)
-	setMode (2, 1)
-	setMode (3, 1)
-//	setNormalParameters (1, 1000, Iset)
-//	setNormalParameters (2, 1000, Iset)
-//	setNormalParameters (3, 1000, Iset)
-	setNormalCurrent (1, Iset)
-	setNormalCurrent (2, Iset)
-	setNormalCurrent (3, Iset)
+Function Draw (trace, id)
+	wave trace
+	variable id
+	string cadena
+	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
+	if(strlen(tracelist))
+		variable i			
+		for (i=0; strlen(cadena)!=0; i+=1)
+			cadena = (StringFromList(i, traceList))
+			if(stringmatch(cadena, NameOfWave(trace)) )
+				 return 0
+			endif				
+		endfor
+	endif
+		string realname = nameofwave (trace)
+		switch (id)
+		case 0:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 0)
+			break
+		case 1:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0, 65535, 0)
+			break
+		case 2:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,65535)
+			break
+		case 3:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+			break
+		case 4:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 65535, 65535)
+			break
+		case 5:
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,0)
+			break
+		case 6:	//it is Spectre Slamp or Sref
+			AppendtoGraph/R /W=SSPanel#SSGraph trace
+			Label/W=SSPanel#SSGraph right "Spectrum"
+			ModifyGraph /W=SSPanel#SSGraph minor=1
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 20000)
+			break
+		case 7:	//led spectre
+			Appendtograph /W=SSPanel#SSGraph trace
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+			break
+		endswitch
+			ModifyGraph /W=SSPanel#SSGraph  tick=2
+			ModifyGraph /W=SSPanel#SSGraph  zero=2
+			ModifyGraph /W=SSPanel#SSGraph  minor=1
+			ModifyGraph /W=SSPanel#SSGraph  standoff=0	
+			return 1		
+End
+Function Draw2 ([position, trace, autoescale, color])//, [others])
+	variable position		//0 -> Left, 1 -> Right
+	wave trace					//Name of the wave to be drawn
+	variable autoescale		//0 -> No , 1 -> Yes
+	variable color			//0 -> Choose random color,  1 -> red, 2 -> green, 3 -> blue, 4 -> black, 5 -> white
+	if (paramisdefault(position))
+		position = 0
+	endif
+	if (paramisdefault(trace))
+		trace = Nan
+	endif
+	if (paramisdefault(autoescale))
+		autoescale = 0
+	endif
+	if (paramisdefault(color))
+		color = 0
+	endif
 	
-End
-
-Function TurnOff_Leds()
-	variable channel	
-	for (channel=1;channel<4;channel+=1)	//12 channels, 3 used
-		setMode (channel, 0)	//Disable
-	endfor
-End
-
-//PopUp that let you choose the COM Port
-//
-//Function/S selectComLeds([comNum])
-//	variable comNum
-//	string com
-//	if (paramisdefault(comNum))
-//		comNum=1
-//		Prompt comNum,"COM Port",popup,"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB"
-//		DoPrompt "Choose the COM Port",comNum
-//		if (V_Flag)	
-//			return ""		// user canceled
-//		endif
-//		com = "COM" + num2str (comNum)
-//		return com
-//	else
-//		com = "COM" + num2str (comNum)
-//		return com
+	//I HOPE THIS IS NOT NECESSARY
+	//do not draw the same thing twice
+//	string tlist=TraceNameList("SSPanel#SSGraph",";",1)
+//	if (stringmatch (tlist, "*" + NameOfWave(trace) + "*"))
+//		//i dont know why just "trace" does not work with the command removefromgraph...
+//		RemoveFromGraph /W=SSPanel#SSGraph $NameOfWave(trace)
 //	endif
-//End
-
-Function CheckProc_SimSolar(cba) : CheckBoxControl
-	STRUCT WMCheckboxAction &cba
-
-	switch( cba.eventCode )
-		case 2: // mouse up
-			Variable checked = cba.checked
-			string check_name = cba.ctrlname
-			strswitch (cba.ctrlname)
-				case "CheckSetLeds":
-					if (checked)	
-						nvar Iset = root:SolarSimulator:LedController:Iset					
-						TurnOn_Leds(Iset)
-					else
-						TurnOff_Leds()
-					endif
-				break
-				default:
-				if (stringmatch (check_name, "Check*"))
-					variable num = str2num (check_name[5])
-					if (num>=0 && num<=5)
-						Check_Enable(num, checked)
-					endif
-				endif
-				break
-			endswitch
-		break
-		case -1: // control being killed
-		break
-	endswitch
-
-	return 0
-End
-
-Function SliderProc_SimSolar(sa) : SliderControl
-	STRUCT WMSliderAction &sa
+	if (position == 0)
+		ModifyGraph /W=SSPanel#SSGraph minor=0
+	else
+		Label/W=SSPanel#SSGraph right "Spectrum"
+		ModifyGraph /W=SSPanel#SSGraph minor=1
+	endif
+	if (autoescale)
+		SetAxis/A/W=SSPanel#SSGraph
+	endif
 	
-	switch( sa.eventCode )
-		case -1: // control being killed
-			break
-		default:
-			break
-	endswitch
+	ModifyGraph/W=SSPanel#SSGraph tick=2, zero=2,  standoff=0
+	if (color == 0)
+		SetColorGraph ("SSPanel#SSGraph")
+	else
+//		switch (color)
 
-	return 0
+//		case 1: 
+//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 0, 0)
+//		break
+//		case 2:
+//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0, 65535, 0)
+//		break
+//		case 3:
+//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,65535)
+//		break
+//		case 4:
+//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 65535, 65535)
+//		break
+//		case 5:
+//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,0)
+//		break
+//		default: 
+//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(20000, 20000, 20000)
+//		endswitch
+	endif		
 End
 
+//This is going to be the next task with the visibility of LEDS gaussian waves on the screen.
+//FLAG
 Function SetVarProc_SimSol(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
 	switch( sva.eventCode )
@@ -167,25 +203,25 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			nvar channel = root:SolarSimulator:channel
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
-				case "setvarLed1":	
-					wave ledwave1 = root:SolarSimulator:LedController:LED470
+//Everything about led controll and allthat stuff is going to be changed soon,
+				
+				case "setvarLed470":	
 //					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
-					Led_Control(ledwave1, ledlevel[0])
-					Iset = Imax * LedLevel[0]	
-					setNormalCurrent (channel, Iset)
+					Led_Gauss(470)
+//					Iset = Imax * LedLevel[0]	
+//					setNormalCurrent (channel, Iset)
 									
 				break
-				case "setvarLed2":
-					wave ledwave2 = root:SolarSimulator:LedController:LED850
-//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel2
-					Led_Control(ledwave2, ledlevel[1])
-					Iset = Imax * LedLevel[0]
+				case "setvarLed850":
+					Led_Gauss(850)
+//					Iset = Imax * LedLevel[0]
 				break
-				case "setvarLed3":
-					wave ledwave3 = root:SolarSimulator:LedController:LED1540
+				case "setvarLed1540":
+					Led_Gauss(1540)
+//					wave ledwave3 = root:SolarSimulator:LedController:LED1540
 //					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
-					Led_Control(ledwave3, ledlevel[2])
-					Iset = Imax * LedLevel[0]
+//					Led_Control(ledwave3, ledlevel[2])
+//					Iset = Imax * LedLevel[0]
 				break
 			endswitch
 		break
@@ -214,6 +250,7 @@ End
 
 Function ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
+	//
 	if (ba.eventcode == -1 || ba.eventcode == 2 || ba.eventcode == 6)
 		ba.blockReentry=1
 	endif
@@ -223,41 +260,20 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			nvar Imax = root:SolarSimulator:LedController:Imax
 			nvar Iset = root:SolarSimulator:LedController:Iset
 			strswitch (ba.ctrlname)
-//				case "buttonApplyCurrent":
-//					setNormalCurrent (channel, Iset)
-//				break
-//				case "buttonSetParameters":
-//					//Defect parameters to start 
-//					Imax = 100
-//					Iset = 50
-//					setNormalParameters (channel, Imax, Iset)
-//				break
-//				case "buttonMode1":
-//					//prueba (channel, 100, 60)
-//					setMode (channel, 1)
-//					//	MODE: 	 	0 	DISABLE
-//					//				1	NORMAL
-//					//				2	STROBE 
-//				break
-//				case "buttonMode0":
-//					//Disable
-//					setMode (channel, 0)
-//				break
-//				case "buttonInit":
-//					svar com = root:SolarSimulator:com
-//					init_Leds (com)
-//				break
 				case "buttonCargarOnda":					
 					//Load_Wave()
 				break
-				case "buttonLoadLed":
-//					LoadLed("D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds")
-//					LoadLed("C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS")
+				case "buttonLog":
+					print "Log_"
+					//print the structure with the current data adquisitio
 				break
-				case "buttonRemoveLed":
-					wave ledwave1 = root:SolarSimulator:LedController:ledwave1
-					RemoveFromGraph /W=SSPanel#SSGraph ledwave1
-				break
+//				case "buttonLoadLed":
+//					
+//				break
+//				case "buttonRemoveLed":
+//					wave ledwave1 = root:SolarSimulator:LedController:ledwave1
+//					RemoveFromGraph /W=SSPanel#SSGraph ledwave1
+//				break
 				case "buttonClean":
 					Clean()
 				break
@@ -278,6 +294,46 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 	return 0
 End
 
+Function CheckProc_SimSolar(cba) : CheckBoxControl
+	STRUCT WMCheckboxAction &cba
+
+	switch( cba.eventCode )
+		case 2: // mouse up
+			Variable checked = cba.checked
+			string check_name = cba.ctrlname
+			strswitch (cba.ctrlname)
+			//We will see if turn on Leeds still continues in the code. 
+//				case "CheckSetLeds":
+//					if (checked)	
+//						nvar Iset = root:SolarSimulator:LedController:Iset					
+//						TurnOn_Leds(Iset)
+//					else
+//						TurnOff_Leds()
+//					endif
+//				break
+				case "checkgraph_leds":
+					Check_PlotEnable (7, checked=checked)
+					break
+				case "checkgraph_spectre":
+					Check_PlotEnable (6, checked=checked)
+					break
+				default:
+				if (stringmatch (check_name, "Check*"))
+					variable id = str2num (check_name[5])
+					if (id>=0 && id<=5)
+						Check_JscEnable(id, checked)
+					endif
+				endif
+				break
+			endswitch
+		break
+		case -1: // control being killed
+		break
+	endswitch
+
+	return 0
+End
+
 Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
 	switch( pa.eventCode )
@@ -291,21 +347,19 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					nvar channel = root:SolarSimulator:channel
 					channel = popNum
 				break
-//				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
+				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
+				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
-//					Load (popStr)
-					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)
-//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia")
-//					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref")
+					Load (popStr, 12)
+				
+					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)					
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-//					Load (popStr)
-//					Load_Wave(fname=popStr, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar")
-//					Load_Wave(fname=popStr, loadpath="D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp")
+					Load (popStr, 13)
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
-						variable num
+						variable num, id
 						if (str2num(paName[8])>=0 && str2num(paName[8])<=5)
 							wave popValues = root:SolarSimulator:Storage:popValues
 							num = str2num(paName[8])
@@ -317,13 +371,15 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 							Pop_Action (num, popValues)							
 						endif
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
-							num = str2num(paName[11])	
-							Load (popStr, id = num )							
-							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_DUT")
+							id = str2num(paName[11])	
+							num = id2num (id, 1) //1 for dut
+							Load (popStr, num )						
+							
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
-							num = str2num(paName[11])
-							Load (popStr, id = num )
-							//Load_Wave(fname=popStr, id=num, loadpath="C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\EQE_REF")
+							id = str2num(paName[11])
+							num = id2num (id, 0) //0 for ref
+							Load (popStr, num  )
+							
 						endif
 						
 					endif
@@ -347,381 +403,66 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 			break
 	endswitch
 	return 0
-End
-
-Function Pop_Action (popNum, popValues)
-	variable popNum
-	wave popValues
-	string checkX
-	string popupX
-	string popupY
-	string valdisp1
-	string valdisp2
-	checkX = "check" + num2str(popNum)
-	popupX = "popupSubREF" + num2str(popNum)
-	popupY = "popupSubDUT" + num2str(popNum)
-	if (popValues[popNum])
-		CheckBox $checkX, 	disable = 0
-		PopupMenu $popupX,	disable = 0
-		PopupMenu $popupY,	disable = 0	
-	else
-		CheckBox $checkX, 	disable = 1
-		PopupMenu $popupX,	disable = 2
-		PopupMenu $popupY,	disable = 2
-	endif	
 end
 
-
-Function Check_Enable (id, checked)
-	variable id, checked
-	string path = "root:SolarSimulator"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
-	variable i
-	//*********Coming Soon: refresh*************//
-	variable refresh //Selected 
-	string checkX
-	string valdisp1
-	string valdisp2
-	for (i=0;i<6; i++)
-		checkX = "check" + num2str(i)
-		valdisp1 = "valdispJREF" + num2str(i)
-		valdisp2 = "valdispJ" + num2str(i)
-		if (id != i)
-			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
-			ValDisplay $valdisp1, disable = 2
-			ValDisplay $valdisp2, disable = 2
-		elseif (checked)			
-			//I dont know why color does not change when checked.
-			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
-			ValDisplay $valdisp1, disable = 0
-			ValDisplay $valdisp2, disable = 0
-		else
-			CheckBox $checkX, value = 0
-			ValDisplay $valdisp1, disable = 2
-			ValDisplay $valdisp2, disable = 2
-		endif
-	endfor
-	SetDataFolder savedatafolder
-end
-
-Function LoadLed (path)
-	string path
-	string current = "root:SolarSimulator:LedController"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder current
-	NewPath /O path_Led, path
-	LoadWave /O /P=path_led
-	SetDataFolder savedatafolder
-End
-
-Function Clean ()
-	string current = "root:SolarSimulator"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder current
-	
-	killWindow SSPanel#SSGraph
-	
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
-	RenameWindow #,SSGraph	
-	prue()
-	
-	SetDataFolder savedatafolder
-end
-
-Function Load (fname, [id])
-	//Id is necessary to know which SubCell is loading each wave (0-5). If there's no ID, it become general
-	//fname is necessary if you want to load an specific file (from dropdown for example)
-	string fname	
-	variable id
-	if (paramisdefault(id))
-		//This is global data loaded (espectre or smthg else)
-		id = -1
-	endif
-	string current = "root:SolarSimulator:LoadedWaves"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder current
-	variable flag= 0
-	string wavenames
-	string sdf
-	string fich_name
-	if (id >= 0 && id<=5) 
-		gendfolders(current + ":Subcell" + num2str(id))
-		sdf= current + ":Subcell" + num2str(id) + ":"
-		//if(itemsinlist(wavelist
-	elseif (id == -1 && stringmatch (fname,"*XT*") )
-		gendfolders(current + ":Spectre")
-		sdf= current + ":SimulatorSpectre:"
-	elseif (id == -1 && stringmatch (fname,"*AM*") )
-		gendfolders(current + ":SpectreRef")
-		sdf= current + ":SpectreRef:" 
-	endif 
-	string wavepath = stringfromlist (0, getQEpath (fname))
-	wave originwave = $wavepath
-	string destwave = (sdf + fname) 
-	Duplicate /O originwave, $destwave
-	
-	if (ItemsInList(WinList("SSPanel",";",""))>0)
-		string tlist=TraceNameList("SSPanel#SSGraph",";",1)
-		wave loadedwave = $destwave
-		//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
-		//if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
-		if (isScaled(loadedwave))
-			Draw(position = 0, trace = loadedwave)
-		else
-			variable newstart = 350
-			variable delta = newDelta (loadedwave, newstart)
-			SetScale /P x, newstart, delta, loadedwave
-			Draw(position = 1, trace = loadedwave)
-		endif
-	endif
-			
-	Setdatafolder savedatafolder
-end
-
-Function Load_Wave ([loadpath, id, fname] )
-	//Path is necessary when you want to load smthg from folder. 
-	//Id is necessary to know which SubCell is loading each wave (0-5). If there's no ID, it become general
-	//fname is necessary if you want to load an specific file (from dropdown for example)
-	string loadpath
-	variable id
-	string fname
-	
-	string current = "root:SolarSimulator:LoadedWaves"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder current
-	variable flag= 0
-	string wavenames
-	
-	if (paramisdefault(loadpath))
-		//Path allows you to choose the file to load.
-		//loadpath = "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor"
-		loadpath = "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS"
-	endif
-	if (paramisdefault(id))
-		//This is global data loaded
-		id = -1
-	endif
-	if (paramisdefault(fname))
-		flag=1
-		fname = ""	
-	endif
-	
-	string fich_name
-	if (id >= 0 && id<=5) 
-		gendfolders(current + ":Subcell" + num2str(id))
-		SetDataFolder current + ":Subcell" + num2str(id)
-		//if(itemsinlist(wavelist
-	elseif (id == -1 && stringmatch (fname,"*XT*") )
-		gendfolders(current + ":SimulatorSpectre")
-		SetDataFolder current + ":SimulatorSpectre"
-	elseif (id == -1 && stringmatch (fname,"*AM*") )
-		gendfolders(current + ":SpectreRef")
-		SetDataFolder current + ":SpectreRef" 
-	endif
-	
-	NewPath/Q/O path_loadwave, loadpath
-	LoadWave/H /P=path_loadwave /O fname 	
-
-	wavenames = S_wavenames
-	if (V_flag)	//This avoid problems if we cancel the fich-loading ( have you load smthg or not? )
-		fich_name = S_FileName
-		if (strlen(wavenames) == 0) //The fich has no name. Error 
-			print "Error in the fich-loading"						
-			return -1
-		else
-			if (ItemsInList(WinList("SSPanel",";",""))>0)
-				string tlist=TraceNameList("SSPanel#SSGraph",";",1)
-				wave loadedwave = $(StringFromList(0, wavenames))
-				//If we load a spectrum, it will be displayed on the right axis. EQE will be desplayed in the left axis 
-				//if (stringmatch (StringFromList(0, wavenames),"*XT*") || stringmatch (StringFromList(0, wavenames),"*AM*") )
-				if (isScaled(loadedwave))
-					Draw(position = 0, trace = loadedwave)
-				else
-					variable newstart = 350
-					variable delta = newDelta (loadedwave, newstart)
-					SetScale /P x, newstart, delta, loadedwave
-					Draw(position = 1, trace = loadedwave)
-				endif
-			endif
-		endif
-	else 
-		SetDataFolder savedatafolder
-		return -1
-	endif
-	SetDataFolder savedatafolder
-End
-
-Function Disable_All (option)
-	variable option
-	variable channel
-	switch (option)
-		case 0:
-			string smsg = "Do you want to disable all channels?\n"
-			DoAlert /T="Disable before Exit" 1, smsg
-			if (V_flag == 2)		//Clicked <"NO">
-			//Abort "Execution aborted.... Restart IGOR"
-				return 0
-			elseif (V_flag == 1)	//Clicked <"YES">	
-				for (channel=1;channel<13;channel+=1)	//12 channels
-					setMode (channel, 0)	//Disable
-				endfor
-			endif
-		//it does not have break, becouse it will be disabling gradually
-		case 1:
-			//string folders = getFolder ("root:SolarSimulator")
-			KillDataFolder root:SolarSimulator:LoadedWaves
-			genDFolders("root:SolarSimulator:LoadedWaves")
-	endswitch	
-End
-
-//ComingSoon//
-//Function WhatToDraw()
-//End
-
-//It will be added new features to the Draw Function to be functional for this procedure
-Function Draw ([position, trace, autoescale, color])//, [others])
-	variable position		//0 -> Left, 1 -> Right
-	wave trace					//Name of the wave to be drawn
-	variable autoescale		//0 -> No , 1 -> Yes
-	variable color			//0 -> Choose random color,  1 -> red, 2 -> green, 3 -> blue, 4 -> black, 5 -> white
-	if (paramisdefault(position))
-		position = 0
-	endif
-	if (paramisdefault(trace))
-		trace = Nan
-	endif
-	if (paramisdefault(autoescale))
-		autoescale = 0
-	endif
-	if (paramisdefault(color))
-		color = 0
-	endif
-	//do not draw the same thing twice
-	string tlist=TraceNameList("SSPanel#SSGraph",";",1)
-	if (stringmatch (tlist, "*" + NameOfWave(trace) + "*"))
-		//i dont know why just "trace" does not work with the command removefromgraph...
-		RemoveFromGraph /W=SSPanel#SSGraph $NameOfWave(trace)
-	endif
-	if (position == 0)
-		AppendtoGraph /W=SSPanel#SSGraph trace
-	else
-		AppendtoGraph/R /W=SSPanel#SSGraph trace
-		Label/W=SSPanel#SSGraph right "Spectrum"
-		ModifyGraph /W=SSPanel#SSGraph minor=1
-	endif
-	if (autoescale)
-		SetAxis/A/W=SSPanel#SSGraph
-	endif
-	ModifyGraph/W=SSPanel#SSGraph tick=2, zero=2,  standoff=0
-	if (color == 0)
-		SetColorGraph ("SSPanel#SSGraph")
-	else
-//		switch (color)
-//		case 1: 
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 0, 0)
-//		break
-//		case 2:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0, 65535, 0)
-//		break
-//		case 3:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,65535)
-//		break
-//		case 4:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 65535, 65535)
-//		break
-//		case 5:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,0)
-//		break
-//		default: 
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(20000, 20000, 20000)
-//		endswitch
-	endif		
-End
-
-	
-//Muestra con Draw solo lo tickeado por checkthings
-//Function Select_Display ()
-//	string path = "root:SolarSimulator:LedController"
-//	string savedatafolder = GetDataFolder (1) 
-//	SetDataFolder path
-//	string waves = wavelist ("*", --.-
-//	
-//	
-//	SetDataFolder savedatafolder
-//End
-
-//*********************
-Function Led_Control (ledwave, ledlevel)
-	wave ledwave
-	variable ledlevel
-	string path = "root:SolarSimulator:LedController"
-	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
-	if (!isScaled(ledwave))
-		variable start = 350
-		variable delta = newDelta ( ledwave, start)
-		SetScale /P x, start, delta, ledwave
-	endif
-	Duplicate/O ledwave, ledwaveSc
-	ledwaveSc = ledwaveSc * ledlevel / waveMax (ledwave) 
-	Draw (position = 0, trace = ledwaveSc, color = 1)
-	SetDataFolder savedatafolder	
-End
-
-Function newDelta (wav, newstart)
-	wave wav
-	variable newstart
-	variable start = leftx (wav)					
-	variable ending = rightx (wav)
-	variable newending = newstart/start*ending
-	variable rows = DimSize (wav, 0)
-	variable newdelta = (newending - newstart)/rows
-	return newdelta	
-End
-
-Function isScaled (wav)
-	wave wav
-	variable start = leftx (wav)
-	variable delta = deltax (wav)
-	variable ending = rightx (wav)
-	//Aprox will be able to scale waves that are loaded without an appropriate scale 
-	if (  (delta > 3 && delta < 7) && (start>15 && start<400) )
-		return 1
-	else 
+Function Init_SP ([val])
+	variable val
+	if (ItemsinList (WinList("SSPanel", ";", "")) > 0 && val == 1)
+		SetDrawLayer /W=SSPanel  Progfront
+		DoWindow /F SSPanel
 		return 0
-	endif
+	endif 
+	init_solarVar ()
+	Solar_Panel ()
 End
-
-Function/S translate (popValues)
-	wave popValues
-	string popVal = ""
-	variable i 
-	for (i = 0; i<6; i++)
-		switch(popValues[i])
-		case 1: 	
-			popVal += "Yes;"
-		break
-		case 0:
-			popVal += "No;"
-		break
-		endswitch
-	endfor
-	return trimstring (popVal)
-end
-
+	
 Function Init_SolarVar ()
+
+	string path = "root:SolarSimulator"
+	//If never initialized
+	if(!DatafolderExists(path))
+		string smsg = "You have to initialize first.\n"
+		smsg += "Do you want to initialize?\n"
+		DoAlert /T="Unable to open the program" 1, smsg
+		if (V_flag == 2)		//Clicked <"NO">
+//			Abort "Execution aborted.... Restart IGOR"
+			return NaN
+		elseif (V_flag == 1)	//Clicked <"YES">
+			genDFolders(path)
+			genDFolders(path + ":Storage")			
+			genDFolders(path + ":LedController")
+			genDFolders(path + ":LoadedWaves")
+			genDFolders("root:Spectre")
+			//Here we have to load Sstd and Slamp manually 
+			genDFolders("root:Spectre:Sref")
+			genDFolders("root:Spectre:Slamp")
+		endif
+	endif
+	
+	SetDataFolder root:SolarSimulator
 	//Initial wave for #GraphPanel
 	make /N=1 /O		root:SolarSimulator:Storage:sa
-	//reference to draw in the scene
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub0
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub1
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub2
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub3
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub4
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub5
-//	make /O 	root:SolarSimulator:LoadedWave:wavesub6
-		
+	//reference to draw in the scene before even give them the value of the selected subcell in the panel.
+	//They will be all drawn in the graqph but not showed until we give them a value. Otherwise, it is nan 
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut0 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut1 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut2 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut3 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut4 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubdut5 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref0 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref1 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref2 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref3 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref4 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavesubref5 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavelamp = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:wavespectre = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:waveled470 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:waveled850 = Nan
+	make /O 	root:SolarSimulator:LoadedWaves:waveled1540 = Nan
+	
+			
 	//Disable/Enable Dropdowns things on the panel
 	make /N=6 /O  :Storage:popvalues
 	wave popValues = :Storage:popvalues
@@ -742,14 +483,25 @@ Function Init_SolarVar ()
 	//Increase power of leds
 	make /N=3 /O :Storage:LedLevel
 	wave LedLevel = :Storage:LedLevel
-	LedLevel = { 0, 0, 0 }
+	LedLevel = {0, 0, 0}
+	make /O :Storage:led470 = Nan
+	make /O :Storage:led850 = Nan
+	make /O :Storage:led1540 = Nan
+	 
 	
 	//LedChannel
 	variable/G root:SolarSimulator:channel
 	nvar channel = root:SolarSimulator:channel
 	channel = 1
 	
+	//ComPort
+	string/G root:SolarSimulator:COM //Connected by serial port
+	svar com = root:SolarSimulator:COM
+	com = ""
+	
+	//**********The Solar_Panel could be launched next**********//
 End
+
 Function Solar_Panel()
 	
 	string path = "root:SolarSimulator"
@@ -758,7 +510,7 @@ Function Solar_Panel()
 	
 	//Initial wave for #GraphPanel
 	wave sa = root:SolarSimulator:Storage:sa
-	string nameDisplay 
+//	string nameDisplay 
 	
 	//Disable/Enable Dropdowns things on the panel
 	wave popValues = :Storage:popvalues
@@ -772,25 +524,39 @@ Function Solar_Panel()
 	nvar Imax = root:SolarSimulator:LedController:Imax
 	nvar Iset = root:SolarSimulator:LedController:Iset
 	
+	//Leds
+//	wave led470 = root:Spectre:SLeds:LED470
+//	wave led850 = root:Spectre:SLeds:LED850
+//	wave led1540 = root:Spectre:SLeds:LED1540
+	
+	SetDataFolder :Storage
+	Copy ("root:Spectre:SLeds:led470", "led470")
+	Copy ("root:Spectre:SLeds:led850", "led850")
+	Copy ("root:Spectre:SLeds:led1540", "led1540")
+	SetDataFolder path
+	wave led470 = :storage:led470
+	wave led850 = :storage:led850
+	wave led1540 = :storage:led1540
+	
 	//Increase power of leds
 	wave LedLevel = :Storage:LedLevel
-
+	
+	//Loops
 	variable i
 	
 	//It has been created  when Leds Procedure initialize. 
 	nvar channel = root:SolarSimulator:channel
-	
-	
+		
 	PauseUpdate; Silent 1		// building window...
 	
 	//Paths
-	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
-	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
-	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS"
-	
-//	Newpath/Q/O  path_Sref, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref"
-//	Newpath/Q/O  path_Slamp, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp"
-//	NewPath/Q/O 	path_SLeds, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds"
+//	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Pr�cticas Empresa\Igor\Waves_SS\espectros_referencia"
+//	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Pr�cticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
+//	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Pr�cticas Empresa\Igor\Waves_SS\Espectros_LEDS"
+//	
+//	Newpath/Q/O  path_Sref, "D:\Luis\UNIVERSIDAD\4� A�O\Pr�cticas Empresa\Igor\Waves\Sref"
+//	Newpath/Q/O  path_Slamp, "D:\Luis\UNIVERSIDAD\4� A�O\Pr�cticas Empresa\Igor\Waves\Slamp"
+//	NewPath/Q/O 	path_SLeds, "D:\Luis\UNIVERSIDAD\4� A�O\Pr�cticas Empresa\Igor\Waves\SLeds"
 	
 	//Panel
 	DoWindow/K SSPanel; DelayUpdate
@@ -824,24 +590,33 @@ Function Solar_Panel()
 //	Button buttonMode1,fSize=12,fColor=(32792,65535,1)
 //	Button buttonInit,pos={672.00,218.00},size={89.00,58.00},proc=ButtonProc_SimSolar,title="Init Serial Port "
 //	Button buttonInit,fSize=12,fColor=(52428,1,20971)
-	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
-	Button buttonCargarOnda,fColor=(16385,65535,41303)
-	Button buttonLoadLed,pos={504.00,495.00},size={108.00,23.00},proc=ButtonProc_SimSolar,title="Cargar LedSpectre"
+//	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
+//	Button buttonCargarOnda,fColor=(16385,65535,41303)
+	Button buttonLoadLed,pos={504.00,495.00},size={103.00,15.00},proc=ButtonProc_SimSolar,title="Cargar LedSpectre"
 	Button buttonLoadLed,fColor=(65535,16385,16385)
 	Button buttonRemoveLed,pos={504.00,524.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Remove Led\rFrom Graph"
 	Button buttonRemoveLed,fColor=(51664,44236,58982)
+	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG"
+	Button buttonLog,fColor=(16385,65535,41303)
 	
-	Button buttonClean,pos={328.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
+	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
 	Button buttonClean,fColor=(65535,65532,16385)
+	
 	//PopUps
 //	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
 //	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
 //	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
 
+//	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSubSref,mode=100,value= #"indexedfile ( path_Sref, -1, \"????\")"
+//	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+//	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSref,mode=100,value= #"indexedfile ( path_Sref, -1, \"????\")"
+	PopupMenu popupSubSref,mode=100,value= #"QEWaveList(1)"
 	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
+	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"QEWaveList(2)"
+
 	
 	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
@@ -890,19 +665,23 @@ Function Solar_Panel()
 	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 	
-	CheckBox checkSetLeds,pos={509.00,573.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
-	CheckBox checkSetLeds,value= 0
+	CheckBox checkgraph_leds,pos={509.00,573.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
+	CheckBox checkgraph_leds,value= 0
+	
+	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="On/Off"
+	CheckBox checkgraph_spectre,value= 0
+	
 	
 	//SetVariable
 //	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
 //	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel,live= 1
 	
-	SetVariable setvarLed1,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
-	SetVariable setvarLed1,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
-	SetVariable setvarLed2,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
-	SetVariable setvarLed2,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
-	SetVariable setvarLed3,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
-	SetVariable setvarLed3,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
+	SetVariable setvarLed470,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
+	SetVariable setvarLed470,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
+	SetVariable setvarLed850,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
+	SetVariable setvarLed850,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
+	SetVariable setvarLed1540,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
+	SetVariable setvarLed1540,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
 	
 	//ValDisplay
 	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
@@ -934,10 +713,10 @@ Function Solar_Panel()
 	for (i = 0; i<6; i++)
 		Pop_Action (i, popValues)
 	endfor 
-	Check_Enable (-1, 0)
+	Check_JscEnable (-1, 0)
 	
 	//Display 
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
+	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
 	ModifyGraph tick=2
@@ -955,93 +734,359 @@ Function Solar_Panel()
 	SetDrawEnv save
 	RenameWindow #,SSGraph
 	SetActiveSubwindow ##	
+	
+	//Waves drawn in the graph
+	SetDataFolder root:SolarSimulator:LoadedWaves
+	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
+	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
+	wave wavelamp, wavespectre;
+	wave waveled470, waveled850, waveled1540;
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
+	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
+	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
+	AppendtoGraph /W=SSPanel#SSGraph waveled470
+	AppendtoGraph /W=SSPanel#SSGraph waveled850
+	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
+	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
+	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
+	Label/W=SSPanel#SSGraph right "Spectrum"
+	ModifyGraph /W=SSPanel#SSGraph minor=1
+//	AppendtoGraph /W=SSPanel#SSGraph wavelamp
+//	AppendtoGraph /W=SSPanel#SSGraph wavelamp
+	SetDataFolder root:SolarSimulator
+	
 end
 
-//Reconstruction of graphPanel when something is removed (for check_Drawing_options )
-Function prue()
+//DropDown "Yes-No" Selection
+Function/S translate (popValues)
+	//popValues is a boolean array. 1 is translated into "Yes" and 0 is translated into "No" int he dropdown
+	wave popValues
+	string popVal = ""
+	variable i 
+	for (i = 0; i<6; i++)
+		switch(popValues[i])
+		case 1: 	
+			popVal += "Yes;"
+		break
+		case 0:
+			popVal += "No;"
+		break
+		endswitch
+	endfor
+	return trimstring (popVal)
+end
+
+//CheckBoxes Panel "Disable-Enable" drop action
+Function Pop_Action (popNum, popValues)
+	//popNum is the numeric reference to the selected popup in the Panel
+	//popValues is the boolean array that carries the FMS information
+	variable popNum
+	wave popValues
+	string checkX
+	string popupX
+	string popupY
+	string valdisp1
+	string valdisp2
+	checkX = "check" + num2str(popNum)
+	popupX = "popupSubREF" + num2str(popNum)
+	popupY = "popupSubDUT" + num2str(popNum)
+	if (popValues[popNum])
+		CheckBox $checkX, 	disable = 0
+		PopupMenu $popupX,	disable = 0
+		PopupMenu $popupY,	disable = 0	
+	else
+		CheckBox $checkX, 	disable = 1
+		PopupMenu $popupX,	disable = 2
+		PopupMenu $popupY,	disable = 2
+	endif	
+end
+
+//***********Check-Rules********************************************************************************************//
+//Check 0-5 Subcells 
+//Check 6 Both Spectres' Plot 
+//Check 7 Led's Plot
+
+Function Check_PlotEnable (id[, checked])
+	//id is the selected box that we want to enable or disable
+	//checked is the state that the selected checkbox has got
+	variable id
+	variable checked
+	if (paramisdefault(checked))
+		checked=1
+	endif
+	string path = "root:SolarSimulator:LoadedWaves"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	variable i
+	if (id>=0 && id <6)
+		string wavesubdutX
+		string wavesubrefX
+		wavesubdutX = "wavesubdut" + num2str(id)
+		wavesubrefX = "wavesubref" + num2str(id)
+		wave wavesubdut = $wavesubdutX
+		wave wavesubref = $wavesubrefX
+		clean()
+		Draw (wavesubdut, id)
+		Draw (wavesubref, id)	
+	elseif (id >=6)
+		if (id == 6)
+			string spectre, lamp
+			spectre = "wavespectre"
+			lamp = "wavelamp"
+			wave wavelamp = $lamp
+			wave wavespectre = $spectre
+			if (checked)
+				Draw (wavelamp, 6)
+				Draw (wavespectre, 6)
+			else
+				RemovefromGraph /Z /W=SSPanel#SSGraph wavelamp
+				RemovefromGraph /Z /W=SSPanel#SSGraph wavespectre
+			endif
+		elseif (id == 7)
+			string led470, led850, led1540
+			led470 = "waveled470"
+			led850 = "waveled850"
+			led1540 = "waveled1540"
+			wave waveled470 = $led470
+			wave waveled850 = $led850
+			wave waveled1540 = $led1540		
+			if (checked)
+				Draw (waveled470, 7)
+				Draw (waveled850, 7)
+				Draw (waveled1540, 7)
+			else
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveled470
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveled850
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveled1540
+			endif
+		endif
+		
+	endif
+		
+	SetDataFolder savedatafolder	
+End
+
+Function Check_JscEnable (id, checked)
+	//id is the selected box that we want to enable or disable
+	//checked is the state that the selected checkbox has got
+	variable id, checked
+	string path = "root:SolarSimulator"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	variable i
+	//*********Coming Soon: refresh*************//
+	variable refresh //Selected
+	string checkX
+	string valdisp1
+	string valdisp2
+	for (i=0;i<6; i++)
+		checkX = "check" + num2str(i)
+		valdisp1 = "valdispJREF" + num2str(i)
+		valdisp2 = "valdispJ" + num2str(i)
+		if (id != i || !checked)
+			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
+			ValDisplay $valdisp1, disable = 2
+			ValDisplay $valdisp2, disable = 2
+		elseif (checked)
+			//I dont know why color does not change when checked.
+			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
+			ValDisplay $valdisp1, disable = 0
+			ValDisplay $valdisp2, disable = 0
+			//Lets draw only the correspondant EQE waves
+			Check_PlotEnable (id)
+		endif
+	endfor
+	SetDataFolder savedatafolder
+end
+//*******************************************************************************************************************//
+
+//Reconstruction of Display. Clean Display
+Function Clean ()
+	SetDataFolder root:SolarSimulator
+	KillWindow SSPanel#SSGraph
+	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
+	RenameWindow #,SSGraph	
 	ModifyGraph /W=SSPanel#SSGraph  tick=2
 	ModifyGraph /W=SSPanel#SSGraph  zero=2
 	ModifyGraph /W=SSPanel#SSGraph  mirror=1
 	ModifyGraph /W=SSPanel#SSGraph  minor=1
 	ModifyGraph /W=SSPanel#SSGraph  standoff=0
-	Label left "%"
-	Label bottom "nm"
-	//Label right "Spectrum"
+//	Label left "%"
+//	Label bottom "nm"
+//	Label right "Spectrum"
 	SetAxis left*,1
 	SetAxis bottom*,2000
-	SetDrawLayer UserFront
-	SetDrawEnv save
+	string checkspectre = "checkgraph_spectre"
+	string checkleds = "checkgraph_leds"
+	CheckBox $checkspectre, value = 0//, labelBack = (0, 0, 0)
+	CheckBox $checkleds, value = 0//, labelBack = (0, 0, 0)
 	
+	SetDataFolder root:SolarSimulator
 end
 
-Window SS() : Panel
-	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(68,226,1133,897) as "SSPanel"
-	SetDrawLayer UserBack
-	SetDrawEnv linethick= 1.5
-	DrawLine 619,639,619,24
-	DrawText 43,313,"Cargar S\\BSTD"
-	DrawText 179,314,"Cargar S\\BLAMP"
-	DrawText 169,357,"Cargar EQE\\BREF"
-	DrawText 319,355,"Cargar EQE\\BDUT"
-	Button buttonCargarOnda,pos={157.00,398.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
-	Button buttonCargarOnda,fColor=(16385,65535,41303)
-	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
-	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
-	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
-	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
-	PopupMenu popupSub0,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
-	PopupMenu popupSub1,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub2,pos={20.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
-	PopupMenu popupSub2,mode=1,popvalue="Yes",value= #"\"Yes;No\""
-	PopupMenu popupSub3,pos={20.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
-	PopupMenu popupSub3,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub4,pos={20.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
-	PopupMenu popupSub4,mode=2,popvalue="No",value= #"\"Yes;No\""
-	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
-	PopupMenu popupSub5,mode=2,popvalue="No",value= #"\"Yes;No\""
+//Different Functions for Scaling . We will use them maybe in the future
+//Get Delta from start parameter
+Function newDeltaStart (wav, newstart)
+	wave wav
+	variable newstart
+	variable start = leftx (wav)					
+	variable ending = rightx (wav)
+	variable newending = newstart/start*ending
+	variable rows = DimSize (wav, 0)
+	variable newdelta = (newending - newstart)/rows
+	return newdelta	
+End
+
+//Get delta from End parameter
+Function newDeltaEnding (wav, newending)
+	wave wav
+	variable newending
+	variable start = leftx (wav)					
+	variable ending = rightx (wav)
+	variable newstart = newending*start/ending
+	variable rows = DimSize (wav, 0)
+	variable newdelta = (newending - newstart)/rows
+	return newdelta	
+End
+
+//is this wave scaled as i want?
+Function isScaled (wav)
+	wave wav
+	variable start = leftx (wav)
+	variable delta = deltax (wav)
+	variable ending = rightx (wav)
+	//Aprox will be able to scale waves that are loaded without an appropriate scale 
+	if (  (delta > 2 && delta < 7) && (start>=0 && start<400) )
+		return 1
+	else 
+		return 0
+	endif
+End
+
+//Generates the different led waves gradient from the input values ( 0% --- 100% )
+Function Led_Gauss (num)
+	variable num	
+	string path = "root:SolarSimulator:Storage"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path
+	wave led470, led850, led1540;
+	wave ledlevel
+	SetDataFolder "root:SolarSimulator:LoadedWaves"
+	wave waveled470, waveled850, waveled1540;	
 	
-	String fldrSav0= GetDataFolder(1)
-	SetDataFolder root:SolarSimulator:Storage:
-	Display/W=(0,0,594,292)/HOST=#  sa vs sa
-	SetDataFolder fldrSav0
-	ModifyGraph mode=3
-	ModifyGraph lSize=2
-	ModifyGraph tick=2
-	ModifyGraph zero=2
-	ModifyGraph mirror=1
-	ModifyGraph minor=1
-	ModifyGraph standoff=0
-	Label left "%"
-	Label bottom "nm"
-	SetAxis left*,1
-	SetAxis bottom*,1
-	SetDrawLayer UserFront
-	SetDrawEnv save
-	RenameWindow #,SSGraph
-	SetActiveSubwindow ##
-EndMacro
-//CHange the help files of dropdown popups to the following onne (all of them ) when finished window Execution
-//PopupMenu popupSub6, help={"Change directory path in function init_SolarPanel()"}
+	//Originally led850 spectrum is not scaled equally as the others
+	if (!isScaled(led850))
+		CopyScales led470, led850
+	endif
+	
+	switch (num)
+	case 470:
+		Duplicate/O led470, waveled470
+		waveled470 = led470 * ledlevel[0] / waveMax (led470) 
+		break
+	case 850:
+		Duplicate/O led850, waveled850
+		waveled850 = led850 * ledlevel[1] / waveMax (led850)
+		break
+	case 1540:
+		Duplicate/O led1540, waveled1540
+		waveled1540 = led1540 * ledlevel[2] / waveMax (led1540)  
+		break
+	endswitch
+	
+	SetDataFolder savedatafolder	
+End
 
-//The older popups. I want to keep them
-//PopupMenu popupSub6,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-//PopupMenu popupSub6,mode=2,popvalue="AMG173GLOBAL.ibw",value= #"indexedfile ( path_Sref, -1, \"????\")"
-//PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-//PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
-//PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
-//PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
-//PopupMenu popupSub10,pos={287.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//PopupMenu popupSub10,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+//Function Based on what does Load() do.
+Function Copy (origin_path, dest_wavename)
+	//To copy we need the origin_wave_path of the desire wave to be copied, and the name of the dest_wave_name
+	//The dest_wave is created in the CURRENT DATA FOLDER 
+	string origin_path
+	string dest_wavename
+	string dest_path
+	string current = GetDataFolder (1)
+	wave originwave = $origin_path
+	//This is necessary becouse duplicate function creates the new wave in the dfr of the originwave
+	dest_path = current + dest_wavename
+	wave destwave = $dest_path
+	Duplicate /O originwave, destwave
+	
+End
 
+Function id2num( id, type)
+	//type is 0 for ref and 1 for dut
+	//id is the subcell position (0-5)
+	//this function translate the subcell position into ref or dut position (0-11)
+	variable id, type
+	string code = num2str(id) + num2str(type)
+	strswitch(code)
+		case "00":
+			return 0 
+		case "01": 
+			return 1
+		case "10": 
+			return 2
+		case "11": 
+			return 3
+		case "20": 
+			return 4
+		case "21": 
+			return 5
+		case "30": 
+			return 6
+		case "31": 
+			return 7
+		case "40": 
+			return 8
+		case "41":
+			return 9
+		case "50": 
+			return 10
+		case "51": 
+			return 11
+	endswitch	
+End
 
-//function setcolorGraph(winStr)
-//	PopupMenu popupSub7,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub7,mode=1,popvalue="XT10open2012.ibw",value= #"indexedfile ( path_Slamp, -1, \"????\")"
-//	PopupMenu popupSub8,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub8,mode=1,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEref, -1, \"????\")"
-//	PopupMenu popupSub9,pos={290.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSub9,mode=2,popvalue="UPM2367n2_1st_EQE.ibw",value= #"indexedfile ( path_EQEdut, -1, \"????\")"
+Function num2id (num)
+	//num is the global position of the wave that occupies in the panel
+	variable num
+	switch (num)
+		case 0:
+		case 1:
+			return 0
+		case 2:
+		case 3:
+			return 1
+		case 4:
+		case 5:
+			return 2
+		case 6:
+		case 7:
+			return 3
+		case 8:
+		case 9:
+			return 4
+		case 10:
+		case 11:
+			return 5
+		case 12:
+		case 13:
+			return 6
+		case 14:
+		case 15: 
+			return 7
+		default: 
+			return 10
+	endswitch
+End
+	
+	
