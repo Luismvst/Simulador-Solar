@@ -127,67 +127,6 @@ Function Draw (trace, id)
 			ModifyGraph /W=SSPanel#SSGraph  standoff=0	
 			return 1		
 End
-Function Draw2 ([position, trace, autoescale, color])//, [others])
-	variable position		//0 -> Left, 1 -> Right
-	wave trace					//Name of the wave to be drawn
-	variable autoescale		//0 -> No , 1 -> Yes
-	variable color			//0 -> Choose random color,  1 -> red, 2 -> green, 3 -> blue, 4 -> black, 5 -> white
-	if (paramisdefault(position))
-		position = 0
-	endif
-	if (paramisdefault(trace))
-		trace = Nan
-	endif
-	if (paramisdefault(autoescale))
-		autoescale = 0
-	endif
-	if (paramisdefault(color))
-		color = 0
-	endif
-	
-	//I HOPE THIS IS NOT NECESSARY
-	//do not draw the same thing twice
-//	string tlist=TraceNameList("SSPanel#SSGraph",";",1)
-//	if (stringmatch (tlist, "*" + NameOfWave(trace) + "*"))
-//		//i dont know why just "trace" does not work with the command removefromgraph...
-//		RemoveFromGraph /W=SSPanel#SSGraph $NameOfWave(trace)
-//	endif
-	if (position == 0)
-		ModifyGraph /W=SSPanel#SSGraph minor=0
-	else
-		Label/W=SSPanel#SSGraph right "Spectrum"
-		ModifyGraph /W=SSPanel#SSGraph minor=1
-	endif
-	if (autoescale)
-		SetAxis/A/W=SSPanel#SSGraph
-	endif
-	
-	ModifyGraph/W=SSPanel#SSGraph tick=2, zero=2,  standoff=0
-	if (color == 0)
-		SetColorGraph ("SSPanel#SSGraph")
-	else
-//		switch (color)
-
-//		case 1: 
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 0, 0)
-//		break
-//		case 2:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0, 65535, 0)
-//		break
-//		case 3:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,65535)
-//		break
-//		case 4:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(65535, 65535, 65535)
-//		break
-//		case 5:
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(0,0,0)
-//		break
-//		default: 
-//			ModifyGraph /W=SSPanel#SSGraph rgb(trace)=(20000, 20000, 20000)
-//		endswitch
-	endif		
-End
 
 //This is going to be the next task with the visibility of LEDS gaussian waves on the screen.
 //FLAG
@@ -630,6 +569,9 @@ Function Solar_Panel()
 	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""
+	
+	PopupMenu popupCom,pos={695.00,20.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
+	PopupMenu popupCom,mode=1,popvalue="COM1",value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 	
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
 	PopupMenu popupSubREF0,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
