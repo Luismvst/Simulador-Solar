@@ -19,7 +19,6 @@ Function Load (fname, num)
 	//
 	string fname	
 	variable num
-	variable id
 	
 	string current = "root:SolarSimulator:LoadedWaves"
 	string savedatafolder = GetDataFolder (1) 
@@ -48,12 +47,10 @@ Function Load (fname, num)
 		break
 	endswitch
 	wave originwave = $wavepath
-	
-	if ( mod (num, 2) && num<12)//type: ref
-		id = num2id(num)
+	variable id = num2id(num)
+	if ( mod (num, 2) && num<12)//type: ref		
 		destwavename = "wavesubdut"+num2str(id)	
 	elseif ( !mod (num, 2) && num<12)//type: dut
-		id = num2id(num)
 		destwavename = "wavesubref"+num2str(id)		
 	elseif (num == 12 )
 		destwavename = "wavelamp"
@@ -69,9 +66,10 @@ Function Load (fname, num)
 		SetScale /I x, 0, 2000 , destwave
 	endif
 	/////////****we will see this in the future***///
-	Draw (destwave, id)
-	string realname = nameofwave (destwave)
-	ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
+	if (!Draw (destwave, id))
+		string realname = nameofwave (destwave)
+		ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
+	endif
 	//********************************
 	Setdatafolder savedatafolder
 end
@@ -131,7 +129,7 @@ Function Draw (trace, id)
 			ModifyGraph /W=SSPanel#SSGraph  zero=2
 			ModifyGraph /W=SSPanel#SSGraph  minor=1
 			ModifyGraph /W=SSPanel#SSGraph  standoff=0	
-		
+			return 1		
 End
 Function Draw2 ([position, trace, autoescale, color])//, [others])
 	variable position		//0 -> Left, 1 -> Right
@@ -319,6 +317,9 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 //				break
 				case "checkgraph_leds":
 					Check_PlotEnable (7, checked=checked)
+					break
+				case "checkgraph_spectre":
+					Check_PlotEnable (6, checked=checked)
 					break
 				default:
 				if (stringmatch (check_name, "Check*"))
@@ -602,7 +603,7 @@ Function Solar_Panel()
 	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG"
 	Button buttonLog,fColor=(16385,65535,41303)
 	
-	Button buttonClean,pos={328.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
+	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
 	Button buttonClean,fColor=(65535,65532,16385)
 	
 	//PopUps
@@ -841,7 +842,20 @@ Function Check_PlotEnable (id[, checked])
 		Draw (wavesubdut, id)
 		Draw (wavesubref, id)	
 	elseif (id >=6)
-		if (id == 7)
+		if (id == 6)
+			string spectre, lamp
+			spectre = "wavespectre"
+			lamp = "wavelamp"
+			wave wavelamp = $lamp
+			wave wavespectre = $spectre
+			if (checked)
+				Draw (wavelamp, 6)
+				Draw (wavespectre, 6)
+			else
+				RemovefromGraph /Z /W=SSPanel#SSGraph wavelamp
+				RemovefromGraph /Z /W=SSPanel#SSGraph wavespectre
+			endif
+		elseif (id == 7)
 			string led470, led850, led1540
 			led470 = "waveled470"
 			led850 = "waveled850"
@@ -859,16 +873,7 @@ Function Check_PlotEnable (id[, checked])
 				RemovefromGraph /Z /W=SSPanel#SSGraph waveled1540
 			endif
 		endif
-		if (id == 6)
-			string wavespectre, wavelamp
-			if (checked)
-				Draw ($wavelamp, 6)
-				Draw ($wavespectre, 6)
-			else
-				RemovefromGraph /Z /W=SSPanel#SSGraph $wavelamp
-				RemovefromGraph /Z /W=SSPanel#SSGraph $wavespectre
-			endif
-		endif
+		
 	endif
 		
 	SetDataFolder savedatafolder	
@@ -908,7 +913,7 @@ Function Check_JscEnable (id, checked)
 end
 //*******************************************************************************************************************//
 
-//Reconstruction of Display
+//Reconstruction of Display. Clean Display
 Function Clean ()
 	SetDataFolder root:SolarSimulator
 	KillWindow SSPanel#SSGraph
@@ -924,6 +929,11 @@ Function Clean ()
 //	Label right "Spectrum"
 	SetAxis left*,1
 	SetAxis bottom*,2000
+	string checkspectre = "checkgraph_spectre"
+	string checkleds = "checkgraph_leds"
+	CheckBox $checkspectre, value = 0//, labelBack = (0, 0, 0)
+	CheckBox $checkleds, value = 0//, labelBack = (0, 0, 0)
+	
 	SetDataFolder root:SolarSimulator
 end
 
