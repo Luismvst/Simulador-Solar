@@ -180,13 +180,6 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					struct ssstructure str
 					print str
 				break
-//				case "buttonLoadLed":
-//					
-//				break
-//				case "buttonRemoveLed":
-//					wave ledwave1 = root:SolarSimulator:LedController:ledwave1
-//					RemoveFromGraph /W=SSPanel#SSGraph ledwave1
-//				break
 				case "buttonClean":
 					Clean()
 				break
@@ -444,7 +437,8 @@ Function Solar_Panel()
 	
 	//Panel
 	DoWindow/K SSPanel; DelayUpdate
-	NewPanel /K=0 /W=(150,105,1215,776) as "SSPanel"
+//	NewPanel /K=0 /W=(150,105,1215,776) as "SSPanel"
+	NewPanel /K=0 /W=(30,59,1329,709) as "SSPanel"
 	DoWindow /C SSPanel
 	
 	//Text
@@ -476,10 +470,10 @@ Function Solar_Panel()
 //	Button buttonInit,fSize=12,fColor=(52428,1,20971)
 //	Button buttonCargarOnda,pos={57.00,493.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Cargar EQE Wave"
 //	Button buttonCargarOnda,fColor=(16385,65535,41303)
-	Button buttonLoadLed,pos={504.00,495.00},size={103.00,15.00},proc=ButtonProc_SimSolar,title="Cargar LedSpectre"
-	Button buttonLoadLed,fColor=(65535,16385,16385)
-	Button buttonRemoveLed,pos={504.00,524.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Remove Led\rFrom Graph"
-	Button buttonRemoveLed,fColor=(51664,44236,58982)
+//	Button buttonLoadLed,pos={504.00,495.00},size={103.00,15.00},proc=ButtonProc_SimSolar,title="Cargar LedSpectre"
+//	Button buttonLoadLed,fColor=(65535,16385,16385)
+//	Button buttonRemoveLed,pos={504.00,524.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Remove Led\rFrom Graph"
+//	Button buttonRemoveLed,fColor=(51664,44236,58982)
 	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG"
 	Button buttonLog,fColor=(16385,65535,41303)
 	
@@ -603,23 +597,51 @@ Function Solar_Panel()
 	//Check_JscEnable (-1, 0)
 	
 	//Display 
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa
+	string gname = "SSPanel#SSGraph"
+	Display/W=(0,0,594,292)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	RenameWindow #,SSGraph
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
-	ModifyGraph tick=2
-	ModifyGraph zero=2
-	ModifyGraph mirror=1
-	ModifyGraph minor=1
-	ModifyGraph standoff=0
-	Label left "%"
-	Label bottom "nm"
+	ModifyGraph /W=$gname tick=2
+	ModifyGraph /W=$gname zero=2
+	ModifyGraph /W=$gname mirror=1
+	ModifyGraph /W=$gname minor=1
+	ModifyGraph /W=$gname standoff=0
+	Label /W=$gname left "%"
+	Label /W=$gname bottom "nm"
 	//Label right "Spectrum"
-	SetAxis left*,1
-	SetAxis bottom*,2000
+	SetAxis /W=$gname left*,1
+	SetAxis /W=$gname bottom*,2000
 	
+	gname = "SSPanel#SSCurvaIV"
+	Display/W=(600,0,1200,500)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	RenameWindow #,SSCurvaIV
+//	ModifyGraph mode=3
+//	ModifyGraph lSize=2
+	ModifyGraph /W=$gname tick=2
+	ModifyGraph /W=$gname zero=2
+	ModifyGraph /W=$gname mirror=1
+	ModifyGraph /W=$gname minor=1
+	ModifyGraph /W=$gname standoff=0
 	SetDrawLayer UserFront
-	SetDrawEnv save
-	RenameWindow #,SSGraph
+	
+//	Display/W=(600,300,1330,710)/HOST=#  :Storage:sa vs :Storage:sa
+//	
+////	ModifyGraph mode=3
+////	ModifyGraph lSize=2
+//	ModifyGraph tick=2
+//	ModifyGraph zero=2
+//	ModifyGraph mirror=1
+//	ModifyGraph minor=1
+//	ModifyGraph standoff=0
+//	Label left "%"
+//	Label bottom "nm"
+//	//Label right "Spectrum"
+//	SetAxis left*,1
+//	SetAxis bottom*,2000
+//	
+//	
+//	SetDrawLayer UserFront
 	SetActiveSubwindow ##	
 	
 	//Waves drawn in the graph
@@ -649,8 +671,6 @@ Function Solar_Panel()
 	ModifyGraph /W=SSPanel#SSGraph minor=1
 //	AppendtoGraph /W=SSPanel#SSGraph wavelamp
 //	AppendtoGraph /W=SSPanel#SSGraph wavelamp
-	SetDataFolder root:SolarSimulator
-	
 end
 
 //DropDown "Yes-No" Selection
@@ -1022,4 +1042,18 @@ Function Led_Apply ()
 	print Imax
 	print Iset
 	SetDataFolder savedatafolder
+End
+
+Function Led_Disable (option)
+	variable option
+	variable channel
+		string smsg = "Do you want to disable all channels?\n"
+		DoAlert /T="Disable before Exit" 1, smsg
+		if (V_flag == 2)		//Clicked <"NO">
+			return 0
+		elseif (V_flag == 1)	//Clicked <"YES">	
+			for (channel=1;channel<13;channel+=1)	//12 channels
+				setMode (channel, 0)	//Disable
+			endfor
+		endif
 End
