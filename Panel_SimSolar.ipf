@@ -1,6 +1,14 @@
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+//static strconstant com = " "
+
+Structure SSstructure
+	variable JscObjetivo
+	variable JscMedido
+	
+EndStructure
+
 Menu "S.Solar"
 	"Display /ç",/Q, Init_SP (val = 1)
 	"Init /ñ", /Q, Init_SP ()
@@ -134,48 +142,19 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
-			wave LedLevel = root:SolarSimulator:Storage:LedLevel
-			nvar Iset = root:SolarSimulator:LedController:Iset
-			nvar Imax = root:SolarSimulator:LedController:Imax
-			nvar channel = root:SolarSimulator:LedController:channel
 			strswitch (sva.ctrlname)
 				// sva.dval -> variable value
-//Everything about led controll and allthat stuff is going to be changed soon,
-				
 				case "setvarLed470":	
-//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
 					Led_Gauss(470)
-//					Iset = Imax * LedLevel[0]	
-//					setNormalCurrent (channel, Iset)
-									
 				break
 				case "setvarLed850":
 					Led_Gauss(850)
-//					Iset = Imax * LedLevel[0]
 				break
 				case "setvarLed1540":
 					Led_Gauss(1540)
-//					wave ledwave3 = root:SolarSimulator:LedController:LED1540
-//					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
-//					Led_Control(ledwave3, ledlevel[2])
-//					Iset = Imax * LedLevel[0]
 				break
 			endswitch
 		break
-//		case 4: // Mouse wheel up
-//			strswitch (sva.ctrlname)
-//				case "setvarLedRojo":
-//				
-//				break
-//			endswitch
-//		break
-//		case 5: // Mouse wheel down
-//			strswitch (sva.ctrlname)
-//				case "setvarLedRojo":
-//					
-//				break
-//			endswitch
-//		break
 		case -1: // control being killed
 			break
 		case 6:
@@ -193,16 +172,13 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 	endif
 	switch( ba.eventCode )
 		case 2: // mouse up
-			nvar channel = root:SolarSimulator:LedController:channel
-			nvar Imax = root:SolarSimulator:LedController:Imax
-			nvar Iset = root:SolarSimulator:LedController:Iset
 			strswitch (ba.ctrlname)
 				case "buttonCargarOnda":					
 					//Load_Wave()
 				break
 				case "buttonLog":
-					print "Log_"
-					//print the structure with the current data adquisitio
+					struct ssstructure str
+					print str
 				break
 //				case "buttonLoadLed":
 //					
@@ -239,15 +215,6 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 			Variable checked = cba.checked
 			string check_name = cba.ctrlname
 			strswitch (cba.ctrlname)
-			//We will see if turn on Leeds still continues in the code. 
-//				case "CheckSetLeds":
-//					if (checked)	
-//						nvar Iset = root:SolarSimulator:LedController:Iset					
-//						TurnOn_Leds(Iset)
-//					else
-//						TurnOff_Leds()
-//					endif
-//				break
 				case "checkgraph_leds":
 					Check_PlotEnable (7, checked=checked)
 					break
@@ -281,7 +248,7 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 			
 			strswitch (pa.ctrlname)
 				case "popupCom":
-					svar com = root:SolarSimulator:Ledcontroller:com					
+					svar com = root:SolarSimulator:Storage:com					
 					if (init_leds(popStr))
 						com=popStr
 					else
@@ -289,7 +256,7 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 					endif
 				break
 				case "popupchannel":
-					nvar channel = root:SolarSimulator:LedController:channel
+					nvar channel = root:SolarSimulator:Storage:channel
 					channel = popNum
 				break
 				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
@@ -329,20 +296,7 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 						
 					endif
 				break
-			endswitch
-			
-//			if (stringmatch(paName, "popupSub*")   && str2num(paName[8])>=0 && str2num(paName[8])<=5 )
-//				wave popValues = root:SolarSimulator:Storage:popValues
-//				variable num = str2num(paName[8])
-//				if ( cmpstr (popStr,"Yes") == 0)
-////					popValues[str2num(paName[8])]=1
-//					popValues[num]=1
-//				elseif ( cmpstr (popStr, "No") == 0 )
-//					popValues[num]=0
-//				endif
-//				Pop_Action (num, popValues)
-//			endif
-			
+			endswitch			
 		break
 		case -1: // control being killed
 			break
@@ -375,7 +329,6 @@ Function Init_SolarVar ()
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
 			genDFolders(path + ":Storage")			
-			genDFolders(path + ":LedController")
 			genDFolders(path + ":GraphWaves")
 			genDFolders(path + ":Spectre")
 			//Here we have to load Sstd and Slamp manually 
@@ -407,7 +360,6 @@ Function Init_SolarVar ()
 	make /O 	root:SolarSimulator:GraphWaves:waveled470 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled850 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled1540 = Nan
-	
 			
 	//Disable/Enable Dropdowns things on the panel
 	make /N=6 /O  :Storage:popvalues
@@ -419,13 +371,6 @@ Function Init_SolarVar ()
 	wave checkwave = :Storage:checkwave
 	checkwave = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	
-	//Values of LedCurrents
-	variable/G root:SolarSimulator:LedController:Imax
-	variable/G root:SolarSimulator:LedController:Iset
-	nvar Imax = root:SolarSimulator:LedController:Imax
-	nvar Iset = root:SolarSimulator:LedController:Iset
-	Imax = 10; Iset = 0
-	
 	//Increase power of leds
 	make /N=3 /O :Storage:LedLevel
 	wave LedLevel = :Storage:LedLevel
@@ -434,16 +379,21 @@ Function Init_SolarVar ()
 	make /O :Storage:led850 = Nan
 	make /O :Storage:led1540 = Nan
 	 
+	//Values of LedCurrents
+	make /N=3	/O 		root:SolarSimulator:Storage:Iset = Nan
+	make /N=3 /O 	root:SolarSimulator:Storage:Imax 
+	wave Imax = root:SolarSimulator:Storage:Imax  
+	Imax = {1000, 1000, 1000}
 	
 	//LedChannel
-	variable/G root:SolarSimulator:LedController:channel
-	nvar channel = root:SolarSimulator:LedController:channel
-	channel = 1
+//	variable/G root:SolarSimulator:Storage:channel
+//	nvar channel = root:SolarSimulator:Storage:channel
+//	channel = 1
 	
 	//ComPort
-	string/G root:SolarSimulator:LedController:COM //Connected by serial port
-	svar com = root:SolarSimulator:LedController:COM
-	com = ""
+	string/G root:SolarSimulator:Storage:COM //Connected by serial port
+	svar com = root:SolarSimulator:Storage:COM
+	com = " "
 	
 	//**********The Solar_Panel could be launched next**********//
 End
@@ -467,8 +417,8 @@ Function Solar_Panel()
 	wave checkwave = :Storage:checkwave
 	
 	//Values of LedCurrents
-	nvar Imax = root:SolarSimulator:LedController:Imax
-	nvar Iset = root:SolarSimulator:LedController:Iset
+	wave Imax = root:SolarSimulator:Storage:Imax
+	wave Iset = root:SolarSimulator:Storage:Iset
 	
 	//Leds	
 	SetDataFolder :Storage
@@ -487,18 +437,10 @@ Function Solar_Panel()
 	variable i
 	
 	//It has been created  when Leds Procedure initialize. 
-	nvar channel = root:SolarSimulator:LedController:channel
-		
-	PauseUpdate; Silent 1		// building window...
+//	nvar channel = root:SolarSimulator:Storage:channel
+	svar com = root:SolarSimulator:Storage:com
 	
-	//Paths
-//	Newpath/Q/O  path_Sref, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectros_referencia"
-//	Newpath/Q/O  path_Slamp, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\espectro_simuladorSolar"
-//	NewPath/Q/O 	path_SLeds, "C:\Users\III-V\Documents\Luis III-V\Prácticas Empresa\Igor\Waves_SS\Espectros_LEDS"
-//	
-//	Newpath/Q/O  path_Sref, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Sref"
-//	Newpath/Q/O  path_Slamp, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\Slamp"
-//	NewPath/Q/O 	path_SLeds, "D:\Luis\UNIVERSIDAD\4º AÑO\Prácticas Empresa\Igor\Waves\SLeds"
+	PauseUpdate; Silent 1		// building window...
 	
 	//Panel
 	DoWindow/K SSPanel; DelayUpdate
@@ -574,7 +516,7 @@ Function Solar_Panel()
 	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""
 	
 	PopupMenu popupCom,pos={142.00,502.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
-	PopupMenu popupCom,mode=1,popvalue=" ",value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
+	PopupMenu popupCom,mode=1,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
 	PopupMenu popupSubREF0,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
@@ -658,7 +600,7 @@ Function Solar_Panel()
 	for (i = 0; i<6; i++)
 		Pop_Action (i, popValues)
 	endfor 
-	Check_JscEnable (-1, 0)
+	//Check_JscEnable (-1, 0)
 	
 	//Display 
 	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa
@@ -797,21 +739,25 @@ Function Check_PlotEnable (id[, checked])
 				RemovefromGraph /Z /W=SSPanel#SSGraph wavespectre
 			endif
 		elseif (id == 7)
+			SetDataFolder path
 			string led470, led850, led1540
 			led470 = "waveled470"
 			led850 = "waveled850"
 			led1540 = "waveled1540"
 			wave waveled470 = $led470
 			wave waveled850 = $led850
-			wave waveled1540 = $led1540		
+			wave waveled1540 = $led1540	
 			if (checked)
 				Draw (waveled470, 7)
 				Draw (waveled850, 7)
 				Draw (waveled1540, 7)
+				//This is only when clicking the checkbox (On or off)
+				TurnOn_Leds()
 			else
 				RemovefromGraph /Z /W=SSPanel#SSGraph waveled470
 				RemovefromGraph /Z /W=SSPanel#SSGraph waveled850
 				RemovefromGraph /Z /W=SSPanel#SSGraph waveled1540
+				TurnOff_Leds()
 			endif
 		endif
 		
@@ -920,12 +866,13 @@ End
 //Generates the different led waves gradient from the input values ( 0% --- 100% )
 Function Led_Gauss (num)
 	variable num	
-	string path = "root:SolarSimulator:Storage"
+	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
+	SetDataFolder path + ":Storage"
 	wave led470, led850, led1540;
-	wave ledlevel
-	SetDataFolder "root:SolarSimulator:GraphWaves"
+	wave ledlevel	
+	wave Imax, Iset;
+	SetDataFolder path + ":GraphWaves"
 	wave waveled470, waveled850, waveled1540;	
 	
 	//Originally led850 spectrum is not scaled equally as the others
@@ -937,16 +884,21 @@ Function Led_Gauss (num)
 	case 470:
 		Duplicate/O led470, waveled470
 		waveled470 = led470 * ledlevel[0] / waveMax (led470) 
+		Iset[0] = Imax[0] * ledlevel[0]
 		break
 	case 850:
 		Duplicate/O led850, waveled850
 		waveled850 = led850 * ledlevel[1] / waveMax (led850)
+		Iset[1] = Imax[1] * ledlevel[1]
 		break
 	case 1540:
 		Duplicate/O led1540, waveled1540
 		waveled1540 = led1540 * ledlevel[2] / waveMax (led1540)  
+		Iset[2] = Imax[2] * ledlevel[2]
 		break
 	endswitch
+	
+	Led_Apply()
 	
 	SetDataFolder savedatafolder	
 End
@@ -1033,78 +985,41 @@ Function num2id (num)
 			return 10
 	endswitch
 End
+
 	
 //Tema Leds//******************
-
-//Buttons (por si hacemos un panel más adelante, tenerlo todo aquí )
-
-//				case "buttonApplyCurrent":
-//					setNormalCurrent (channel, Iset)
-//				break
-//				case "buttonSetParameters":
-//					//Defect parameters to start 
-//					Imax = 100
-//					Iset = 50
-//					setNormalParameters (channel, Imax, Iset)
-//				break
-//				case "buttonMode1":
-//					//prueba (channel, 100, 60)
-//					setMode (channel, 1)
-//					//	MODE: 	 	0 	DISABLE
-//					//				1	NORMAL
-//					//				2	STROBE 
-//				break
-//				case "buttonMode0":
-//					//Disable
-//					setMode (channel, 0)
-//				break
-//				case "buttonInit":
-//					svar com = root:SolarSimulator:com
-//					init_Leds (com)
-//				break
-
-// Tema Deslizaderas numericas
-
-//	case "setvarLed1":	
-//					wave ledwave1 = root:SolarSimulator:LedController:LED470
-////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel1
-//					Led_Control(ledwave1, ledlevel[0])
-//					Iset = Imax * LedLevel[0]	
-//					setNormalCurrent (channel, Iset)
-//									
-//				break
-//				case "setvarLed2":
-//					wave ledwave2 = root:SolarSimulator:LedController:LED850
-////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel2
-//					Led_Control(ledwave2, ledlevel[1])
-//					Iset = Imax * LedLevel[0]
-//				break
-//				case "setvarLed3":
-//					wave ledwave3 = root:SolarSimulator:LedController:LED1540
-////					nvar ledlevel = root:SolarSimulator:Storage:LedLevel3
-//					Led_Control(ledwave3, ledlevel[2])
-//					Iset = Imax * LedLevel[0]
-
 //Switching on and off
-
-//Function TurnOn_Leds(Iset)
-//	variable Iset
-//	//Normal Mode
-//	setMode (1, 1)
+Function TurnOn_Leds()
+//Normal Mode	
+	string sdf = GetDataFolder (1)
+	SetDataFolder "root:SolarSimulator:Storage"
+	wave Imax
+//	setMode (1, 1)	//Normal mode
 //	setMode (2, 1)
 //	setMode (3, 1)
-////	setNormalParameters (1, 1000, Iset)
-////	setNormalParameters (2, 1000, Iset)
-////	setNormalParameters (3, 1000, Iset)
-//	setNormalCurrent (1, Iset)
-//	setNormalCurrent (2, Iset)
-//	setNormalCurrent (3, Iset)
-//	
-//End
-//
-//Function TurnOff_Leds()
-//	variable channel	
-//	for (channel=1;channel<4;channel+=1)	//12 channels, 3 used
+//	setNormalParameters (1, Imax[0], 0)
+//	setNormalParameters (2, Imax[1], 0)
+//	setNormalParameters (3, Imax[2], 0)
+	SetDataFolder sdf
+
+End
+
+Function TurnOff_Leds()
+	variable channel	
+	for (channel=1;channel<4;channel+=1)	//12 channels, 3 used
 //		setMode (channel, 0)	//Disable
-//	endfor
-//End
+	endfor
+End
+
+Function Led_Apply ()
+	
+	string savedatafolder = GetDataFolder(1)
+	SetDataFolder "root:SolarSimulator:Storage"
+	wave Iset, Imax
+//	setNormalCurrent (1, Iset[0])
+//	setNormalCurrent (2, Iset[1])
+//	setNormalCurrent (3, Iset[2])	
+	print Imax
+	print Iset
+	SetDataFolder savedatafolder
+End
