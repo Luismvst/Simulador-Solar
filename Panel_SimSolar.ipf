@@ -814,6 +814,7 @@ Function Check_JscEnable (id, checked)
 			ValDisplay $valdisp2, disable = 0
 			//Lets draw only the correspondant EQE waves
 			Check_PlotEnable (id)
+			
 		endif
 	endfor
 	SetDataFolder savedatafolder
@@ -1057,3 +1058,59 @@ Function Led_Disable (option)
 			endfor
 		endif
 End
+
+//Measure Jsc -> DIFFERENT WAYS TO DO IT
+
+////IV Procedure
+//configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
+//jsc=-1*measureI_K2600(deviceID,channel)
+//jsc*=(1e3/darea)
+//
+////III-V Procedure
+//jsc = qe2jsc (qe,"AMG173DIRECT_w",1)
+//
+////My own Function 
+//Function qe2JscSS (qe, specStr)
+//	wave qe 
+//	string specStr
+//	
+//	strswitch(specStr)
+//	case "am0": //Space
+//		wave specw=root:SolarSimulator:Spectre:Sref:am0
+//	break
+//	case "am15g_G173": // Global 
+//		wave specw=root:SolarSimulator:Spectre:Sref:am15g_G173
+//	break		
+//	case "am15d_G173": // Direct 900 w/m2
+//		wave specw=root:SolarSimulator:Spectre:Sref:am15d_G173
+//	break		
+//	case "am15dn": // Low-AOD, 1000 w/m2
+//		wave specw=root:SolarSimulator:Spectre:Sref:am15dn
+//	break	
+//	case "AMG173DIRECT": // Direct normalized to 1000 w/m2.
+//		wave specw=root:SolarSimulator:Spectre:Sref:AMG173DIRECT
+//	break
+//	case "AMG173GLOBAL": // Direct normalized to 1000 w/m2.
+//		wave specw=root:SolarSimulator:Spectre:Sref:AMG173GLOBAL
+//	break
+//	case "xe": // Direct normalized to 1000 w/m2.
+//		wave specw=root:SolarSimulator:Spectre:Slamp:XT10open2012
+//	break				
+//endswitch
+//
+//	variable numPoints=(numpnts(qe)-1)*deltax(qe)+1
+//	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
+//	Duplicate /O tmpw,sr
+//	
+//	sr=(1.602e-19*tmpw*x*1e-9)/(6.62606957e-34*2.99792458e8) // mA / W
+//	
+//	sr*=specw(x)/10
+//	jsc=area(sr)
+////	jsc = area ( src, rangex1, rangex2) //between a certain point-range
+////	integrate/t sr
+////	jsc=sr[numpnts(sr)-1]
+//	wavekiller("tmpw")
+//	wavekiller("sr")
+//
+//	return jsc
+//End
