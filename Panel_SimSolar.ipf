@@ -4,18 +4,24 @@
 //static strconstant com = " "
 
 Structure SSstructure
-	variable JscObjetivo
-	variable JscMedido
-	
+	string SpectreObj, SpectreLamp;
+	string qedut1, qedut2, qedut3, qedut4, qedut5;
+	string qeref1, qeref2, qeref3, qeref4, qeref5;
 EndStructure
 
 Menu "S.Solar"
 	"Display /ç",/Q, Init_SP (val = 1)
 	"Init /ñ", /Q, Init_SP ()
+	"KillPanel /´", /Q, kill()
 End
 
+//This kills the actual SSPanel
+Function kill ()
+	KillWindow/Z SSpanel
+	print "Panel dead"
+end
 //This function does load from the current experiment waves
-Function Load (fname, num)
+Function/S Load (fname, num)
 	//num is necessary to know which position of SubCell is the wave going to be (wavesubdut"0")
 	//fname is necessary to load and display it from the dropdown on the graph
 	//
@@ -72,6 +78,7 @@ Function Load (fname, num)
 		string realname = nameofwave (destwave)
 		ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
 	endif
+	return wavepath
 	//********************************
 	Setdatafolder savedatafolder
 end
@@ -94,11 +101,11 @@ Function Draw (trace, id)
 		switch (id)
 		case 0:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 0)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(22806,20185,30670)
 			break
 		case 1:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0, 65535, 0)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(43253,2359,56098)
 			break
 		case 2:
 			Appendtograph /W=SSPanel#SSGraph trace
@@ -106,11 +113,11 @@ Function Draw (trace, id)
 			break
 		case 3:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 0)
 			break
 		case 4:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 65535, 65535)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 65535)
 			break
 		case 5:
 			Appendtograph /W=SSPanel#SSGraph trace
@@ -124,7 +131,17 @@ Function Draw (trace, id)
 			break
 		case 7:	//led spectre
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+			strswitch (realname)
+			case "waveled470":
+				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)
+				break
+			case "waveled850":
+				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)
+				break
+			case "waveled1540":
+				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(3146,5243,45875)
+				break
+			endswitch
 			break
 		endswitch
 			ModifyGraph /W=SSPanel#SSGraph  tick=2
@@ -177,8 +194,10 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					//Load_Wave()
 				break
 				case "buttonLog":
-					struct ssstructure str
-					print str
+					wave JscObj = :Storage:JscObj
+					wave JscMeas = :Storage:JscMeas
+					print jscObj
+					print JscMeas
 				break
 				case "buttonClean":
 					Clean()
@@ -219,6 +238,7 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 					variable id = str2num (check_name[5])
 					if (id>=0 && id<=5)
 						Check_JscEnable(id, checked)
+						//CalcularJscaquicreo
 					endif
 				endif
 				break
@@ -233,12 +253,13 @@ End
 
 Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
+	struct ssstructure s
 	switch( pa.eventCode )
 		case 2: // mouse up
 			Variable popNum = pa.popNum
 			String popStr = pa.popStr
 			String paName = pa.ctrlname
-			
+			string wavepath
 			strswitch (pa.ctrlname)
 				case "popupCom":
 					svar com = root:SolarSimulator:Storage:com					
@@ -255,16 +276,17 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
-					Load (popStr, 12)
-				
+					s.spectreObj = Load (popStr, 12)
+					
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)					
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-					Load (popStr, 13)
+					s.spectrelamp = Load (popStr, 13)
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
 						variable num, id
+						string aux
 						if (str2num(paName[8])>=0 && str2num(paName[8])<=5)
 							wave popValues = root:SolarSimulator:Storage:popValues
 							num = str2num(paName[8])
@@ -278,12 +300,14 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
 							id = str2num(paName[11])	
 							num = id2num (id, 1) //1 for dut
-							Load (popStr, num )						
+							aux = "s.qedut"+paName[11]							
+							aux = Load (popStr, num )						
 							
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
 							id = str2num(paName[11])
 							num = id2num (id, 0) //0 for ref
-							Load (popStr, num  )
+							aux = "s.qeref"+paName[11]
+							aux = Load (popStr, num  )
 							
 						endif
 						
@@ -388,6 +412,10 @@ Function Init_SolarVar ()
 	svar com = root:SolarSimulator:Storage:COM
 	com = " "
 	
+	//Jsc
+	make /N=6 /O root:SolarSimulator:Storage:JscObj = Nan
+	make /N=6 /O root:SolarSimulator:Storage:JscMeas = Nan
+	
 	//**********The Solar_Panel could be launched next**********//
 End
 
@@ -432,6 +460,10 @@ Function Solar_Panel()
 	//It has been created  when Leds Procedure initialize. 
 //	nvar channel = root:SolarSimulator:Storage:channel
 	svar com = root:SolarSimulator:Storage:com
+	
+	//Jsc
+	wave JscMeas = root:SolarSimulator:Storage:JscMeas
+	wave JscObj = root:SolarSimulator:Storage:JscObj
 	
 	PauseUpdate; Silent 1		// building window...
 	
@@ -566,29 +598,29 @@ Function Solar_Panel()
 	
 	//ValDisplay
 	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[0]"
 	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[1]"
 	ValDisplay valdispJREF2,pos={488.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[2]"
 	ValDisplay valdispJREF3,pos={488.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[3]"
 	ValDisplay valdispJREF4,pos={488.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[4]"
 	ValDisplay valdispJREF5,pos={488.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[5]"
 	ValDisplay valdispJ0,pos={573.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[0]"
 	ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[1]"
 	ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[2]"
 	ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[3]"
 	ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[4]"
 	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[5]"
 	
 	//Functions to initialize panel
 	for (i = 0; i<6; i++)
@@ -614,16 +646,16 @@ Function Solar_Panel()
 	SetAxis /W=$gname bottom*,2000
 	
 	gname = "SSPanel#SSCurvaIV"
-	Display/W=(600,0,1200,500)/HOST=SSPanel  :Storage:sa vs :Storage:sa
-	RenameWindow #,SSCurvaIV
-//	ModifyGraph mode=3
-//	ModifyGraph lSize=2
-	ModifyGraph /W=$gname tick=2
-	ModifyGraph /W=$gname zero=2
-	ModifyGraph /W=$gname mirror=1
-	ModifyGraph /W=$gname minor=1
-	ModifyGraph /W=$gname standoff=0
-	SetDrawLayer UserFront
+//	Display/W=(600,0,1200,500)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+//	RenameWindow #,SSCurvaIV
+////	ModifyGraph mode=3
+////	ModifyGraph lSize=2
+//	ModifyGraph /W=$gname tick=2
+//	ModifyGraph /W=$gname zero=2
+//	ModifyGraph /W=$gname mirror=1
+//	ModifyGraph /W=$gname minor=1
+//	ModifyGraph /W=$gname standoff=0
+//	SetDrawLayer UserFront
 	
 //	Display/W=(600,300,1330,710)/HOST=#  :Storage:sa vs :Storage:sa
 //	
@@ -1070,47 +1102,48 @@ End
 //jsc = qe2jsc (qe,"AMG173DIRECT_w",1)
 //
 ////My own Function 
-//Function qe2JscSS (qe, specStr)
-//	wave qe 
-//	string specStr
-//	
-//	strswitch(specStr)
-//	case "am0": //Space
-//		wave specw=root:SolarSimulator:Spectre:Sref:am0
-//	break
-//	case "am15g_G173": // Global 
-//		wave specw=root:SolarSimulator:Spectre:Sref:am15g_G173
-//	break		
-//	case "am15d_G173": // Direct 900 w/m2
-//		wave specw=root:SolarSimulator:Spectre:Sref:am15d_G173
-//	break		
-//	case "am15dn": // Low-AOD, 1000 w/m2
-//		wave specw=root:SolarSimulator:Spectre:Sref:am15dn
-//	break	
-//	case "AMG173DIRECT": // Direct normalized to 1000 w/m2.
-//		wave specw=root:SolarSimulator:Spectre:Sref:AMG173DIRECT
-//	break
-//	case "AMG173GLOBAL": // Direct normalized to 1000 w/m2.
-//		wave specw=root:SolarSimulator:Spectre:Sref:AMG173GLOBAL
-//	break
-//	case "xe": // Direct normalized to 1000 w/m2.
-//		wave specw=root:SolarSimulator:Spectre:Slamp:XT10open2012
-//	break				
-//endswitch
-//
-//	variable numPoints=(numpnts(qe)-1)*deltax(qe)+1
-//	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
-//	Duplicate /O tmpw,sr
-//	
-//	sr=(1.602e-19*tmpw*x*1e-9)/(6.62606957e-34*2.99792458e8) // mA / W
-//	
-//	sr*=specw(x)/10
-//	jsc=area(sr)
-////	jsc = area ( src, rangex1, rangex2) //between a certain point-range
-////	integrate/t sr
-////	jsc=sr[numpnts(sr)-1]
-//	wavekiller("tmpw")
-//	wavekiller("sr")
-//
-//	return jsc
-//End
+Function qe2JscSS (qe, specStr)
+	wave qe 
+	string specStr
+	variable jsc
+	
+	strswitch(specStr)
+	case "am0": //Space
+		wave specw=root:SolarSimulator:Spectre:Sref:am0
+	break
+	case "am15g_G173": // Global 
+		wave specw=root:SolarSimulator:Spectre:Sref:am15g_G173
+	break		
+	case "am15d_G173": // Direct 900 w/m2
+		wave specw=root:SolarSimulator:Spectre:Sref:am15d_G173
+	break		
+	case "am15dn": // Low-AOD, 1000 w/m2
+		wave specw=root:SolarSimulator:Spectre:Sref:am15dn
+	break	
+	case "AMG173DIRECT": // Direct normalized to 1000 w/m2.
+		wave specw=root:SolarSimulator:Spectre:Sref:AMG173DIRECT
+	break
+	case "AMG173GLOBAL": // Direct normalized to 1000 w/m2.
+		wave specw=root:SolarSimulator:Spectre:Sref:AMG173GLOBAL
+	break
+	case "xe": // Direct normalized to 1000 w/m2.
+		wave specw=root:SolarSimulator:Spectre:Slamp:XT10open2012
+	break				
+endswitch
+
+	variable numPoints=(numpnts(qe)-1)*deltax(qe)+1
+	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
+	Duplicate /O tmpw,sr
+	
+	sr=(1.602e-19*tmpw*x*1e-9)/(6.62606957e-34*2.99792458e8) // mA / W
+	
+	sr*=specw(x)/10
+	jsc=area(sr)
+//	jsc = area ( src, rangex1, rangex2) //between a certain point-range
+//	integrate/t sr
+//	jsc=sr[numpnts(sr)-1]
+	wavekiller("tmpw")
+	wavekiller("sr")
+
+	return jsc
+End
