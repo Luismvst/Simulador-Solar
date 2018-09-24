@@ -18,7 +18,7 @@ End
 //This kills the actual SSPanel
 Function kill ()
 	KillWindow/Z SSpanel
-	print "Panel dead"
+//	print "Panel dead"
 end
 //This function does load from the current experiment waves
 Function/S Load (fname, num)
@@ -61,9 +61,9 @@ Function/S Load (fname, num)
 	elseif ( !mod (num, 2) && num<12)//type: dut
 		destwavename = "wavesubref"+num2str(id)		
 	elseif (num == 12 )
-		destwavename = "wavelamp"
-	elseif (num == 13 )
 		destwavename = "wavespectre"
+	elseif (num == 13 )
+		destwavename = "wavelamp"
 	endif
 	//This is necessary becouse duplicate function creates the new wave in the dfr of the originwave
 	destwavename = current + ":" + destwavename
@@ -74,13 +74,13 @@ Function/S Load (fname, num)
 		SetScale /I x, 0, 2000 , destwave
 	endif
 	/////////****we will see this in the future***///
-	if (!Draw (destwave, id))
-		string realname = nameofwave (destwave)
-		ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
-	endif
-	return wavepath
-	//********************************
+	//It has been reviewed, my decision is to comment Draw at Load.
+//	if (!Draw (destwave, id))
+//		string realname = nameofwave (destwave)
+//		ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
+//	endif	
 	Setdatafolder savedatafolder
+	return wavepath
 end
 
 Function Draw (trace, id)
@@ -194,10 +194,12 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					//Load_Wave()
 				break
 				case "buttonLog":
-					wave JscObj = :Storage:JscObj
-					wave JscMeas = :Storage:JscMeas
-					print jscObj
-					print JscMeas
+//					wave JscObj = :Storage:JscObj
+//					wave JscMeas = :Storage:JscMeas
+//					print jscObj
+//					print JscMeas
+					struct ssstructure s
+					print s
 				break
 				case "buttonClean":
 					Clean()
@@ -236,9 +238,11 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 				default:
 				if (stringmatch (check_name, "Check*"))
 					variable id = str2num (check_name[5])
-					if (id>=0 && id<=5)
+					if (id>=0 && id<=5)			
+						if(checked)
+							Calc_Jsc(id)
+						endif
 						Check_JscEnable(id, checked)
-						//CalcularJscaquicreo
 					endif
 				endif
 				break
@@ -251,9 +255,8 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 	return 0
 End
 
-Function PopMenuProc_SimSolar(pa) : PopupMenuControl
+Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
-	struct ssstructure s
 	switch( pa.eventCode )
 		case 2: // mouse up
 			Variable popNum = pa.popNum
@@ -276,17 +279,16 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
-					s.spectreObj = Load (popStr, 12)
+					wavepath = Load (popStr, 12)
 					
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)					
 				break
 				case "popupSubSlamp":	//Cargar Slamp
-					s.spectrelamp = Load (popStr, 13)
+					wavepath = Load (popStr, 13)
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
 						variable num, id
-						string aux
 						if (str2num(paName[8])>=0 && str2num(paName[8])<=5)
 							wave popValues = root:SolarSimulator:Storage:popValues
 							num = str2num(paName[8])
@@ -299,16 +301,14 @@ Function PopMenuProc_SimSolar(pa) : PopupMenuControl
 						endif
 						if (stringmatch (paName, "popupSubDUT*"))//Cargar EQEdut
 							id = str2num(paName[11])	
-							num = id2num (id, 1) //1 for dut
-							aux = "s.qedut"+paName[11]							
-							aux = Load (popStr, num )						
+							num = id2num (id, 1) //1 for dut						
+							wavepath = Load (popStr, num )						
 							
 						elseif (stringmatch (paName, "popupSubREF*"))//Cargar EQEref	
 							id = str2num(paName[11])
 							num = id2num (id, 0) //0 for ref
-							aux = "s.qeref"+paName[11]
-							aux = Load (popStr, num  )
-							
+							wavepath = Load (popStr, num  )
+							//Wavepath is just for debugging, it will be deleted.
 						endif
 						
 					endif
@@ -413,8 +413,12 @@ Function Init_SolarVar ()
 	com = " "
 	
 	//Jsc
-	make /N=6 /O root:SolarSimulator:Storage:JscObj = Nan
-	make /N=6 /O root:SolarSimulator:Storage:JscMeas = Nan
+	make /N=6 /O root:SolarSimulator:Storage:JscObj 
+	make /N=6 /O root:SolarSimulator:Storage:JscMeas 
+	wave JscObj = root:SolarSimulator:Storage:JscObj 
+	wave JscMeas = root:SolarSimulator:Storage:JscMeas 
+	JscMeas = {0,0,0,0,0,0}
+	JscObj = 0
 	
 	//**********The Solar_Panel could be launched next**********//
 End
@@ -523,7 +527,7 @@ Function Solar_Panel()
 //	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
 
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSref,mode=100,value= #"QEWaveList(1)"
+	PopupMenu popupSubSref,mode=100,popvalue=" ",value= #"QEWaveList(1)"
 	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"QEWaveList(2)"
 
@@ -598,29 +602,29 @@ Function Solar_Panel()
 	
 	//ValDisplay
 	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[0]"
+	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
 	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[1]"
+	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(1)"
 	ValDisplay valdispJREF2,pos={488.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[2]"
+	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(2)"
 	ValDisplay valdispJREF3,pos={488.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[3]"
+	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(3)"
 	ValDisplay valdispJREF4,pos={488.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[4]"
+	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(4)"
 	ValDisplay valdispJREF5,pos={488.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscObj[5]"
+	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(5)"
 	ValDisplay valdispJ0,pos={573.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[0]"
+	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(0)"
 	ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[1]"
+	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
 	ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[2]"
+	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
 	ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[3]"
+	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
 	ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[4]"
+	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
 	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},value= #"0",disable=2,value = #"JscMeas[5]"
+	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
 	
 	//Functions to initialize panel
 	for (i = 0; i<6; i++)
@@ -831,10 +835,13 @@ Function Check_JscEnable (id, checked)
 	string checkX
 	string valdisp1
 	string valdisp2
+	string getJscObj, getJscMeas;
 	for (i=0;i<6; i++)
 		checkX = "check" + num2str(i)
 		valdisp1 = "valdispJREF" + num2str(i)
 		valdisp2 = "valdispJ" + num2str(i)
+		getJscObj = "get_JscObj("+num2str(i)+")"
+		getJscMeas = "get_JscMeas("+num2str(i)+")"
 		if (id != i || !checked)
 			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
 			ValDisplay $valdisp1, disable = 2
@@ -842,8 +849,8 @@ Function Check_JscEnable (id, checked)
 		elseif (checked)
 			//I dont know why color does not change when checked.
 			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
-			ValDisplay $valdisp1, disable = 0
-			ValDisplay $valdisp2, disable = 0
+			ValDisplay $valdisp1, disable = 0,value = #getJscObj
+			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
 			//Lets draw only the correspondant EQE waves
 			Check_PlotEnable (id)
 			
@@ -1102,34 +1109,14 @@ End
 //jsc = qe2jsc (qe,"AMG173DIRECT_w",1)
 //
 ////My own Function 
-Function qe2JscSS (qe, specStr)
-	wave qe 
-	string specStr
+Function qe2JscSS (qe, specw)
+	wave qe , specw
 	variable jsc
-	
-	strswitch(specStr)
-	case "am0": //Space
-		wave specw=root:SolarSimulator:Spectre:Sref:am0
-	break
-	case "am15g_G173": // Global 
-		wave specw=root:SolarSimulator:Spectre:Sref:am15g_G173
-	break		
-	case "am15d_G173": // Direct 900 w/m2
-		wave specw=root:SolarSimulator:Spectre:Sref:am15d_G173
-	break		
-	case "am15dn": // Low-AOD, 1000 w/m2
-		wave specw=root:SolarSimulator:Spectre:Sref:am15dn
-	break	
-	case "AMG173DIRECT": // Direct normalized to 1000 w/m2.
-		wave specw=root:SolarSimulator:Spectre:Sref:AMG173DIRECT
-	break
-	case "AMG173GLOBAL": // Direct normalized to 1000 w/m2.
-		wave specw=root:SolarSimulator:Spectre:Sref:AMG173GLOBAL
-	break
-	case "xe": // Direct normalized to 1000 w/m2.
-		wave specw=root:SolarSimulator:Spectre:Slamp:XT10open2012
-	break				
-endswitch
+	variable num
+	//Identify if the wave contains Nan on its first positin.
+	if ( numtype (qe[0]) == 2 || numtype (specw[0]) == 2) 
+		return 0
+	endif
 
 	variable numPoints=(numpnts(qe)-1)*deltax(qe)+1
 	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
@@ -1147,3 +1134,48 @@ endswitch
 
 	return jsc
 End
+
+Function Calc_Jsc(id)
+	variable id
+	wave jscObj = root:SolarSimulator:Storage:jscObj
+	wave wavespectre = root:SolarSimulator:GraphWaves:wavespectre
+	switch (id)
+	case 0:
+		wave qe = root:SolarSimulator:GraphWaves:wavesubref0		
+		jscObj[0] = qe2JscSS (qe, wavespectre)
+		break
+	case 1:
+		wave qe = root:SolarSimulator:GraphWaves:wavesubref1
+		jscObj[1] = qe2JscSS (qe, wavespectre)
+		break
+	case 2:
+		wave qe = root:SolarSimulator:GraphWaves:wavesubref2		
+		jscObj[2] = qe2JscSS (qe, wavespectre)
+		break
+	case 3:
+		wave qe = root:SolarSimulator:GraphWaves:wavesubref3		
+		jscObj[3] = qe2JscSS (qe, wavespectre)
+		break
+	case 4:
+		wave qe = root:SolarSimulator:GraphWaves:wavesubref4		
+		jscObj[4] = qe2JscSS (qe, wavespectre)
+		break
+	case 5:
+		wave qe = root:SolarSimulator:GraphWaves:wavesubref5		
+		jscObj[5] = qe2JscSS (qe, wavespectre)
+		break
+	endSwitch
+End
+
+Function get_JscObj (i)
+	variable i
+	wave JscObj = root:SolarSimulator:Storage:JscObj
+	return JscObj[i]
+end
+
+Function get_JscMeas (i)
+	variable i
+	wave JscMeas = root:SolarSimulator:Storage:JscMeas
+	return JscMeas(i)
+end
+		
