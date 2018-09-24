@@ -3,12 +3,6 @@
 
 //static strconstant com = " "
 
-Structure SSstructure
-	string SpectreObj, SpectreLamp;
-	string qedut1, qedut2, qedut3, qedut4, qedut5;
-	string qeref1, qeref2, qeref3, qeref4, qeref5;
-EndStructure
-
 Menu "S.Solar"
 	"Display /ç",/Q, Init_SP (val = 1)
 	"Init /ñ", /Q, Init_SP ()
@@ -193,13 +187,12 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonCargarOnda":					
 					//Load_Wave()
 				break
-				case "buttonLog":
-//					wave JscObj = :Storage:JscObj
-//					wave JscMeas = :Storage:JscMeas
-//					print jscObj
-//					print JscMeas
-					struct ssstructure s
-					print s
+//				case "buttonLog":
+				case "buttonLedApply":
+					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
+					if (ledchecked)
+						Led_Apply()		
+					endif			
 				break
 				case "buttonClean":
 					Clean()
@@ -230,6 +223,8 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 			string check_name = cba.ctrlname
 			strswitch (cba.ctrlname)
 				case "checkgraph_leds":
+					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
+					ledchecked = checked
 					Check_PlotEnable (7, checked=checked)
 					break
 				case "checkgraph_spectre":
@@ -239,10 +234,10 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 				if (stringmatch (check_name, "Check*"))
 					variable id = str2num (check_name[5])
 					if (id>=0 && id<=5)			
-						if(checked)
-							Calc_Jsc(id)
-						endif
 						Check_JscEnable(id, checked)
+						if(checked)
+							Calc_JscObj(id)
+						endif
 					endif
 				endif
 				break
@@ -262,7 +257,7 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 			Variable popNum = pa.popNum
 			String popStr = pa.popStr
 			String paName = pa.ctrlname
-			string wavepath
+			string wavepath//useless.
 			strswitch (pa.ctrlname)
 				case "popupCom":
 					svar com = root:SolarSimulator:Storage:com					
@@ -387,6 +382,7 @@ Function Init_SolarVar ()
 	make /N=10 /O :Storage:Checkwave
 	wave checkwave = :Storage:checkwave
 	checkwave = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	variable /G :Storage:ledchecked 
 	
 	//Increase power of leds
 	make /N=3 /O :Storage:LedLevel
@@ -440,6 +436,7 @@ Function Solar_Panel()
 	
 	//Display traces on graph depending on the checkbox selected
 	wave checkwave = :Storage:checkwave
+	nvar ledchecked = :Storage:ledchecked
 	
 	//Values of LedCurrents
 	wave Imax = root:SolarSimulator:Storage:Imax
@@ -512,6 +509,8 @@ Function Solar_Panel()
 //	Button buttonRemoveLed,fColor=(51664,44236,58982)
 	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG"
 	Button buttonLog,fColor=(16385,65535,41303)
+	Button buttonLedApply,pos={506.00,501.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="APPLY"
+	Button buttonLedApply,fColor=(16385,65535,41303)
 	
 	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
 	Button buttonClean,fColor=(65535,65532,16385)
@@ -956,9 +955,7 @@ Function Led_Gauss (num)
 		waveled1540 = led1540 * ledlevel[2] / waveMax (led1540)  
 		Iset[2] = Imax[2] * ledlevel[2]
 		break
-	endswitch
-	
-	Led_Apply()
+	endswitch	
 	
 	SetDataFolder savedatafolder	
 End
@@ -1135,7 +1132,7 @@ Function qe2JscSS (qe, specw)
 	return jsc
 End
 
-Function Calc_Jsc(id)
+Function Calc_JscObj(id)
 	variable id
 	wave jscObj = root:SolarSimulator:Storage:jscObj
 	wave wavespectre = root:SolarSimulator:GraphWaves:wavespectre
@@ -1165,6 +1162,15 @@ Function Calc_Jsc(id)
 		jscObj[5] = qe2JscSS (qe, wavespectre)
 		break
 	endSwitch
+End
+
+Function calc_JscMeas (id)
+	variable id
+	variable channel 
+//configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
+//jsc=-1*measureI_K2600(deviceID,channel)
+//jsc*=(1e3/darea)
+	
 End
 
 Function get_JscObj (i)
