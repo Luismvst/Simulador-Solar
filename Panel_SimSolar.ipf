@@ -1,16 +1,16 @@
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-
+#include "gpibcom"
 //static strconstant com = " "
 
 Menu "S.Solar"
 	"Display /ç",/Q, Init_SP (val = 1)
 	"Init /ñ", /Q, Init_SP ()
-	"KillPanel /´", /Q, kill()
+	"KillPanel /´", /Q, killPanel()
 End
 
 //This kills the actual SSPanel
-Function kill ()
+Function killPanel ()
 	KillWindow/Z SSpanel
 //	print "Panel dead"
 end
@@ -225,7 +225,7 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 				case "checkgraph_leds":
 					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
 					ledchecked = checked
-					Check_PlotEnable (7, checked=checked)
+					Check_PlotEnable (7, checked=checked)	
 					break
 				case "checkgraph_spectre":
 					Check_PlotEnable (6, checked=checked)
@@ -340,7 +340,8 @@ Function Init_SolarVar ()
 			return NaN
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
-			genDFolders(path + ":Storage")			
+			genDFolders(path + ":Storage")	
+//			genDFolders(path + ":Storage:Jsc-K2600")
 			genDFolders(path + ":GraphWaves")
 			genDFolders(path + ":Spectre")
 			//Here we have to load Sstd and Slamp manually 
@@ -350,7 +351,7 @@ Function Init_SolarVar ()
 		endif
 	endif
 	
-	SetDataFolder root:SolarSimulator
+	SetDataFolder path
 	//Initial wave for #GraphPanel
 	make /N=1 /O		root:SolarSimulator:Storage:sa
 	//reference to draw in the scene before even give them the value of the selected subcell in the panel.
@@ -416,7 +417,28 @@ Function Init_SolarVar ()
 	JscMeas = {0,0,0,0,0,0}
 	JscObj = 0
 	
-	//**********The Solar_Panel could be launched next**********//
+	SetDataFolder ":Storage"
+	variable/G darea
+	variable/G iarea
+	darea = 0
+	
+	//Keithley K2600
+//	SetDataFolder ":Storage:Jsc-K2600"	
+	Variable/G probe, probe, ilimit, nplc, delay, vmax, vmin, step, light, forward;
+	String /G channel
+	channel = "A"
+	probe = 1 //2-Wire = 0, 4-Wire = 1
+	nplc = 1
+	ilimit = 0.1
+	delay = 1 
+	vmax = 1
+	vmin = 0
+	step = 0.01
+	light = 0
+	forward = 1	 //Reverse => forward=2
+		
+		
+	SetDataFolder path
 End
 
 Function Solar_Panel()
@@ -465,6 +487,7 @@ Function Solar_Panel()
 	//Jsc
 	wave JscMeas = root:SolarSimulator:Storage:JscMeas
 	wave JscObj = root:SolarSimulator:Storage:JscObj
+	nvar darea = root:SolarSimulator:Storage:darea
 	
 	PauseUpdate; Silent 1		// building window...
 	
@@ -514,6 +537,12 @@ Function Solar_Panel()
 	
 	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
 	Button buttonClean,fColor=(65535,65532,16385)
+	
+	//Posible
+	Button btnMeasIV,pos={900,400},size={96,25},proc=BtnProc_measIVpanel,title="\\f01Measure IV"
+	Button btnAbort,pos={715,605},size={57,20},title="ABORT",labelBack=(65280,0,0)
+	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0)
+	Button btnAbort disable=2
 	
 	//PopUps
 //	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
@@ -573,6 +602,16 @@ Function Solar_Panel()
 	PopupMenu popupSubDUT5,pos={290.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(2)"
 	
+	PopupMenu popupBias,pos={705.00,340.00},size={113.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Bias Type"
+	PopupMenu popupBias,mode=1,popvalue="Forward",value= #"\"Forward;Reverse\""
+	PopupMenu popupChannel,pos={711.00,415.00},size={107.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Channel"
+	PopupMenu popupChannel,mode=1,popvalue="A",value= #"\"A;B\""
+	PopupMenu popupAmbient,pos={724.00,390.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Curve"
+	PopupMenu popupAmbient,mode=1,popvalue="Light",value= #"\"Light;Dark\""
+	PopupMenu popupProbe,pos={725.00,366.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Probe"
+	PopupMenu popupProbe,mode=1,popvalue="4-Wire",value= #"\"2-Wire;4-Wire\""
+	
+	
 	//CheckBox
 	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
@@ -598,6 +637,21 @@ Function Solar_Panel()
 	SetVariable setvarLed850,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
 	SetVariable setvarLed1540,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
 	SetVariable setvarLed1540,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
+	
+	SetVariable setvarstep,pos={714.00,449.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Step (V)"
+	SetVariable setvarstep,limits={0,1,0.1},value= root:SolarSimulator:Storage:step,live= 1
+	SetVariable setvarvmin,pos={715.00,473.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Min (V)"
+	SetVariable setvarvmin,limits={0,1,0.1},value= root:SolarSimulator:Storage:vmin,live= 1
+	SetVariable setvarilimit,pos={714.00,551.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Limit (A)"
+	SetVariable setvarilimit,limits={0,1,0.1},value= root:SolarSimulator:Storage:ilimit,live= 1
+	SetVariable setvardelay,pos={715.00,522.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Delay (V)"
+	SetVariable setvardelay,limits={0,1,0.1},value= root:SolarSimulator:Storage:delay,live= 1
+	SetVariable setvarvmax,pos={716.00,497.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Max (V)"
+	SetVariable setvarvmax,limits={0,1,0.1},value= root:SolarSimulator:Storage:vmax,live= 1
+	SetVariable setvarnplc,pos={717.00,578.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Nplc"
+	SetVariable setvarnplc,limits={0,1,0.1},value= root:SolarSimulator:Storage:nplc,live= 1
+	SetVariable setvarDArea,pos={843.00,339.00},size={169.00,18.00},title="Total Area (cm2)"
+	SetVariable setvarDArea,value= root:SolarSimulator:Storage:darea
 	
 	//ValDisplay
 	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
@@ -625,6 +679,7 @@ Function Solar_Panel()
 	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
 	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
 	
+	
 	//Functions to initialize panel
 	for (i = 0; i<6; i++)
 		Pop_Action (i, popValues)
@@ -649,34 +704,21 @@ Function Solar_Panel()
 	SetAxis /W=$gname bottom*,2000
 	
 	gname = "SSPanel#SSCurvaIV"
-//	Display/W=(600,0,1200,500)/HOST=SSPanel  :Storage:sa vs :Storage:sa
-//	RenameWindow #,SSCurvaIV
-////	ModifyGraph mode=3
-////	ModifyGraph lSize=2
-//	ModifyGraph /W=$gname tick=2
-//	ModifyGraph /W=$gname zero=2
-//	ModifyGraph /W=$gname mirror=1
-//	ModifyGraph /W=$gname minor=1
-//	ModifyGraph /W=$gname standoff=0
-//	SetDrawLayer UserFront
+	//ControlBar?
+	Display/W=(674,0,1329,295)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	RenameWindow #,SSCurvaIV
+//	ModifyGraph mode=3
+//	ModifyGraph lSize=2
+	ModifyGraph /W=$gname tick=2
+	ModifyGraph /W=$gname zero=2
+	ModifyGraph /W=$gname mirror=1
+	ModifyGraph /W=$gname minor=1
+	ModifyGraph /W=$gname standoff=0
+	Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
+	Label /W=$gname bottom "Voltage (V)"
+	SetDrawLayer UserFront
 	
-//	Display/W=(600,300,1330,710)/HOST=#  :Storage:sa vs :Storage:sa
-//	
-////	ModifyGraph mode=3
-////	ModifyGraph lSize=2
-//	ModifyGraph tick=2
-//	ModifyGraph zero=2
-//	ModifyGraph mirror=1
-//	ModifyGraph minor=1
-//	ModifyGraph standoff=0
-//	Label left "%"
-//	Label bottom "nm"
-//	//Label right "Spectrum"
-//	SetAxis left*,1
-//	SetAxis bottom*,2000
-//	
-//	
-//	SetDrawLayer UserFront
+
 	SetActiveSubwindow ##	
 	
 	//Waves drawn in the graph
@@ -885,28 +927,28 @@ end
 
 //Different Functions for Scaling . We will use them maybe in the future
 //Get Delta from start parameter
-Function newDeltaStart (wav, newstart)
-	wave wav
-	variable newstart
-	variable start = leftx (wav)					
-	variable ending = rightx (wav)
-	variable newending = newstart/start*ending
-	variable rows = DimSize (wav, 0)
-	variable newdelta = (newending - newstart)/rows
-	return newdelta	
-End
+//Function newDeltaStart (wav, newstart)
+//	wave wav
+//	variable newstart
+//	variable start = leftx (wav)					
+//	variable ending = rightx (wav)
+//	variable newending = newstart/start*ending
+//	variable rows = DimSize (wav, 0)
+//	variable newdelta = (newending - newstart)/rows
+//	return newdelta	
+//End
 
 //Get delta from End parameter
-Function newDeltaEnding (wav, newending)
-	wave wav
-	variable newending
-	variable start = leftx (wav)					
-	variable ending = rightx (wav)
-	variable newstart = newending*start/ending
-	variable rows = DimSize (wav, 0)
-	variable newdelta = (newending - newstart)/rows
-	return newdelta	
-End
+//Function newDeltaEnding (wav, newending)
+//	wave wav
+//	variable newending
+//	variable start = leftx (wav)					
+//	variable ending = rightx (wav)
+//	variable newstart = newending*start/ending
+//	variable rows = DimSize (wav, 0)
+//	variable newdelta = (newending - newstart)/rows
+//	return newdelta	
+//End
 
 //is this wave scaled as i want?
 Function isScaled (wav)
@@ -915,7 +957,7 @@ Function isScaled (wav)
 	variable delta = deltax (wav)
 	variable ending = rightx (wav)
 	//Aprox will be able to scale waves that are loaded without an appropriate scale 
-	if (  (delta > 2 && delta < 7) && (start>=0 && start<400) )
+	if (  (delta > 2 && delta < 7) && (start>=0 && start<400) && ending-start<2000 )
 		return 1
 	else 
 		return 0
@@ -1165,12 +1207,17 @@ Function Calc_JscObj(id)
 End
 
 Function calc_JscMeas (id)
-	variable id
-	variable channel 
-//configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
-//jsc=-1*measureI_K2600(deviceID,channel)
-//jsc*=(1e3/darea)
-	
+	variable id	
+	wave jscMeas = root:SolarSimulator:Storage:jscMeas
+	string sdf = GetDataFolder (1)
+	SetDataFolder "root:SolarSimulator:Storage:Jsc-K2600"
+	nvar deviceID, probe, probe, ilimit, nplc, delay
+	svar channel
+	nvar darea = root:SolarSimulator:Storage:darea
+//	configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
+	jscMeas[id]=-1*measI_K2600(deviceID,channel)
+	jscMeas[id]*=(1e3/darea)	
+	SetDataFolder sdf
 End
 
 Function get_JscObj (i)
@@ -1182,6 +1229,27 @@ end
 Function get_JscMeas (i)
 	variable i
 	wave JscMeas = root:SolarSimulator:Storage:JscMeas
-	return JscMeas(i)
+	return JscMeas[i]
 end
-		
+
+//*******************Keithley K2600************************	
+Function measI_K2600 (deviceID, channel)
+	variable deviceID
+	String channel
+	String cmd, target
+	channel=lowerstr(channel)
+	
+	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
+	sendcmd_GPIB(deviceID,cmd)
+	cmd="smu"+channel+".source.levelv = 0"
+	sendcmd_GPIB(deviceID,cmd)
+	cmd="print(smu"+channel+".measure.i(smu"+channel+".nvbuffer1))"
+	sendcmd_GPIB(deviceID,cmd)
+	GPIBRead2 /Q target
+	variable imeas=str2num(target)
+	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
+	sendcmd_GPIB(deviceID,cmd)
+	GPIB2 InterfaceClear
+	GPIB2 KillIO
+	return imeas
+End
