@@ -7,6 +7,7 @@ Menu "S.Solar"
 	"Display /ç",/Q, Init_SP (val = 1)
 	"Init /ñ", /Q, Init_SP ()
 	"KillPanel /´", /Q, killPanel()
+	"Mightex Panel", /Q, init_mightexPanel()
 End
 
 //This kills the actual SSPanel
@@ -154,7 +155,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 2: // Enter key
 		case 3: // Live update
 			strswitch (sva.ctrlname)
-				// sva.dval -> variable value
+				//sva.dval -> variable value
 				case "setvarLed470":	
 					Led_Gauss(470)
 				break
@@ -164,6 +165,10 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 				case "setvarLed1540":
 					Led_Gauss(1540)
 				break
+				//I do it directly from setvar 
+//				case "setvardarea":
+//					nvar darea = root:SolarSimulator:Storage:darea
+//					darea = sva.dval
 			endswitch
 		break
 		case -1: // control being killed
@@ -177,16 +182,13 @@ End
 
 Function ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
-	//
 	if (ba.eventcode == -1 || ba.eventcode == 2 || ba.eventcode == 6)
 		ba.blockReentry=1
 	endif
 	switch( ba.eventCode )
 		case 2: // mouse up
+			string baName = ba.ctrlname
 			strswitch (ba.ctrlname)
-				case "buttonCargarOnda":					
-					//Load_Wave()
-				break
 //				case "buttonLog":
 				case "buttonLedApply":
 					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
@@ -197,8 +199,16 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":
 					Clean()
 				break
+				default: 
+					if (stringmatch (baName, "btncheck*"))
+						if (str2num(baName[8])>=0 && str2num(baName[8])<=5)
+							wave btnValues = root:SolarSimulator:Storage:btnValues
+							variable id = str2num(baName[8])
+							btnValues[id]=1							
+							Button_JscEnable(id)
+						endif
+					endif
 			endswitch
-			
 			break
 		case -1: // control being killed
 			strswitch (ba.ctrlname)	
@@ -234,7 +244,7 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 				if (stringmatch (check_name, "Check*"))
 					variable id = str2num (check_name[5])
 					if (id>=0 && id<=5)			
-						Check_JscEnable(id, checked)
+//						Check_JscEnable(id, checked)
 						if(checked)
 							Calc_JscObj(id)
 						endif
@@ -380,11 +390,11 @@ Function Init_SolarVar ()
 	popValues = {1, 1, 1, 0, 0, 0}
 	
 	//Display traces on graph depending on the checkbox selected
-	make /N=10 /O :Storage:Checkwave
-	wave checkwave = :Storage:checkwave
-	checkwave = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	variable /G :Storage:ledchecked 
+	make /N=5 /O :Storage:btnValues
+	wave btnValues = :Storage:btnValues
+	btnValues = {0, 0, 0, 0, 0, 0}
 	
+	variable /G :Storage:ledchecked 
 	//Increase power of leds
 	make /N=3 /O :Storage:LedLevel
 	wave LedLevel = :Storage:LedLevel
@@ -448,46 +458,36 @@ Function Solar_Panel()
 	SetDataFolder path
 	
 	//Initial wave for #GraphPanel
-	wave sa = root:SolarSimulator:Storage:sa
-//	string nameDisplay 
+	wave sa = :Storage:sa
 	
 	//Disable/Enable Dropdowns things on the panel
 	wave popValues = :Storage:popvalues
 	popValues = {1, 1, 1, 0, 0, 0}
 	string popVal = translate (popValues)//Yes;No; Selection
-	
-	//Display traces on graph depending on the checkbox selected
-	wave checkwave = :Storage:checkwave
-	nvar ledchecked = :Storage:ledchecked
-	
-	//Values of LedCurrents
-	wave Imax = root:SolarSimulator:Storage:Imax
-	wave Iset = root:SolarSimulator:Storage:Iset
-	
+		
 	//Leds	
 	SetDataFolder :Storage
 	Copy ("root:SolarSimulator:Spectre:SLeds:led470", "led470")
 	Copy ("root:SolarSimulator:Spectre:SLeds:led850", "led850")
 	Copy ("root:SolarSimulator:Spectre:SLeds:led1540", "led1540")
 	SetDataFolder path
-	wave led470 = :storage:led470
-	wave led850 = :storage:led850
-	wave led1540 = :storage:led1540
+//	wave led470 = :storage:led470
+//	wave led850 = :storage:led850
+//	wave led1540 = :storage:led1540
 	
-	//Increase power of leds
+	//The leds' power
 	wave LedLevel = :Storage:LedLevel
 	
 	//Loops
 	variable i
 	
 	//It has been created  when Leds Procedure initialize. 
-//	nvar channel = root:SolarSimulator:Storage:channel
 	svar com = root:SolarSimulator:Storage:com
 	
 	//Jsc
-	wave JscMeas = root:SolarSimulator:Storage:JscMeas
-	wave JscObj = root:SolarSimulator:Storage:JscObj
-	nvar darea = root:SolarSimulator:Storage:darea
+//	wave JscMeas = root:SolarSimulator:Storage:JscMeas
+//	wave JscObj = root:SolarSimulator:Storage:JscObj
+//	nvar darea = root:SolarSimulator:Storage:darea
 	
 	PauseUpdate; Silent 1		// building window...
 	
@@ -536,9 +536,16 @@ Function Solar_Panel()
 	Button buttonLedApply,fColor=(16385,65535,41303)
 	
 	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph"
-	Button buttonClean,fColor=(65535,65532,16385)
+	Button buttonClean,fColor=(65535,65532,16385)	
 	
-	//Posible
+	Button btncheck0,pos={465.00,360.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck1,pos={465.00,380.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck2,pos={465.00,400.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck3,pos={465.00,420.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck4,pos={465.00,440.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck5,pos={465.00,460.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	
+	//Curve I-V
 	Button btnMeasIV,pos={900,400},size={96,25},proc=BtnProc_measIVpanel,title="\\f01Measure IV"
 	Button btnAbort,pos={715,605},size={57,20},title="ABORT",labelBack=(65280,0,0)
 	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0)
@@ -613,13 +620,13 @@ Function Solar_Panel()
 	
 	
 	//CheckBox
-	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-	CheckBox check3,pos={465.00,420.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-	
+//	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+//	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+//	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+//	CheckBox check3,pos={465.00,420.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+//	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+//	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
+
 	CheckBox checkgraph_leds,pos={509.00,573.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
 	CheckBox checkgraph_leds,value= 0
 	
@@ -784,11 +791,11 @@ Function Pop_Action (popNum, popValues)
 	popupX = "popupSubREF" + num2str(popNum)
 	popupY = "popupSubDUT" + num2str(popNum)
 	if (popValues[popNum])
-		CheckBox $checkX, 	disable = 0
+//		CheckBox $checkX, 	disable = 0
 		PopupMenu $popupX,	disable = 0
 		PopupMenu $popupY,	disable = 0	
 	else
-		CheckBox $checkX, 	disable = 1
+//		CheckBox $checkX, 	disable = 1
 		PopupMenu $popupX,	disable = 2
 		PopupMenu $popupY,	disable = 2
 	endif	
@@ -863,33 +870,35 @@ Function Check_PlotEnable (id[, checked])
 	SetDataFolder savedatafolder	
 End
 
-Function Check_JscEnable (id, checked)
+Function Button_JscEnable (id)
 	//id is the selected box that we want to enable or disable
 	//checked is the state that the selected checkbox has got
-	variable id, checked
+	variable id
 	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
-	SetDataFolder path
+	SetDataFolder path	
+	wave btnValues = :Storage:btnValues
 	variable i
 	//*********Coming Soon: refresh*************//
 	variable refresh //Selected
-	string checkX
+	string btncheck
 	string valdisp1
 	string valdisp2
 	string getJscObj, getJscMeas;
 	for (i=0;i<6; i++)
-		checkX = "check" + num2str(i)
+		btncheck = "btncheck" + num2str(i)
 		valdisp1 = "valdispJREF" + num2str(i)
 		valdisp2 = "valdispJ" + num2str(i)
 		getJscObj = "get_JscObj("+num2str(i)+")"
 		getJscMeas = "get_JscMeas("+num2str(i)+")"
-		if (id != i || !checked)
-			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
+		if (id != i || !btnValues[i])
+			Button $btncheck, fColor=(16385,65535,41303)
 			ValDisplay $valdisp1, disable = 2
 			ValDisplay $valdisp2, disable = 2
-		elseif (checked)
+		elseif (btnValues[i])
 			//I dont know why color does not change when checked.
-			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
+			Button $btncheck, fColor=(65535, 0, 0)
+			ValDisplay $valdisp1, disable = 0,value = #getJscObj
 			ValDisplay $valdisp1, disable = 0,value = #getJscObj
 			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
 			//Lets draw only the correspondant EQE waves
@@ -899,6 +908,42 @@ Function Check_JscEnable (id, checked)
 	endfor
 	SetDataFolder savedatafolder
 end
+//Function Check_JscEnable (id, checked)
+//	//id is the selected box that we want to enable or disable
+//	//checked is the state that the selected checkbox has got
+//	variable id, checked
+//	string path = "root:SolarSimulator"
+//	string savedatafolder = GetDataFolder (1) 
+//	SetDataFolder path
+//	variable i
+//	//*********Coming Soon: refresh*************//
+//	variable refresh //Selected
+//	string checkX
+//	string valdisp1
+//	string valdisp2
+//	string getJscObj, getJscMeas;
+//	for (i=0;i<6; i++)
+//		checkX = "check" + num2str(i)
+//		valdisp1 = "valdispJREF" + num2str(i)
+//		valdisp2 = "valdispJ" + num2str(i)
+//		getJscObj = "get_JscObj("+num2str(i)+")"
+//		getJscMeas = "get_JscMeas("+num2str(i)+")"
+//		if (id != i || !checked)
+//			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
+//			ValDisplay $valdisp1, disable = 2
+//			ValDisplay $valdisp2, disable = 2
+//		elseif (checked)
+//			//I dont know why color does not change when checked.
+//			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
+//			ValDisplay $valdisp1, disable = 0,value = #getJscObj
+//			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
+//			//Lets draw only the correspondant EQE waves
+//			Check_PlotEnable (id)
+//			
+//		endif
+//	endfor
+//	SetDataFolder savedatafolder
+//end
 //*******************************************************************************************************************//
 
 //Reconstruction of Display. Clean Display
@@ -1139,14 +1184,6 @@ End
 
 //Measure Jsc -> DIFFERENT WAYS TO DO IT
 
-////IV Procedure
-//configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
-//jsc=-1*measureI_K2600(deviceID,channel)
-//jsc*=(1e3/darea)
-//
-////III-V Procedure
-//jsc = qe2jsc (qe,"AMG173DIRECT_w",1)
-//
 ////My own Function 
 Function qe2JscSS (qe, specw)
 	wave qe , specw
@@ -1215,8 +1252,8 @@ Function calc_JscMeas (id)
 	svar channel
 	nvar darea = root:SolarSimulator:Storage:darea
 //	configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
-	jscMeas[id]=-1*measI_K2600(deviceID,channel)
-	jscMeas[id]*=(1e3/darea)	
+//	jscMeas[id]=-1*measI_K2600(deviceID,channel)
+//	jscMeas[id]*=(1e3/darea)	
 	SetDataFolder sdf
 End
 
