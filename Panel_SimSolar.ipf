@@ -190,6 +190,9 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			string baName = ba.ctrlname
 			strswitch (ba.ctrlname)
 //				case "buttonLog":
+				case "buttonMeasIV":
+//					configK2600_GPIB(deviceID,0,channel,probe,ilimit,nplc,delay) // o second argument means iv meas
+//					sweepIV_K2600(deviceID,step,nmin,nmax,channel,forw)
 				case "buttonLedApply":
 					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
 					if (ledchecked)
@@ -206,6 +209,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 							variable id = str2num(baName[8])
 							btnValues[id]=1							
 							Button_JscEnable(id)
+							Calc_JscObj(id)
+							Calc_JscMeas(id)
 						endif
 					endif
 			endswitch
@@ -269,18 +274,22 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 			String paName = pa.ctrlname
 			string wavepath//useless.
 			strswitch (pa.ctrlname)
+				case "popupChannel":
+					svar /Z channel = root:SolarSimulator:Storage:channel
+					channel = popStr
+					break
+				case "popupAmbient":
+					nvar /z light_dark = root:SolarSimulator:Storage:light_dark
+					light_dark = popNum
+					break
 				case "popupCom":
-					svar com = root:SolarSimulator:Storage:com					
+					svar /Z com = root:SolarSimulator:Storage:com					
 					if (init_leds(popStr))
 						com=popStr
 					else
 						PopupMenu popupCom, popvalue=" ", mode=1
 					endif
-				break
-				case "popupchannel":
-					nvar channel = root:SolarSimulator:Storage:channel
-					channel = popNum
-				break
+					break
 				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
@@ -335,6 +344,8 @@ Function Init_SP ([val])
 	endif 
 	init_solarVar ()
 	Solar_Panel ()
+//	InitBoard_GPIB(0)
+//	InitDevice_GPIB(0,26)
 End
 	
 Function Init_SolarVar ()
@@ -434,7 +445,7 @@ Function Init_SolarVar ()
 	
 	//Keithley K2600
 //	SetDataFolder ":Storage:Jsc-K2600"	
-	Variable/G probe, probe, ilimit, nplc, delay, vmax, vmin, step, light, forward;
+	Variable/G probe, probe, ilimit, nplc, delay, vmax, vmin, step, light_dark, forward;
 	String /G channel
 	channel = "A"
 	probe = 1 //2-Wire = 0, 4-Wire = 1
@@ -444,7 +455,7 @@ Function Init_SolarVar ()
 	vmax = 1
 	vmin = 0
 	step = 0.01
-	light = 0
+	light_dark = 0	//1 - Light / 2 - Dark
 	forward = 1	 //Reverse => forward=2
 		
 		
@@ -552,21 +563,10 @@ Function Solar_Panel()
 	Button btnAbort disable=2
 	
 	//PopUps
-//	PopupMenu popupchannel,pos={890.00,74.00},size={113.00,19.00},proc=PopMenuProc_SimSolar,title="\\f01Select Channel"
-//	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
-//	PopupMenu popupchannel,mode=1,popvalue="1",value= #"\"1;2;3;4;5;6;7;8\""
-
-//	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSubSref,mode=100,value= #"indexedfile ( path_Sref, -1, \"????\")"
-//	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-//	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"indexedfile ( path_Slamp, -1, \"????\")"
-
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSref,mode=100,popvalue=" ",value= #"QEWaveList(1)"
 	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"QEWaveList(2)"
-
-	
+	PopupMenu popupSubSlamp,mode=100,popvalue=" ",value= #"QEWaveList(2)"	
 	PopupMenu popupSub0,pos={20.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
 	PopupMenu popupSub1,pos={20.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
@@ -579,9 +579,8 @@ Function Solar_Panel()
 	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={20.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""
-	
 	PopupMenu popupCom,pos={142.00,502.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
-	PopupMenu popupCom,mode=1,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
+	PopupMenu popupCom,mode=100,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
 	PopupMenu popupSubREF0,pos={125.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
@@ -609,14 +608,15 @@ Function Solar_Panel()
 	PopupMenu popupSubDUT5,pos={290.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(2)"
 	
-	PopupMenu popupBias,pos={705.00,340.00},size={113.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Bias Type"
-	PopupMenu popupBias,mode=1,popvalue="Forward",value= #"\"Forward;Reverse\""
+	PopupMenu popupDir,pos={705.00,340.00},size={113.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Bias Type"
+	PopupMenu popupDir,mode=1,popvalue="Forward",value= #"\"Forward;Reverse\""
 	PopupMenu popupChannel,pos={711.00,415.00},size={107.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Channel"
 	PopupMenu popupChannel,mode=1,popvalue="A",value= #"\"A;B\""
 	PopupMenu popupAmbient,pos={724.00,390.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Curve"
 	PopupMenu popupAmbient,mode=1,popvalue="Light",value= #"\"Light;Dark\""
 	PopupMenu popupProbe,pos={725.00,366.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Probe"
 	PopupMenu popupProbe,mode=1,popvalue="4-Wire",value= #"\"2-Wire;4-Wire\""
+	
 	
 	
 	//CheckBox
@@ -635,16 +635,12 @@ Function Solar_Panel()
 	
 	
 	//SetVariable
-//	SetVariable setvarLedRojo,pos={263.00,497.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led Rojo"
-//	SetVariable setvarLedRojo,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel,live= 1
-	
 	SetVariable setvarLed470,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
 	SetVariable setvarLed470,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
 	SetVariable setvarLed850,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 850"
 	SetVariable setvarLed850,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
 	SetVariable setvarLed1540,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 1540"
 	SetVariable setvarLed1540,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
-	
 	SetVariable setvarstep,pos={714.00,449.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Step (V)"
 	SetVariable setvarstep,limits={0,1,0.1},value= root:SolarSimulator:Storage:step,live= 1
 	SetVariable setvarvmin,pos={715.00,473.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Min (V)"
@@ -1288,5 +1284,29 @@ Function measI_K2600 (deviceID, channel)
 	sendcmd_GPIB(deviceID,cmd)
 	GPIB2 InterfaceClear
 	GPIB2 KillIO
+	
 	return imeas
+End
+
+Function measV_K2600(deviceID,channel)
+	variable deviceID
+	String channel
+	String cmd, target
+	channel=lowerstr(channel)
+	
+	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
+	sendcmd_GPIB(deviceID,cmd)
+	cmd="smu"+channel+".source.leveli = 0"
+	sendcmd_GPIB(deviceID,cmd)
+	cmd="print(smu"+channel+".measure.v(smu"+channel+".nvbuffer1))"
+	sendcmd_GPIB(deviceID,cmd)
+	GPIBRead2 /Q target
+	variable vmeas=str2num(target)
+	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
+	sendcmd_GPIB(deviceID,cmd)
+	sendcmd_GPIB(deviceID,"waitcomplete()")
+	GPIB2 InterfaceClear
+	GPIB2 KillIO
+	
+	return vmeas
 End
