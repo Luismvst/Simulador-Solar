@@ -176,10 +176,6 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 					Led_Gauss(1540)
 					Draw ($"waveled1540", 7)
 				break
-				//I do it directly from setvar 
-//				case "setvardarea":
-//					nvar darea = root:SolarSimulator:Storage:darea
-//					darea = sva.dval
 			endswitch
 		break
 		case -1: // control being killed
@@ -256,6 +252,9 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 			Variable checked = cba.checked
 			string check_name = cba.ctrlname
 			strswitch (cba.ctrlname)
+				case "checklog":
+					ModifyGraph /W=SSPanel#SSCurvaIV log(left)=checked
+					break
 				case "checkgraph_leds":
 					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
 					ledchecked = checked
@@ -572,9 +571,9 @@ Function Solar_Panel()
 	Button btnAbort,pos={715,605},size={57,20},title="ABORT",labelBack=(65280,0,0)
 	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0)
 	Button btnAbort, disable=2
-	Button btnMeasJsc,pos={1057.00,302.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Jsc"
+	Button btnMeasJsc,pos={1045.00,302.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Jsc"
 	Button btnMeasJsc,fColor=(65535,65532,16385)
-	Button btnMeasVoc,pos={1058.00,333.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Voc"
+	Button btnMeasVoc,pos={1045.00,333.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Voc"
 	Button btnMeasVoc,fColor=(16385,65535,65535)
 	//PopUps
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
@@ -646,7 +645,7 @@ Function Solar_Panel()
 	
 	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="On/Off"
 	CheckBox checkgraph_spectre,value= 0
-	CheckBox checklog,pos={1300.00,340.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
+	CheckBox checklog,pos={700.00,308.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
 	
 	//SetVariable
 	SetVariable setvarLed470,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 470"
@@ -695,15 +694,19 @@ Function Solar_Panel()
 	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
 	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
 	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
-	ValDisplay valdispJsc,pos={1185.00,309.00},size={94.00,17.00},bodyWidth=75,disable=2,title="Jsc"
-	ValDisplay valdispJsc,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000}
-	ValDisplay valdispJsc,value= #"root:SolarSimulator:Storage:Jsc"
-	ValDisplay valdispJ,pos={1203.00,383.00},size={75.00,17.00},bodyWidth=75,disable=2
-	ValDisplay valdispJ,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000}
-	ValDisplay valdispJ,value= 0
-	ValDisplay valdispVoc,pos={1179.00,342.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc"
-	ValDisplay valdispVoc,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000}
-	ValDisplay valdispVoc,value= #"root:SolarSimulator:Storage:Voc"
+	ValDisplay valdispJsc,pos={1185.00,310.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
+	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
+	ValDisplay valdispVoc,pos={1185.00,340.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
+	ValDisplay valdispVoc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Voc"
+	ValDisplay valdispff,pos={1185.00,370.00},size={99.00,17.00},bodyWidth=75,disable=2,title="FF(%)"
+	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value=0
+	ValDisplay valdisph,pos={1185.00,400.00},size={99.00,17.00},bodyWidth=75,disable=2,title="h(%)"
+	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= 0
+	ValDisplay valdispJmp,pos={1185.00,430.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
+	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value=0
+	ValDisplay valdispVmp,pos={1185.00,460.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
+	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value=0
+	
 
 	
 	//Functions to initialize panel
@@ -1292,7 +1295,7 @@ Function Meas_Jsc (deviceID, [id])
 	nvar probe, probe, ilimit, nplc, delay
 	svar channel
 	nvar darea = root:SolarSimulator:Storage:darea
-//	configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
+//	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)
 	if (id)
 		wave jscMeas = root:SolarSimulator:Storage:jscMeas
 	//	jscMeas[id]=-1*measI_K2600(deviceID,channel)
@@ -1312,7 +1315,7 @@ Function Meas_Voc(deviceID)
 	nvar probe, probe, ilimit, nplc, delay
 	svar channel
 	nvar darea, voc
-//	configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay)
+//	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)
 //	voc=-1*measI_K2600(deviceID,channel)
 //	voc*=(1e3/darea)
 End
@@ -1387,7 +1390,7 @@ Function measIV_SSCurvaIV (deviceID)
 	nvar vmax = root:SolarSimulator:Storage:vmax
 	nvar forward = root:SolarSimulator:Storage:forward
 	
-//	configK2600_GPIB(deviceID,0,channel,probe,ilimit,nplc,delay)
+//	configK2600_GPIB_SSCurvaIV(deviceID,0,channel,probe,ilimit,nplc,delay)
 //	sweepIV_K2600(deviceID,step,vmin,vmax,channel,forward)
 End
 
@@ -1551,3 +1554,82 @@ Function /S getIVsetupNotes_SSCurvaIV()
 	
 	return snote
 End
+
+Function configK2600_GPIB_SSCurvaIV(deviceID,configType,channel,probe,ilimit,nplc,delay)
+	variable deviceID
+	variable configType
+	string channel
+	variable probe
+	variable ilimit
+	//variable vlimit
+	variable nplc
+	variable delay
+	delay/=1000
+	string cmdList
+
+	channel=lowerstr(channel)
+
+	switch(configType)
+
+	case 0: // Set voltage measure current
+		cmdList="smu"+channel+".reset();format.data = format.ASCII;smu"+channel+".nvbuffer1.clear();"
+		cmdList+="smu"+channel+".nvbuffer1.appendmode = 1;"
+		cmdList+="smu"+channel+".nvbuffer1.collectsourcevalues = 1;smu"+channel+".measure.count = 1;"
+		cmdList+="smu"+channel+".measure.filter.count = 1;"
+		cmdList+="smu"+channel+".measure.nplc = "+num2str(nplc)+";"
+		cmdList+="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON;"
+		cmdList+="smu"+channel+".source.func = smu"+channel+".OUTPUT_DCVOLTS;"
+		cmdList+="smu"+channel+".sense = "+num2str(probe-1)+";smu"+channel+".measure.autorangei = 1;"
+		cmdList+="smu"+channel+".source.limiti = "+num2str(ilimit)+";smu"+channel+".measure.autozero = 2;"
+		cmdList+="smu"+channel+".measure.delay = "+num2str(delay)+";"
+	break
+	
+	case 1: // Inject current measure voltage
+		cmdList="smu"+channel+".reset();format.data = format.ASCII;smu"+channel+".nvbuffer1.clear();"
+		cmdList+="smu"+channel+".nvbuffer1.appendmode = 1;"
+		cmdList+="smu"+channel+".nvbuffer1.collectsourcevalues = 1;smu"+channel+".measure.count = 1;"
+		cmdList+="smu"+channel+".measure.filter.count = 1;"
+		cmdList+="smu"+channel+".measure.nplc = "+num2str(nplc)+";"
+		cmdList+="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON;"
+		cmdList+="smu"+channel+".source.func = smu"+channel+".OUTPUT_DCVOLTS;"
+		cmdList+="smu"+channel+".sense = "+num2str(probe-1)+";smu"+channel+".measure.autorangev = 1;"
+		cmdList+="smu"+channel+".source.limitv = 5;smu"+channel+".measure.autozero = 2;"
+		cmdList+="smu"+channel+".measure.delay = "+num2str(delay)+";"	
+	break
+		
+	case 2: // Measure voltage, must ENABLE SOURCE FUNCTION IN AMPS TO MEASURE VOLTAGE 
+		cmdList="smu"+channel+".reset();format.data = format.ASCII;smu"+channel+".nvbuffer1.clear();"
+		cmdList+="smu"+channel+".source.func = smu"+channel+".OUTPUT_DCAMPS;"
+		cmdList+="smu"+channel+".nvbuffer1.appendmode = 1;"
+		cmdList+="smu"+channel+".measure.count = 1;"
+		cmdList+="smu"+channel+".measure.filter.count = 10;"
+		cmdList+="smu"+channel+".measure.nplc = "+num2str(nplc)+";"
+		//cmdList+="smu"+channel+".measure.filter.count = 10;smu"+channel+".filter.enable = 1;"
+		cmdList+="smu"+channel+".sense = "+num2str(probe-1)+";smu"+channel+".measure.autorangev = 1;"
+		cmdList+="smu"+channel+".source.limitv = 5;smu"+channel+".measure.autozero = 2;smu"+channel+".source.offmode = 0;"
+		cmdList+="smu"+channel+".measure.delay = "+num2str(delay)+";"
+	break
+	
+	case 3: // Measure Current
+		cmdList="smu"+channel+".reset();format.data = format.ASCII;smu"+channel+".nvbuffer1.clear();"
+		cmdList+="smu"+channel+".source.func = smu"+channel+".OUTPUT_DCVOLTS;"
+		cmdList+="smu"+channel+".nvbuffer1.appendmode = 1;"
+		cmdList+="smu"+channel+".measure.count = 10;"
+		cmdList+="smu"+channel+".measure.nplc = "+num2str(nplc)+";"
+		cmdList+="smu"+channel+".sense = "+num2str(probe-1)+";smu"+channel+".measure.autorangei = 1;"
+		cmdList+="smu"+channel+".source.limiti = "+num2str(ilimit)+";smu"+channel+".measure.autozero = 2;"
+		cmdList+="smu"+channel+".measure.delay = "+num2str(delay)+";"
+	break
+	
+	default: // reset 
+		cmdList="smu"+channel+".reset()"
+	break
+
+endswitch
+
+//	if(stringmatch(channel,"B"))
+//		cmdList=replaceString("smua.",cmdList,"smub.")
+//	endif
+	cmdList_GPIB(deviceID,cmdList)
+	//print cmdList
+end
