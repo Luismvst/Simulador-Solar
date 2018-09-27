@@ -166,12 +166,15 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 				//sva.dval -> variable value
 				case "setvarLed470":	
 					Led_Gauss(470)
+					Draw ($"waveled470", 7)
 				break
 				case "setvarLed850":
 					Led_Gauss(850)
+					Draw ($"waveled850", 7)
 				break
 				case "setvarLed1540":
 					Led_Gauss(1540)
+					Draw ($"waveled1540", 7)
 				break
 				//I do it directly from setvar 
 //				case "setvardarea":
@@ -196,7 +199,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 	switch( ba.eventCode )
 		case 2: // mouse up
 			string baName = ba.ctrlname
-			variable deviceID = getDeviceID("K2600")
+//			variable deviceID = getDeviceID("K2600")
+			variable deviceID = 26	//Me lo invento, the other function does not work yet
 			strswitch (ba.ctrlname)
 //				case "buttonLog":
 				case "btnMeasIV":					
@@ -761,15 +765,13 @@ Function Solar_Panel()
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
 	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
-	AppendtoGraph /W=SSPanel#SSGraph waveled470
-	AppendtoGraph /W=SSPanel#SSGraph waveled850
-	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
+//	AppendtoGraph /W=SSPanel#SSGraph waveled470
+//	AppendtoGraph /W=SSPanel#SSGraph waveled850
+//	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
 	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
 	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
 	Label/W=SSPanel#SSGraph right "Spectrum"
 	ModifyGraph /W=SSPanel#SSGraph minor=1
-//	AppendtoGraph /W=SSPanel#SSGraph wavelamp
-//	AppendtoGraph /W=SSPanel#SSGraph wavelamp
 end
 
 //DropDown "Yes-No" Selection
@@ -1197,6 +1199,28 @@ Function Led_Disable (option)
 		endif
 End
 
+Function Disable_All ([option])
+	variable option
+	if (paramisdefault (option))
+		option = 0
+	endif
+	variable channel
+	switch (option)
+		case 1:
+			string smsg = "Do you want to disable all channels?\n"
+			DoAlert /T="Disable before Exit" 1, smsg
+			if (V_flag == 2)		//Clicked <"NO">
+			//Abort "Execution aborted.... Restart IGOR"
+				return 0
+			elseif (V_flag == 1)	//Clicked <"YES">	
+				TurnOff_leds()
+			endif
+			break
+		case 2:
+			KillDataFolder root:SolarSimulator:Storage
+			break
+	endswitch	
+End
 ////My own Function 
 Function qe2JscSS (qe, specw)
 	wave qe , specw
