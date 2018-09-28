@@ -385,7 +385,7 @@ Function Init_SP ([val])
 		return 0
 	endif 
 	init_solarVar (val=val)	
-//	Load_Spectre()
+	Load_Spectre()
 	Solar_Panel ()
 	Init_Keithley_2600()
 End
@@ -400,6 +400,7 @@ Function  Close_Keithley_2600()
 //	DevClearList(0,26)
 End
 
+//In case we only export the procedure, not the experiment (in the fture it will make sense) 
 Function Load_Spectre ()
 //	NewPath/O/Q path, "D:Luis:UNIVERSIDAD:Prácticas Empresa:Igor:Igor:Waves_SS:EQE_DUT"
 //	NewPath/O/Q 	EQE_DUT, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_DUT"
@@ -420,25 +421,31 @@ Function Load_Spectre ()
 //---------------ETC-------------------//
 
 //	LoadWave /C /O /P="C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_DUT" "UPM2367n2_1st_EQE.ibw"
-//	string sp = GetDataFolder(1)
-//	string general_path = SpecialDirPath ("Documents", 0, 0, 0)
-//	general_path += ":SolarSimulatorData"
-//	//LED_DATA
-//	string led_path = general_path + ":SLeds"
-//	SetDataFolder root:SolarSimulator:Spectre:SLeds
-//	LoadWave/C/O /P=led_path	"LED470.ibw"
-//	LoadWave/C/O /P=led_path	"LED850.ibw"
-//	LoadWave/C/O /P=led_path	"LED1540.ibw"
-//	
-//	//SOLAR SPECTRE DATA
+	string sp = GetDataFolder(1)
+	string general_path = SpecialDirPath ("Igor Pro User Files", 0, 0, 0)
+	general_path += "SolarSimulatorData"
+	//LED_DATA
+	string led_path = general_path + ":SLeds"
+	SetDataFolder root:SolarSimulator:Spectre:SLeds
+	LoadWave/C/O /P=$led_path	"LED470.ibw"
+	LoadWave/C/O /P=led_path	"LED850.ibw"
+	LoadWave/C/O /P=led_path	"LED1540.ibw"
+	
+	//SOLAR SPECTRE DATA
 //	NewPath/O/Q 	path_ref, general_path + ":SRef"
-//	SetDataFolder root:SolarSimulator:Spectre:SRef
-//	LoadWave/C/O /P=path_leds	"LED470.ibw"
-//	LoadWave/C/O /P=path_leds	"LED850.ibw"
-//	LoadWave/C/O /P=path_leds	"LED1540.ibw"
-//	
-////	KillPath path_leds	
-//	SetDataFolder sp
+	string ref_path = general_path + ":SRef"
+	SetDataFolder root:SolarSimulator:Spectre:SRef
+	LoadWave/C/O /P=ref_path	"AMG173DIRECT.ibw"
+	LoadWave/C/O /P=ref_path	"AMG173GLOBAL.ibw"
+	LoadWave/C/O /P=ref_path	"AMO.ibw"
+	
+	string lamp_path = general_path + ":SLamp"
+	SetDataFolder root:SolarSimulator:Spectre:SLamp
+	LoadWave/C/O /P=lamp_path	"XT10open2012.ibw"
+	NewPath/O/Q 	path_lamp, "C:\Users\III-V\Documents\WaveMetrics\Igor Pro 7 User Files\SolarSimulatorData\SLamp"
+	
+//	KillPath path_leds	
+	SetDataFolder sp
 End
 
 Function Init_SolarVar ([val])
@@ -1297,6 +1304,9 @@ Function Disable_All ([option])
 			break
 		case 2:
 			KillDataFolder root:SolarSimulator:Storage
+//			KillPath ref_path
+//			KillPath led_path
+//			KillPath lamp_path
 			break
 	endswitch	
 End
