@@ -5,8 +5,8 @@
 
 Menu "S.Solar"
 	SubMenu "Solar Panel"	
-		"Display /ç",/Q, Init_SP (val = 1)
-		"Init SolarPanel /ñ", /Q, Init_SP ()	
+		"Display /ç",/Q, Init_SP ()
+		"Init SolarPanel /ñ", /Q, Init_SP (val = 1)	
 		"KillPanel /´", /Q, killPanel()
 	End
 	SubMenu "Keithley 2600"
@@ -82,6 +82,7 @@ Function/S Load (fname, num)
 //		string realname = nameofwave (destwave)
 //		ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//redcolor for new loaded waves
 //	endif	
+	Draw (destwave, id)
 	Setdatafolder savedatafolder
 	return wavepath
 end
@@ -261,6 +262,8 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 					Check_PlotEnable (7, checked=checked)	
 					break
 				case "checkgraph_spectre":
+					nvar spectrechecked = root:SolarSimulator:Storage:spectrechecked
+					spectrechecked = checked
 					Check_PlotEnable (6, checked=checked)
 					break
 				default:
@@ -290,7 +293,7 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 			Variable popNum = pa.popNum
 			String popStr = pa.popStr
 			String paName = pa.ctrlname
-			string wavepath//useless.
+			string wavepath
 			strswitch (pa.ctrlname)
 				case "popupChannel":
 					svar /Z channel = root:SolarSimulator:Storage:channel
@@ -312,11 +315,23 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
 					wavepath = Load (popStr, 12)
+					if (strlen (wavepath))
+						nvar spectrechecked = root:SolarSimulator:Storage:spectrechecked
+						spectrechecked = 1
+						CheckBox checkgraph_spectre,value= spectrechecked
+						Check_PlotEnable (6, checked = spectrechecked)
+					endif
 					
 					//Note: lOOK if /H is necessary (it creates a copy of the loaded wave)					
 				break
 				case "popupSubSlamp":	//Cargar Slamp
 					wavepath = Load (popStr, 13)
+					if (strlen (wavepath))
+						nvar spectrechecked = root:SolarSimulator:Storage:spectrechecked
+						spectrechecked = 1
+						CheckBox checkgraph_spectre,value= spectrechecked
+						Check_PlotEnable (6, checked = spectrechecked)
+					endif
 				break
 				default: 
 					if (stringmatch (paName, "popupSub*"))
@@ -360,7 +375,8 @@ Function Init_SP ([val])
 		DoWindow /F SSPanel
 		return 0
 	endif 
-	init_solarVar ()
+	init_solarVar (val=val)	
+	Load_Spectre()
 	Solar_Panel ()
 	Init_Keithley_2600()
 End
@@ -374,12 +390,44 @@ End
 Function  Close_Keithley_2600()
 //	DevClearList(0,26)
 End
-	
-Function Init_SolarVar ()
 
+Function Load_Spectre ()
+//	NewPath/O/Q path, "D:Luis:UNIVERSIDAD:Prácticas Empresa:Igor:Igor:Waves_SS:EQE_DUT"
+//	NewPath/O/Q 	EQE_DUT, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_DUT"
+//	NewPath/O/Q 	EQE_REF, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_REF"
+//	NewPath/O/Q  Slamp, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:espectro_simuladorSolar"	
+//	NewPath/O/Q  Sref, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:espectros_referencia"	
+//	NewPath/O/Q 	path_leds, "C::Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:Espectros_LEDS"
+//	LoadWave/C /P=EQE_DUT	"UPM2367n2_1st_EQE.ibw"
+//	LoadWave/C /P=EQE_DUT	"UPM2367n2_2nd_EQE.ibw"
+//	LoadWave/C /P=EQE_DUT	"UPM2367n2_3rd_EQE.ibw"
+//	LoadWave/C /P=EQE_DUT	"UPM2367n2_4th_EQE.ibw"
+//	LoadWave/C /P=Sref	"AMG173DIRECT.ibw"
+//	LoadWave/C /P=Sref	"AMG173GLOBAL.ibw"
+//	LoadWave/C /P=Sref	"AMO.ibw"
+//	LoadWave/C /P=EQE_REF	"L1641n1_Ext.ibw"
+//	LoadWave/C /P=EQE_REF	"L1642n1_Ext.ibw"
+//	LoadWave/C /P=EQE_REF	"MC387n2_qe_XExt.ibw"
+//---------------ETC-------------------//
+	NewPath/O/Q 	path_leds, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:Espectros_LEDS"
+//	LoadWave/C/O /P=path_leds	"root:SolarSimulator:Spectre:Sleds:LED470.ibw"
+//	LoadWave/C/O /P=path_leds	"root:SolarSimulator:Spectre:Sleds:LED850.ibw"
+//	LoadWave/C/O /P=path_leds	"root:SolarSimulator:Spectre:Sleds:LED1540.ibw"
+	string sp = GetDataFolder(1)
+	SetDataFolder root:SolarSimulator:Spectre:Sleds
+	LoadWave/C/O /P=path_leds	"LED470.ibw"
+	LoadWave/C/O /P=path_leds	"LED850.ibw"
+	LoadWave/C/O /P=path_leds	"LED1540.ibw"
+	
+//	KillPath path_leds	
+	SetDataFolder sp
+End
+
+Function Init_SolarVar ([val])
+	variable val
 	string path = "root:SolarSimulator"
 	//If never initialized
-	if(!DatafolderExists(path))
+	if(!DatafolderExists(path) || val == 1)
 		string smsg = "You have to initialize first.\n"
 		smsg += "Do you want to initialize?\n"
 		DoAlert /T="Unable to open the program" 1, smsg
@@ -393,9 +441,9 @@ Function Init_SolarVar ()
 			genDFolders(path + ":GraphWaves")
 			genDFolders(path + ":Spectre")
 			//Here we have to load Sstd and Slamp manually 
-			genDFolders(path + ":Spectre:Sref")
-			genDFolders(path + ":Spectre:Slamp")
-			genDFolders(path + ":Spectre:Sleds")
+			genDFolders(path + ":Spectre:SRef")
+			genDFolders(path + ":Spectre:SLamp")
+			genDFolders(path + ":Spectre:SLeds")
 		endif
 	endif
 	
@@ -421,25 +469,29 @@ Function Init_SolarVar ()
 	make /O 	root:SolarSimulator:GraphWaves:waveled470 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled850 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled1540 = Nan
-			
+		
+	SetDataFolder ":Storage"	
 	//Disable/Enable Dropdowns things on the panel
-	make /N=6 /O  :Storage:popvalues
-	wave popValues = :Storage:popvalues
+	make /N=6 /O  popvalues
+	wave popValues = popvalues
 	popValues = {1, 1, 1, 0, 0, 0}
 	
 	//Display traces on graph depending on the checkbox selected
-	make /N=5 /O :Storage:btnValues
-	wave btnValues = :Storage:btnValues
+	make /N=5 /O btnValues
+	wave btnValues = btnValues
 	btnValues = {0, 0, 0, 0, 0, 0}
 	
-	variable /G :Storage:ledchecked 
+	variable /G ledchecked 
+	variable /G spectrechecked
+	spectrechecked = 0
+	ledchecked = 0
 	//Increase power of leds
-	make /N=3 /O :Storage:LedLevel
-	wave LedLevel = :Storage:LedLevel
+	make /N=3 /O LedLevel
+	wave LedLevel = LedLevel
 	LedLevel = {0, 0, 0}
-	make /O :Storage:led470 = Nan
-	make /O :Storage:led850 = Nan
-	make /O :Storage:led1540 = Nan
+	make /O led470 = Nan
+	make /O led850 = Nan
+	make /O led1540 = Nan
 	 
 	//Values of LedCurrents
 	make /N=3	/O 		root:SolarSimulator:Storage:Iset = Nan
@@ -465,13 +517,13 @@ Function Init_SolarVar ()
 	JscMeas = {0,0,0,0,0,0}
 	JscObj = {0,0,0,0,0,0}
 	
-	SetDataFolder ":Storage"
+	
 	variable/G darea
 	variable/G iarea
 	darea = 0
 	
 	//Keithley K2600
-//	SetDataFolder ":Storage:Jsc-K2600"	
+//	SetDataFolder "Jsc-K2600"	
 	Variable/G probe, probe, ilimit, nplc, delay, vmax, vmin, step, light_dark, forward;
 	String /G channel, dname, notes
 	variable /G ff, eff, jsc, jmp,vmp,voc
@@ -508,9 +560,9 @@ Function Solar_Panel()
 		
 	//Leds	
 	SetDataFolder :Storage
-	Copy ("root:SolarSimulator:Spectre:SLeds:led470", "led470")
-	Copy ("root:SolarSimulator:Spectre:SLeds:led850", "led850")
-	Copy ("root:SolarSimulator:Spectre:SLeds:led1540", "led1540")
+	Copy ("root:SolarSimulator:Spectre:SLeds:LED470", "led470")
+	Copy ("root:SolarSimulator:Spectre:SLeds:LED850", "led850")
+	Copy ("root:SolarSimulator:Spectre:SLeds:LED1540", "led1540")
 	SetDataFolder path
 //	wave led470 = :storage:led470
 //	wave led850 = :storage:led850
@@ -524,7 +576,7 @@ Function Solar_Panel()
 	
 	//It has been created  when Leds Procedure initialize. 
 	svar com = root:SolarSimulator:Storage:com
-	
+	nvar spectrechecked = :Storage:spectrechecked
 	//Jsc
 //	wave JscMeas = root:SolarSimulator:Storage:JscMeas
 //	wave JscObj = root:SolarSimulator:Storage:JscObj
@@ -644,7 +696,7 @@ Function Solar_Panel()
 	CheckBox checkgraph_leds,value= 0
 	
 	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="On/Off"
-	CheckBox checkgraph_spectre,value= 0
+	CheckBox checkgraph_spectre,value= spectrechecked
 	CheckBox checklog,pos={700.00,308.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
 	
 	//SetVariable
@@ -751,30 +803,30 @@ Function Solar_Panel()
 	SetActiveSubwindow ##	
 	
 	//Waves drawn in the graph
-	SetDataFolder root:SolarSimulator:GraphWaves
-	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
-	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
-	wave wavelamp, wavespectre;
-	wave waveled470, waveled850, waveled1540;
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
-	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
-	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
-//	AppendtoGraph /W=SSPanel#SSGraph waveled470
-//	AppendtoGraph /W=SSPanel#SSGraph waveled850
-//	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
-	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
-	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
-	Label/W=SSPanel#SSGraph right "Spectrum"
-	ModifyGraph /W=SSPanel#SSGraph minor=1
+//	SetDataFolder root:SolarSimulator:GraphWaves
+//	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
+//	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
+//	wave wavelamp, wavespectre;
+//	wave waveled470, waveled850, waveled1540;
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
+//	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
+////	AppendtoGraph /W=SSPanel#SSGraph waveled470
+////	AppendtoGraph /W=SSPanel#SSGraph waveled850
+////	AppendtoGraph /W=SSPanel#SSGraph waveled1540	
+//	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
+//	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
+//	Label/W=SSPanel#SSGraph right "Spectrum"
+//	ModifyGraph /W=SSPanel#SSGraph minor=1
 end
 
 //DropDown "Yes-No" Selection
@@ -803,19 +855,23 @@ Function Pop_Action (popNum, popValues)
 	variable popNum
 	wave popValues
 	string checkX
+	string btnX
 	string popupX
 	string popupY
 	string valdisp1
 	string valdisp2
 	checkX = "check" + num2str(popNum)
+	btnX = "btn"+checkX
 	popupX = "popupSubREF" + num2str(popNum)
 	popupY = "popupSubDUT" + num2str(popNum)
 	if (popValues[popNum])
 //		CheckBox $checkX, 	disable = 0
+		Button $btnX, disable = 0
 		PopupMenu $popupX,	disable = 0
 		PopupMenu $popupY,	disable = 0	
 	else
 //		CheckBox $checkX, 	disable = 1
+		Button $btnX,	disable = 1
 		PopupMenu $popupX,	disable = 2
 		PopupMenu $popupY,	disable = 2
 	endif	
@@ -1296,14 +1352,14 @@ Function Meas_Jsc (deviceID, [id])
 	svar channel
 	nvar darea = root:SolarSimulator:Storage:darea
 //	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)
-	if (id)
+	if (id>=0 && id <=5)
 		wave jscMeas = root:SolarSimulator:Storage:jscMeas
 	//	jscMeas[id]=-1*measI_K2600(deviceID,channel)
 	//	jscMeas[id]*=(1e3/darea)	
-	else
+	elseif (id==-1)
 		nvar jsc  = root:SolarSimulator:Storage:jsc
-		jsc=-1*measI_K2600(deviceID,channel)
-		jsc*=(1e3/darea)
+//		jsc=-1*measI_K2600(deviceID,channel)
+//		jsc*=(1e3/darea)
 	endif
 	SetDataFolder sdf
 End
