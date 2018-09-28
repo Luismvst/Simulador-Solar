@@ -1,7 +1,12 @@
 #pragma TextEncoding = "Windows-1252"
+//#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include "gpibcom"
 //static strconstant com = " "
+
+//IMPROTANT: 
+//To make this program work, we have to introduce the folder called "SolarSimulatorData" into the "Igor Pro User Files" Folder.
+//THe path to that folder is "C:User:Documents:Wavemetric:IgorProUserFiles:" for most computers
 
 Menu "S.Solar"
 	SubMenu "Solar Panel"	
@@ -163,19 +168,23 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
+			nvar ledchecked = root:SolarSimulator:Storage:ledchecked
 			strswitch (sva.ctrlname)
 				//sva.dval -> variable value
 				case "setvarLed470":	
 					Led_Gauss(470)
-					Draw ($"waveled470", 7)
+					CheckBox checkgraph_leds,value= 1
+//					Draw ($"waveled470", 7)
 				break
 				case "setvarLed850":
 					Led_Gauss(850)
-					Draw ($"waveled850", 7)
+					CheckBox checkgraph_leds,value= 1
+//					Draw ($"waveled850", 7)
 				break
 				case "setvarLed1540":
 					Led_Gauss(1540)
-					Draw ($"waveled1540", 7)
+					CheckBox checkgraph_leds,value= 1
+//					Draw ($"waveled1540", 7)
 				break
 			endswitch
 		break
@@ -376,7 +385,7 @@ Function Init_SP ([val])
 		return 0
 	endif 
 	init_solarVar (val=val)	
-	Load_Spectre()
+//	Load_Spectre()
 	Solar_Panel ()
 	Init_Keithley_2600()
 End
@@ -409,18 +418,27 @@ Function Load_Spectre ()
 //	LoadWave/C /P=EQE_REF	"L1642n1_Ext.ibw"
 //	LoadWave/C /P=EQE_REF	"MC387n2_qe_XExt.ibw"
 //---------------ETC-------------------//
-	NewPath/O/Q 	path_leds, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:Espectros_LEDS"
-//	LoadWave/C/O /P=path_leds	"root:SolarSimulator:Spectre:Sleds:LED470.ibw"
-//	LoadWave/C/O /P=path_leds	"root:SolarSimulator:Spectre:Sleds:LED850.ibw"
-//	LoadWave/C/O /P=path_leds	"root:SolarSimulator:Spectre:Sleds:LED1540.ibw"
-	string sp = GetDataFolder(1)
-	SetDataFolder root:SolarSimulator:Spectre:Sleds
-	LoadWave/C/O /P=path_leds	"LED470.ibw"
-	LoadWave/C/O /P=path_leds	"LED850.ibw"
-	LoadWave/C/O /P=path_leds	"LED1540.ibw"
-	
-//	KillPath path_leds	
-	SetDataFolder sp
+
+//	LoadWave /C /O /P="C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_DUT" "UPM2367n2_1st_EQE.ibw"
+//	string sp = GetDataFolder(1)
+//	string general_path = SpecialDirPath ("Documents", 0, 0, 0)
+//	general_path += ":SolarSimulatorData"
+//	//LED_DATA
+//	string led_path = general_path + ":SLeds"
+//	SetDataFolder root:SolarSimulator:Spectre:SLeds
+//	LoadWave/C/O /P=led_path	"LED470.ibw"
+//	LoadWave/C/O /P=led_path	"LED850.ibw"
+//	LoadWave/C/O /P=led_path	"LED1540.ibw"
+//	
+//	//SOLAR SPECTRE DATA
+//	NewPath/O/Q 	path_ref, general_path + ":SRef"
+//	SetDataFolder root:SolarSimulator:Spectre:SRef
+//	LoadWave/C/O /P=path_leds	"LED470.ibw"
+//	LoadWave/C/O /P=path_leds	"LED850.ibw"
+//	LoadWave/C/O /P=path_leds	"LED1540.ibw"
+//	
+////	KillPath path_leds	
+//	SetDataFolder sp
 End
 
 Function Init_SolarVar ([val])
@@ -1107,19 +1125,21 @@ Function Led_Gauss (num)
 		Duplicate/O led470, waveled470
 		waveled470 = led470 * ledlevel[0] / waveMax (led470) 
 		Iset[0] = Imax[0] * ledlevel[0]
+		Draw (waveled470, 7)
 		break
 	case 850:
 		Duplicate/O led850, waveled850
 		waveled850 = led850 * ledlevel[1] / waveMax (led850)
 		Iset[1] = Imax[1] * ledlevel[1]
+		Draw (waveled850, 7)
 		break
 	case 1540:
 		Duplicate/O led1540, waveled1540
 		waveled1540 = led1540 * ledlevel[2] / waveMax (led1540)  
 		Iset[2] = Imax[2] * ledlevel[2]
+		Draw (waveled1540, 7)
 		break
 	endswitch	
-	
 	SetDataFolder savedatafolder	
 End
 
@@ -1280,9 +1300,10 @@ Function Disable_All ([option])
 			break
 	endswitch	
 End
-////My own Function 
+
+////My own Function to calculate jsc from qe and s.spectre
 Function qe2JscSS (qe, specw)
-	wave qe , specw
+	wave qe , specw	//qeSubCellRef y solar spectre (am0, amgd, amgg..)
 	variable jsc
 	variable num
 	//Identify if the wave contains Nan on its first positin.
