@@ -225,7 +225,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					endif			
 					break
 				case "buttonClean":
-					Clean()
+					Clean(btn = 1)
 					break
 				default: 
 					if (stringmatch (baName, "btncheck*"))
@@ -402,49 +402,35 @@ End
 
 //In case we only export the procedure, not the experiment (in the fture it will make sense) 
 Function Load_Spectre ()
-//	NewPath/O/Q path, "D:Luis:UNIVERSIDAD:Prácticas Empresa:Igor:Igor:Waves_SS:EQE_DUT"
-//	NewPath/O/Q 	EQE_DUT, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_DUT"
-//	NewPath/O/Q 	EQE_REF, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_REF"
-//	NewPath/O/Q  Slamp, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:espectro_simuladorSolar"	
-//	NewPath/O/Q  Sref, "C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:espectros_referencia"	
-//	NewPath/O/Q 	path_leds, "C::Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:Espectros_LEDS"
-//	LoadWave/C /P=EQE_DUT	"UPM2367n2_1st_EQE.ibw"
-//	LoadWave/C /P=EQE_DUT	"UPM2367n2_2nd_EQE.ibw"
-//	LoadWave/C /P=EQE_DUT	"UPM2367n2_3rd_EQE.ibw"
-//	LoadWave/C /P=EQE_DUT	"UPM2367n2_4th_EQE.ibw"
-//	LoadWave/C /P=Sref	"AMG173DIRECT.ibw"
-//	LoadWave/C /P=Sref	"AMG173GLOBAL.ibw"
-//	LoadWave/C /P=Sref	"AMO.ibw"
-//	LoadWave/C /P=EQE_REF	"L1641n1_Ext.ibw"
-//	LoadWave/C /P=EQE_REF	"L1642n1_Ext.ibw"
-//	LoadWave/C /P=EQE_REF	"MC387n2_qe_XExt.ibw"
-//---------------ETC-------------------//
-
-//	LoadWave /C /O /P="C:Users:III-V:Documents:Luis III-V:Prácticas Empresa:Igor:Waves_SS:EQE_DUT" "UPM2367n2_1st_EQE.ibw"
 	string sp = GetDataFolder(1)
 	string general_path = SpecialDirPath ("Igor Pro User Files", 0, 0, 0)
 	general_path += "SolarSimulatorData"
-	//LED_DATA
-	string led_path = general_path + ":SLeds"
+//	string general_path1 = replaceString (":", general_path, "\ " )	
+//	general_path1 = replaceString ("C\ ", general_path1, "C:\ ") 
+//	general_path1 = replaceString (" ", general_path1, "")
+//	print general_path1	
+	
+	//LED_DATA	
+//	string led_path = general_path + "\SLeds"
 	SetDataFolder root:SolarSimulator:Spectre:SLeds
-	LoadWave/C/O /P=$led_path	"LED470.ibw"
-	LoadWave/C/O /P=led_path	"LED850.ibw"
-	LoadWave/C/O /P=led_path	"LED1540.ibw"
+	newpath/O/Q lpath, general_path + ":SLeds"
+	LoadWave/C/O /P=lpath	"LED470.ibw"
+	LoadWave/C/O /P=lpath	"LED850.ibw"
+	LoadWave/C/O /P=lpath	"LED1540.ibw"
 	
 	//SOLAR SPECTRE DATA
-//	NewPath/O/Q 	path_ref, general_path + ":SRef"
-	string ref_path = general_path + ":SRef"
+	NewPath/O/Q 	rpath, general_path + ":SRef"
+//	string ref_path = general_path + ":SRef"
 	SetDataFolder root:SolarSimulator:Spectre:SRef
-	LoadWave/C/O /P=ref_path	"AMG173DIRECT.ibw"
-	LoadWave/C/O /P=ref_path	"AMG173GLOBAL.ibw"
-	LoadWave/C/O /P=ref_path	"AMO.ibw"
+	LoadWave/C/O /P=rpath	"AMG173DIRECT.ibw"
+	LoadWave/C/O /P=rpath	"AMG173GLOBAL.ibw"
+	LoadWave/C/O /P=rpath	"AMO.ibw"
 	
-	string lamp_path = general_path + ":SLamp"
 	SetDataFolder root:SolarSimulator:Spectre:SLamp
-	LoadWave/C/O /P=lamp_path	"XT10open2012.ibw"
-	NewPath/O/Q 	path_lamp, "C:\Users\III-V\Documents\WaveMetrics\Igor Pro 7 User Files\SolarSimulatorData\SLamp"
+	NewPath/O/Q 	lpath, general_path + ":SLamp"
+	LoadWave/C/O /P=lpath	"XT10open2012.ibw"
 	
-//	KillPath path_leds	
+	killPath /A 
 	SetDataFolder sp
 End
 
@@ -996,6 +982,7 @@ Function Button_JscEnable (id)
 			Button $btncheck, fColor=(16385,65535,41303)
 			ValDisplay $valdisp1, disable = 2
 			ValDisplay $valdisp2, disable = 2
+			btnValues[i]=0
 		elseif (btnValues[i])
 			//I dont know why color does not change when checked.
 			Button $btncheck, fColor=(65535, 0, 0)
@@ -1048,8 +1035,14 @@ end
 //*******************************************************************************************************************//
 
 //Reconstruction of Display. Clean Display
-Function Clean ()
+Function Clean ([btn])
+	variable btn
 	SetDataFolder root:SolarSimulator
+	if (btn)//if btn > 0
+		wave btnValues = :Storage:btnValues
+		btnValues = {0,0,0,0,0,0}
+		Button_jscEnable (-1)
+	endif
 	KillWindow SSPanel#SSGraph
 	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
 	RenameWindow #,SSGraph	
@@ -1066,7 +1059,7 @@ Function Clean ()
 	string checkspectre = "checkgraph_spectre"
 	string checkleds = "checkgraph_leds"
 	CheckBox $checkspectre, value = 0//, labelBack = (0, 0, 0)
-	CheckBox $checkleds, value = 0//, labelBack = (0, 0, 0)
+	CheckBox $checkleds, value = 0//, labelBack = (0, 0, 0)4
 	
 	SetDataFolder root:SolarSimulator
 end
