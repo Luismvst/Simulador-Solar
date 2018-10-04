@@ -173,17 +173,20 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 				//sva.dval -> variable value
 				case "setvarLed470":	
 					Led_Gauss(470)
-					CheckBox checkgraph_leds,value= 1
+					ledchecked = 1
+					CheckBox checkgraph_leds,value=ledchecked
 //					Draw ($"waveled470", 7)
 				break
 				case "setvarLed850":
 					Led_Gauss(850)
-					CheckBox checkgraph_leds,value= 1
+					ledchecked = 1
+					CheckBox checkgraph_leds,value=ledchecked
 //					Draw ($"waveled850", 7)
 				break
 				case "setvarLed1540":
 					Led_Gauss(1540)
-					CheckBox checkgraph_leds,value= 1
+					ledchecked = 1
+					CheckBox checkgraph_leds,value=ledchecked
 //					Draw ($"waveled1540", 7)
 				break
 			endswitch
@@ -385,7 +388,7 @@ Function Init_SP ([val])
 		return 0
 	endif 
 	init_solarVar (val=val)	
-	Load_Spectre()
+//	Load_Spectre()
 	Solar_Panel ()
 	Init_Keithley_2600()
 End
@@ -414,21 +417,21 @@ Function Load_Spectre ()
 //	string led_path = general_path + "\SLeds"
 	SetDataFolder root:SolarSimulator:Spectre:SLeds
 	newpath/O/Q lpath, general_path + ":SLeds"
-	LoadWave/C/O /P=lpath	"LED470.ibw"
-	LoadWave/C/O /P=lpath	"LED850.ibw"
-	LoadWave/C/O /P=lpath	"LED1540.ibw"
+	LoadWave/C/O/Q /P=lpath	"LED470.ibw"
+	LoadWave/C/O/Q /P=lpath	"LED850.ibw"
+	LoadWave/C/O/Q /P=lpath	"LED1540.ibw"
 	
 	//SOLAR SPECTRE DATA
 	NewPath/O/Q 	rpath, general_path + ":SRef"
 //	string ref_path = general_path + ":SRef"
 	SetDataFolder root:SolarSimulator:Spectre:SRef
-	LoadWave/C/O /P=rpath	"AMG173DIRECT.ibw"
-	LoadWave/C/O /P=rpath	"AMG173GLOBAL.ibw"
-	LoadWave/C/O /P=rpath	"AMO.ibw"
+	LoadWave/C/O/Q /P=rpath	"AMG173DIRECT.ibw"
+	LoadWave/C/O/Q /P=rpath	"AMG173GLOBAL.ibw"
+	LoadWave/C/O/Q /P=rpath	"AMO.ibw"
 	
 	SetDataFolder root:SolarSimulator:Spectre:SLamp
 	NewPath/O/Q 	lpath, general_path + ":SLamp"
-	LoadWave/C/O /P=lpath	"XT10open2012.ibw"
+	LoadWave/C/O/Q /P=lpath	"XT10open2012.ibw"
 	
 	killPath /A 
 	SetDataFolder sp
@@ -956,7 +959,7 @@ Function Check_PlotEnable (id[, checked])
 		
 	SetDataFolder savedatafolder	
 End
-
+gi
 Function Button_JscEnable (id)
 	//id is the selected box that we want to enable or disable
 	//checked is the state that the selected checkbox has got
@@ -965,6 +968,7 @@ Function Button_JscEnable (id)
 	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path	
 	wave btnValues = :Storage:btnValues
+	nvar ledchecked = :Storage:LedChecked
 	variable i
 	//*********Coming Soon: refresh*************//
 	variable refresh //Selected
@@ -991,58 +995,28 @@ Function Button_JscEnable (id)
 			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
 			//Lets draw only the correspondant EQE waves
 			Check_PlotEnable (id)
+			Check_PlotEnable (7, checked = ledchecked)
 			
 		endif
 	endfor
 	SetDataFolder savedatafolder
 end
-//Function Check_JscEnable (id, checked)
-//	//id is the selected box that we want to enable or disable
-//	//checked is the state that the selected checkbox has got
-//	variable id, checked
-//	string path = "root:SolarSimulator"
-//	string savedatafolder = GetDataFolder (1) 
-//	SetDataFolder path
-//	variable i
-//	//*********Coming Soon: refresh*************//
-//	variable refresh //Selected
-//	string checkX
-//	string valdisp1
-//	string valdisp2
-//	string getJscObj, getJscMeas;
-//	for (i=0;i<6; i++)
-//		checkX = "check" + num2str(i)
-//		valdisp1 = "valdispJREF" + num2str(i)
-//		valdisp2 = "valdispJ" + num2str(i)
-//		getJscObj = "get_JscObj("+num2str(i)+")"
-//		getJscMeas = "get_JscMeas("+num2str(i)+")"
-//		if (id != i || !checked)
-//			CheckBox $checkX, value = 0//, labelBack = (0, 0, 0)
-//			ValDisplay $valdisp1, disable = 2
-//			ValDisplay $valdisp2, disable = 2
-//		elseif (checked)
-//			//I dont know why color does not change when checked.
-//			CheckBox $checkX, value = 1//, labelBack = (50000, 65535, 20000)
-//			ValDisplay $valdisp1, disable = 0,value = #getJscObj
-//			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
-//			//Lets draw only the correspondant EQE waves
-//			Check_PlotEnable (id)
-//			
-//		endif
-//	endfor
-//	SetDataFolder savedatafolder
-//end
-//*******************************************************************************************************************//
 
 //Reconstruction of Display. Clean Display
 Function Clean ([btn])
 	variable btn
+	string sdf = getdatafolder (1)
 	SetDataFolder root:SolarSimulator
-	if (btn)//if btn > 0
+	nvar ledchecked = :Storage:ledchecked
+	switch (btn)
+	case 1://if btn==1 -> Included Leds
+		ledchecked = 0
+	case 2://if btn==2 -> Total Clean (included jsc_buttons)
 		wave btnValues = :Storage:btnValues
 		btnValues = {0,0,0,0,0,0}
 		Button_jscEnable (-1)
-	endif
+		break
+	endswitch
 	KillWindow SSPanel#SSGraph
 	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
 	RenameWindow #,SSGraph	
@@ -1059,9 +1033,9 @@ Function Clean ([btn])
 	string checkspectre = "checkgraph_spectre"
 	string checkleds = "checkgraph_leds"
 	CheckBox $checkspectre, value = 0//, labelBack = (0, 0, 0)
-	CheckBox $checkleds, value = 0//, labelBack = (0, 0, 0)4
+	CheckBox $checkleds, value = ledchecked//, labelBack = (0, 0, 0)
 	
-	SetDataFolder root:SolarSimulator
+	Setdatafolder sdf
 end
 
 //Different Functions for Scaling . We will use them maybe in the future
