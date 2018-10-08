@@ -10,7 +10,7 @@ function/S QElist(ref)
 	//	Wave/Z QEname=iodfr:QEnames
 	//	Wave/Z QElong=iodfr:QElong
 	string runs=folderList()		//Get list of folders under root
-	string run, QE1list=" "
+	string run, QE1list="_none_;"
 	variable i, notref
 	//Look for QE waves in every folder
 	for(i=0;(i<itemsinlist(runs,","));i+=1)
@@ -169,14 +169,14 @@ end
 
 Function /S QEWaveList(num)
 	variable num
-	string list
+	string list="_none_;"
 	String fldrSav= GetDataFolder(1)
 	if (num == 1)
 		SetDataFolder root:SolarSimulator:Spectre:SRef			
 	elseif (num == 2)
 		SetDataFolder root:SolarSimulator:Spectre:SLamp		
-	endif	
-	list = wavelist ("*", ";", "")
+	endif
+	list+= wavelist ("*", ";", "")
 	SetDataFolder fldrSav
 	return list
 end

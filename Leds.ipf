@@ -3,17 +3,6 @@
 #include "serialcom"
 #include "serialcomB"
 
-//Initialize the LEDS with the 
-Function init_Leds(COM)		
-	string com
-	DFRef saveDFR=GetDataFolderDFR()
-	string path = "root:SolarSimulator:LedController"
-	DFRef dfr = $path
-	SetDatafolder dfr
-	string Device = "LedController"
-	return init_OpenSerial(com, Device)
-	SetDataFolder saveDFR
-end
 //In a future it will be merged with Mario´s InitOpenSerial() 
 Function init_OpenSerial (com, Device)
 
@@ -29,7 +18,7 @@ Function init_OpenSerial (com, Device)
 		DeviceCommands=" baud=9600, parity=0, databits=8, stopbits=1"
 	endif
 		// is the port available in the computer?
-	if (WhichListItem(com,sports)==-1)
+	if (WhichListItem(com,sports)!=-1)
 		cmd = "VDT2 /P=" + com + DeviceCommands
 		Execute cmd
 		cmd = "VDTOperationsPort2 " + com
