@@ -245,21 +245,24 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					if (stringmatch (baName, "btncheck*"))
 						if (str2num(baName[8])>=0 && str2num(baName[8])<=5)
 							wave btnValues = root:SolarSimulator:Storage:btnValues
-							wave JscMeas = root:SolarSimulator:Storage:jscMeas
+//							wave JscMeas = root:SolarSimulator:Storage:jscMeas
 							variable id = str2num(baName[8])
 							btnValues[id]=!btnValues[id]							
 							Button_JscEnable(id)
-							Calc_JscObj(id)							
-							variable start, finish, i		
-							for (i=0;btnValues[id]==1 && i <= 10;i++)	
-								start = stopmstimer (-2)				
-								jscMeas[id]=Meas_Jsc(deviceID)
-								print i
-								do 
-									finish = stopmstimer(-2) - start 	//us
-									finish = finish / 10^6 	// us -> s
-								while (finish < 0.5 )		//It holds on for 2 secs.					
-							endfor
+							Calc_JscObj(id)		
+							if (btnValues[id])
+								CountDown_Jsc (deviceID, id, 5 )					
+							endif
+//							variable start, finish, i		
+//							for (i=0;btnValues[id]==1 && i <= 10;i++)	
+//								start = stopmstimer (-2)				
+//								jscMeas[id]=Meas_Jsc(deviceID)
+//								print i
+//								do 
+//									finish = stopmstimer(-2) - start 	//us
+//									finish = finish / 10^6 	// us -> s
+//								while (finish < 0.5 )		//It holds on for 2 secs.					
+//							endfor
 						endif
 					endif
 			endswitch
@@ -1024,11 +1027,10 @@ Function Button_JscEnable (id)
 			//I dont know why color does not change when checked.
 			Button $btncheck, fColor=(65535, 0, 0)
 			ValDisplay $valdisp1, disable = 0,value = #getJscObj
-			ValDisplay $valdisp1, disable = 0,value = #getJscObj
 			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
 			//Lets draw only the correspondant EQE waves
-			Check_PlotEnable (id)
-			Check_PlotEnable (7, checked = ledchecked)
+//			Check_PlotEnable (id)
+//			Check_PlotEnable (7, checked = ledchecked)
 			
 		endif
 	endfor
@@ -1263,12 +1265,9 @@ Function Led_Apply ()
 	string savedatafolder = GetDataFolder(1)
 	SetDataFolder "root:SolarSimulator:Storage"
 	wave Iset
-	variable ledchecked
-	if (ledchecked)
-		setNormalCurrent (channel1, Iset[0])
-		setNormalCurrent (channel2, Iset[1])
-		setNormalCurrent (channel3, Iset[2])	
-	endif
+	setNormalCurrent (channel1, Iset[0])
+	setNormalCurrent (channel2, Iset[1])
+	setNormalCurrent (channel3, Iset[2])
 	SetDataFolder savedatafolder
 End
 
@@ -1714,4 +1713,101 @@ endswitch
 //	endif
 	cmdList_GPIB(deviceID,cmdList)
 	//print cmdList
+end
+
+
+Function PressEscapeToAbort(phase, title, message)
+	Variable phase				// 0: Display control panel with message.
+									// 1: Test if Escape is pressed.
+									// 2: Close control panel.
+	String title				// Title for control panel.
+	String message				// Tells user what you are doing.
+	
+	if (phase == 0)			// Create panel
+		DoWindow/F PressEscapePanel
+		if (V_flag == 0)
+			NewPanel/K=1 /W=(100,100,350,200)
+			DoWindow/C PressEscapePanel
+			DoWindow/T PressEscapePanel, title
+		endif
+		TitleBox Message,pos={7,8},size={69,20},title=message
+		String abortStr = "Press escape to abort"
+		TitleBox Press,pos={6,59},size={106,20},title=abortStr
+		DoUpdate
+	endif
+	
+	if (phase == 1)							// Test for Escape
+		Variable doAbort = 0
+		if (GetKeyState(0) & 32)			// Is Escape pressed now?
+			doAbort = 1
+		else
+			if (strlen(message) != 0)		// Want to change message?
+				TitleBox Message,title=message
+				DoUpdate
+			endif
+		endif
+		return doAbort
+	endif
+	
+	if (phase == 2)							// Kill panel
+		DoWindow/K PressEscapePanel
+	endif
+	
+	return 0
+End
+
+Function CountDown_Jsc(deviceID, id, countdown)
+	variable deviceID
+	variable id, countdown	
+	wave jsc = root:SolarSimulator:Storage:jscMeas
+	wave btnValues = root:SolarSimulator:Storage:btnValues
+	String message = "Initializing measurement"
+	TitleBox countdown_message,pos={340,617},size={100,20},title=message
+	String abortStr = "Press escape to abort"
+	TitleBox countdown_abort,pos={500,617},size={100,20},title=abortStr
+	Dilay (500)
+	Variable startTicks = ticks
+	Variable endTicks = startTicks + 60*countdown
+	Variable lastMessageUpdate = startTicks
+	variable count //borrar***
+	do		
+		DoUpdate /W=SSPanel#SSGraph /E=1
+		if (ticks>=lastMessageUpdate+60)			// Time to update message?
+			Variable remaining = (endTicks - ticks) / 60
+			sprintf message, "Time remaining: %d seconds", remaining
+			TitleBox countdown_message, title=message
+			lastMessageUpdate = ticks
+//			jsc[id] = Meas_Jsc (deviceID)
+			jsc[id] = count
+		endif
+
+		if (GetKeyState(0) && 32 || btnValues[id] != 1)
+//			abortStr = "Test aborted by Escape."
+//			message = "CANCELLED"
+//			TitleBox countdown_abort,title=abortStr
+//			TitleBox countdown_message,title=message
+
+			jsc [id] = Nan
+//			Dilay (500)	//ms
+			break				
+		endif
+		count ++
+	while(ticks < endTicks)
+	abortStr = ""
+	message = ""
+	TitleBox countdown_message, title = message
+	TitleBox countdown_abort, title = abortStr
+
+End
+
+Function bucle ()
+	
+	wave jsc = root:SolarSimulator:Storage:jscMeas
+	variable i
+	jsc = 0
+	for (i=0; i<6; i++)
+		dilay (1000)
+		doUpdate
+		jsc[i]=i
+	endfor
 end
