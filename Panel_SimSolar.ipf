@@ -753,6 +753,7 @@ Function Solar_Panel()
 	SetVariable setvarDArea,value= root:SolarSimulator:Storage:darea
 	
 	//ValDisplay
+	
 	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
 	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
@@ -777,6 +778,8 @@ Function Solar_Panel()
 	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
 	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
 	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
+
+
 //	ValDisplay valdispJsc,pos={1185.00,310.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
 //	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
 //	ValDisplay valdispVoc,pos={1185.00,340.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
@@ -791,6 +794,7 @@ Function Solar_Panel()
 //	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value=0
 //	When used in sqared screens, this is a better implementation
 // 	ScreenResolution ()
+
 	ValDisplay valdispJsc,pos={1015.00,450.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
 	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
 	ValDisplay valdispVoc,pos={1015.00,480.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
@@ -1369,6 +1373,10 @@ Function Calc_JscObj(id)
 		jscObj[5] = qe2JscSS (qe, wavespectre)
 		break
 	endSwitch
+	string valdispJx = "valdispJREF"+num2str(id)
+	string getJsc = "get_JscObj ("+num2str(id)+")"
+	ValDisplay valdispJx, value= #getJsc
+	
 End
 
 Function Meas_Jsc (deviceID)
@@ -1400,7 +1408,8 @@ Function Meas_Voc(deviceID)
 	return voc
 	SetDataFolder sdf
 End
-
+ 
+ 
 Function get_JscObj (i)
 	variable i
 	wave JscObj = root:SolarSimulator:Storage:JscObj
@@ -1761,6 +1770,8 @@ Function CountDown_Jsc(deviceID, id, countdown)
 	variable id, countdown	
 	wave jsc = root:SolarSimulator:Storage:jscMeas
 	wave btnValues = root:SolarSimulator:Storage:btnValues
+	string valdispJX = "valdispJ" + num2str(id)
+	string getJscMeas = "get_JscMeas(" + num2str (id) + ")"
 	String message = "Initializing measurement"
 	TitleBox countdown_message,pos={340,617},size={100,20},title=message
 	String abortStr = "Press escape to abort"
@@ -1769,7 +1780,7 @@ Function CountDown_Jsc(deviceID, id, countdown)
 	Variable startTicks = ticks
 	Variable endTicks = startTicks + 60*countdown
 	Variable lastMessageUpdate = startTicks
-	variable count //borrar***
+	variable count = 1 //borrar***
 	do		
 		DoUpdate /W=SSPanel#SSGraph /E=1
 		if (ticks>=lastMessageUpdate+60)			// Time to update message?
@@ -1779,6 +1790,20 @@ Function CountDown_Jsc(deviceID, id, countdown)
 			lastMessageUpdate = ticks
 //			jsc[id] = Meas_Jsc (deviceID)
 			jsc[id] = count
+//			ValDisplay $valdispJX , value = #"get_JscMeas(id)"
+//			ValDisplay valdispJ0,valueColor=(1,16019,65535),value = #"get_JscMeas(0)"
+//			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #"root:SolarSimulator:Storage:jscMeas[0]"
+			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #getJscMeas
+//			ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//			ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
+//			ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//			ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
+//			ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//			ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
+//			ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//			ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
+//			ValDisplay $valdispJX,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//			ValDisplay $valdispJX,format="",limits={0,0,0},barmisc={0,1000},value = #"get_JscMeas(0)"
 		endif
 
 		if (GetKeyState(0) && 32 || btnValues[id] != 1)
@@ -1786,10 +1811,10 @@ Function CountDown_Jsc(deviceID, id, countdown)
 //			message = "CANCELLED"
 //			TitleBox countdown_abort,title=abortStr
 //			TitleBox countdown_message,title=message
-
-			jsc [id] = Nan
+//
+//			jsc [id] = Nan
 //			Dilay (500)	//ms
-			break				
+			break			//Out of loop	
 		endif
 		count ++
 	while(ticks < endTicks)
