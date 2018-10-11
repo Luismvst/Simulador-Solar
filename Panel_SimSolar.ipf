@@ -222,7 +222,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			strswitch (ba.ctrlname)
 //				case "buttonLog":
 				case "btnMeasIV":					
-					measIV_SSCurvaIV(deviceID)
+					meas_SSCurvaIV(deviceID, 0)
 					break
 				case "btnMeasJsc":
 					nvar jsc  = root:SolarSimulator:Storage:jsc
@@ -249,20 +249,11 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 							variable id = str2num(baName[8])
 							btnValues[id]=!btnValues[id]							
 							Button_JscEnable(id)
-							Calc_JscObj(id)		
+							Calc_JscObj(id)	
+							Calc_JscM (id)	
 							if (btnValues[id])
-								CountDown_Jsc (deviceID, id, 5 )					
+								CountDown_Jsc (deviceID, id, 1 )					
 							endif
-//							variable start, finish, i		
-//							for (i=0;btnValues[id]==1 && i <= 10;i++)	
-//								start = stopmstimer (-2)				
-//								jscMeas[id]=Meas_Jsc(deviceID)
-//								print i
-//								do 
-//									finish = stopmstimer(-2) - start 	//us
-//									finish = finish / 10^6 	// us -> s
-//								while (finish < 0.5 )		//It holds on for 2 secs.					
-//							endfor
 						endif
 					endif
 			endswitch
@@ -537,10 +528,13 @@ Function Init_SolarVar ([val])
 	//Jsc
 	make /N=6 /O root:SolarSimulator:Storage:JscObj 
 	make /N=6 /O root:SolarSimulator:Storage:JscMeas 
+	make /N=6 /O root:SolarSimulator:Storage:JscM
 	wave JscObj = root:SolarSimulator:Storage:JscObj 
 	wave JscMeas = root:SolarSimulator:Storage:JscMeas 
+	wave JscM = root:SolarSimulator:Storage:JscM
 	JscMeas = {0,0,0,0,0,0}
 	JscObj = {0,0,0,0,0,0}
+	JscM = {0,0,0,0,0,0}
 	
 	
 	variable/G darea
@@ -633,8 +627,9 @@ Function Solar_Panel()
 	DrawText 179,314,"Cargar S\\BLAMP"
 	DrawText 169,357,"Cargar EQE\\BREF"
 	DrawText 319,355,"Cargar EQE\\BDUT"
-	DrawText 491,353,"Jsc\\BREF OBJETIVO"
-	DrawText 574,355,"Jsc\\BREF MEDIDO"
+	DrawText 497,355,"Jsc\\BOBJ"
+	DrawText 600,355,"Jsc\\BMEAS"
+	DrawText 561,355,"M"
 	
 	//Buttons
 	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG",fColor=(16385,65535,41303)
@@ -752,34 +747,78 @@ Function Solar_Panel()
 	SetVariable setvarDArea,pos={843.00,339.00},size={169.00,18.00},title="Total Area (cm2)"
 	SetVariable setvarDArea,value= root:SolarSimulator:Storage:darea
 	
+	SetVariable setvarNotes,pos={829.00,609.00},size={336.00,18.00},title="\\f01Notes"
+	SetVariable setvarNotes,value= root:SolarSimulator:Storage:notes	
+	SetVariable setvarName,pos={870.00,583.00},size={293.00,18.00},title="\\f01DUT name"
+	SetVariable setvarName,value= root:SolarSimulator:Storage:dname
 	//ValDisplay
 	
-	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF0,pos={488.00,362.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
-	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF1,pos={488.00,382.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(1)"
-	ValDisplay valdispJREF2,pos={488.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF2,pos={488.00,402.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(2)"
-	ValDisplay valdispJREF3,pos={488.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF3,pos={488.00,422.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(3)"
-	ValDisplay valdispJREF4,pos={488.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF4,pos={488.00,442.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(4)"
-	ValDisplay valdispJREF5,pos={488.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+	ValDisplay valdispJREF5,pos={488.00,462.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(5)"
-	ValDisplay valdispJ0,pos={573.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ0,pos={596,362.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(0)"
-	ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ1,pos={596,382.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
-	ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ2,pos={596,402.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
-	ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ3,pos={596,422.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
-	ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ4,pos={596,442.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
-	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+	ValDisplay valdispJ5,pos={596,462.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
+	
+	ValDisplay valdispJM0,pos={542.00,362.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
+	ValDisplay valdispJM0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(0)"
+	ValDisplay valdispJM1,pos={542.00,382.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
+	ValDisplay valdispJM1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(1)"
+	ValDisplay valdispJM2,pos={542.00,402.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
+	ValDisplay valdispJM2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(2)"
+	ValDisplay valdispJM3,pos={542.00,422.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
+	ValDisplay valdispJM3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(3)"
+	ValDisplay valdispJM4,pos={542.00,442.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
+	ValDisplay valdispJM4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(4)"
+	ValDisplay valdispJM5,pos={542.00,462.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
+	ValDisplay valdispJM5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(5)"
+	
+	
+//	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+//	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
+//	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+//	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(1)"
+//	ValDisplay valdispJREF2,pos={488.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+//	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(2)"
+//	ValDisplay valdispJREF3,pos={488.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+//	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(3)"
+//	ValDisplay valdispJREF4,pos={488.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+//	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(4)"
+//	ValDisplay valdispJREF5,pos={488.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
+//	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(5)"
+//	ValDisplay valdispJ0,pos={573.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(0)"
+//	ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
+//	ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
+//	ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
+//	ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
+//	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
+//	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
 
 
+	//Doisposicion 1
 //	ValDisplay valdispJsc,pos={1185.00,310.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
 //	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
 //	ValDisplay valdispVoc,pos={1185.00,340.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
@@ -795,20 +834,35 @@ Function Solar_Panel()
 //	When used in sqared screens, this is a better implementation
 // 	ScreenResolution ()
 
-	ValDisplay valdispJsc,pos={1015.00,450.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
-	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
-	ValDisplay valdispVoc,pos={1015.00,480.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
-	ValDisplay valdispVoc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Voc"
-	ValDisplay valdispff,pos={1015.00,510.00},size={99.00,17.00},bodyWidth=75,disable=2,title="FF(%)"
-	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value=0
-	ValDisplay valdisph,pos={1015.00,540.00},size={99.00,17.00},bodyWidth=75,disable=2,title="h(%)"
-	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= 0
-	ValDisplay valdispJmp,pos={1015.00,570.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
-	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value=0
-	ValDisplay valdispVmp,pos={1015.00,600.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
-	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value=0
+	//Disposicion 2
+//	ValDisplay valdispJsc,pos={1015.00,450.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
+//	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
+//	ValDisplay valdispVoc,pos={1015.00,480.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
+//	ValDisplay valdispVoc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Voc"
+//	ValDisplay valdispff,pos={1015.00,510.00},size={99.00,17.00},bodyWidth=75,disable=2,title="FF(%)"
+//	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value=0
+//	ValDisplay valdisph,pos={1015.00,540.00},size={99.00,17.00},bodyWidth=75,disable=2,title="h(%)"
+//	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= 0
+//	ValDisplay valdispJmp,pos={1015.00,570.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
+//	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value=0
+//	ValDisplay valdispVmp,pos={1015.00,600.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
+//	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value=0
 	
-
+	//disposicion final
+	ValDisplay valdispJsc,pos={1040.00,380.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
+	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000}
+	ValDisplay valdispJsc,value= #"root:SolarSimulator:Storage:Jsc"
+	ValDisplay valdispVoc,pos={1040.00,410.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
+	ValDisplay valdispVoc,limits={0,0,0},barmisc={0,1000}
+	ValDisplay valdispVoc,value= #"root:SolarSimulator:Storage:Voc"
+	ValDisplay valdispff,pos={1040.00,440.00},size={99.00,17.00},bodyWidth=75,disable=2,title="FF(%)"
+	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdisph,pos={1040.00,470.00},size={99.00,17.00},bodyWidth=75,disable=2,title="h(%)"
+	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispJmp,pos={1040.00,500.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
+	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value= #"0"
+	ValDisplay valdispVmp,pos={1040.00,530.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
+	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value= #"0"
 	
 	//Functions to initialize panel
 	for (i = 0; i<6; i++)
@@ -1013,25 +1067,28 @@ Function Button_JscEnable (id)
 	//*********Coming Soon: refresh*************//
 	variable refresh //Selected
 	string btncheck
-	string valdisp1
-	string valdisp2
-	string getJscObj, getJscMeas;
+	string valdisp1, valdisp2, valdisp3;
+	string getJscObj, getJscMeas, getJscM;
 	for (i=0;i<6; i++)
 		btncheck = "btncheck" + num2str(i)
 		valdisp1 = "valdispJREF" + num2str(i)
 		valdisp2 = "valdispJ" + num2str(i)
+		valdisp3 = "valdispJM" + num2str(i)
 		getJscObj = "get_JscObj("+num2str(i)+")"
 		getJscMeas = "get_JscMeas("+num2str(i)+")"
+		getJscM = "get_JscM("+num2str(i)+")"
 		if (id != i || !btnValues[i])
 			Button $btncheck, fColor=(16385,65535,41303)
 			ValDisplay $valdisp1, disable = 2
 			ValDisplay $valdisp2, disable = 2
+			ValDisplay $valdisp3, disable = 2
 			btnValues[i]=0
 		elseif (btnValues[i])
 			//I dont know why color does not change when checked.
 			Button $btncheck, fColor=(65535, 0, 0)
 			ValDisplay $valdisp1, disable = 0,value = #getJscObj
 			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
+			ValDisplay $valdisp3, disable = 0,value = #getJscM
 			//Lets draw only the correspondant EQE waves
 //			Check_PlotEnable (id)
 //			Check_PlotEnable (7, checked = ledchecked)
@@ -1343,42 +1400,90 @@ Function qe2JscSS (qe, specw)
 	return jsc
 End
 
+//Function Calc_JscObj_v1(id)
+//	variable id
+//	wave jscObj = root:SolarSimulator:Storage:jscObj
+//	wave wavespectre = root:SolarSimulator:GraphWaves:wavespectre
+//	switch (id)
+//	case 0:
+//		wave qe = root:SolarSimulator:GraphWaves:wavesubref0		
+//		jscObj[0] = qe2JscSS (qe, wavespectre)
+//		break
+//	case 1:
+//		wave qe = root:SolarSimulator:GraphWaves:wavesubref1
+//		jscObj[1] = qe2JscSS (qe, wavespectre)
+//		break
+//	case 2:
+//		wave qe = root:SolarSimulator:GraphWaves:wavesubref2		
+//		jscObj[2] = qe2JscSS (qe, wavespectre)
+//		break
+//	case 3:
+//		wave qe = root:SolarSimulator:GraphWaves:wavesubref3		
+//		jscObj[3] = qe2JscSS (qe, wavespectre)
+//		break
+//	case 4:
+//		wave qe = root:SolarSimulator:GraphWaves:wavesubref4		
+//		jscObj[4] = qe2JscSS (qe, wavespectre)
+//		break
+//	case 5:
+//		wave qe = root:SolarSimulator:GraphWaves:wavesubref5		
+//		jscObj[5] = qe2JscSS (qe, wavespectre)
+//		break
+//	endSwitch
+//	string valdispJx = "valdispJREF"+num2str(id)
+//	string getJsc = "get_JscObj ("+num2str(id)+")"
+//	ValDisplay $valdispJx, value= #getJsc
+//	
+//End
+
 Function Calc_JscObj(id)
 	variable id
 	wave jscObj = root:SolarSimulator:Storage:jscObj
 	wave wavespectre = root:SolarSimulator:GraphWaves:wavespectre
-	switch (id)
-	case 0:
-		wave qe = root:SolarSimulator:GraphWaves:wavesubref0		
-		jscObj[0] = qe2JscSS (qe, wavespectre)
-		break
-	case 1:
-		wave qe = root:SolarSimulator:GraphWaves:wavesubref1
-		jscObj[1] = qe2JscSS (qe, wavespectre)
-		break
-	case 2:
-		wave qe = root:SolarSimulator:GraphWaves:wavesubref2		
-		jscObj[2] = qe2JscSS (qe, wavespectre)
-		break
-	case 3:
-		wave qe = root:SolarSimulator:GraphWaves:wavesubref3		
-		jscObj[3] = qe2JscSS (qe, wavespectre)
-		break
-	case 4:
-		wave qe = root:SolarSimulator:GraphWaves:wavesubref4		
-		jscObj[4] = qe2JscSS (qe, wavespectre)
-		break
-	case 5:
-		wave qe = root:SolarSimulator:GraphWaves:wavesubref5		
-		jscObj[5] = qe2JscSS (qe, wavespectre)
-		break
-	endSwitch
+	string sdf = GetDataFolder (1)
+	SetDataFolder root:SolarSimulator:GraphWaves
+	string sref = "wavesubref"+num2str(id)
+	wave qe = $sref
+	SetDataFolder sdf
+	JscObj[id] = qe2JscSS ( qe, wavespectre)
 	string valdispJx = "valdispJREF"+num2str(id)
 	string getJsc = "get_JscObj ("+num2str(id)+")"
-	ValDisplay valdispJx, value= #getJsc
-	
+	ValDisplay $valdispJx, value= #getJsc
 End
 
+Function Calc_JscM (id)
+	variable id
+	wave JscM = root:SolarSimulator:Storage:JscM
+	wave JscObj = root:SolarSimulator:Storage:JscObj
+	string wavesubrefX = "wavesubref" + num2str(id)
+	string wavesubdutX = "wavesubdut" + num2str(id)
+	string sdf = GetDataFOlder (1)
+	SetDataFolder root:SolarSimulator:GraphWaves
+	wave wsref = $wavesubrefX
+	wave wsdut = $wavesubdutX
+	wave wavespectre
+	wave wavelamp
+	make /O /N=4	jsc
+	wave jsc
+	
+	jsc[0] = qe2jscSS ( wsdut, wavelamp )
+	jsc[1] = qe2jscSS ( wsref, wavespectre )
+	jsc[2] = qe2jscSS ( wsref, wavelamp )
+	jsc[3] = qe2jscSS ( wsdut, wavespectre )
+	
+//	JscObj[id] =  
+	JscM[id] = jsc[0]*jsc[1]/jsc[2]/jsc[3]	
+	
+	string valdispJx = "valdispJREF"+num2str(id)
+	string getJsc = "get_JscObj ("+num2str(id)+")"
+	ValDisplay $valdispJx, value= #getJsc
+	
+	wavekiller ("jsc")	
+	SetDataFolder sdf
+
+End
+
+//en meas_CurvaIV we implementate this fnction. 
 Function Meas_Jsc (deviceID)
 	variable deviceID
 	string sdf = GetDataFolder (1)
@@ -1394,6 +1499,7 @@ Function Meas_Jsc (deviceID)
 	SetDataFolder sdf
 End
 
+//en meas_CurvaIV we implementate this fnction. 
 Function Meas_Voc(deviceID)
 	variable deviceID
 	string sdf = GetDataFolder (1)
@@ -1422,7 +1528,13 @@ Function get_JscMeas (i)
 	return JscMeas[i]
 end
 
-//*******************Keithley K2600************************	
+Function get_JscM (i)
+	variable i
+	wave JscM = root:SolarSimulator:Storage:JscM
+	return JscM[i]
+end
+
+//*******************Keithley K2600***********************************************************************************************************//	
 Function measI_K2600 (deviceID, channel)
 	variable deviceID
 	String channel
@@ -1468,9 +1580,9 @@ Function measV_K2600(deviceID,channel)
 	return vmeas
 End
 
-Function measIV_SSCurvaIV (deviceID)
-	variable deviceID
-	nvar channel = root:SolarSimulator:Storage:channel
+Function meas_SSCurvaIV (deviceID, type)
+	variable deviceID, type;
+	svar channel = root:SolarSimulator:Storage:channel
 	nvar probe = root:SolarSimulator:Storage:probe
 	nvar ilimit = root:SolarSimulator:Storage:ilimit
 	nvar nplc = root:SolarSimulator:Storage:nplc
@@ -1479,9 +1591,26 @@ Function measIV_SSCurvaIV (deviceID)
 	nvar vmin = root:SolarSimulator:Storage:vmin
 	nvar vmax = root:SolarSimulator:Storage:vmax
 	nvar forward = root:SolarSimulator:Storage:forward
+	nvar darea = root:SolarSimulator:Storage:darea
 	
-//	configK2600_GPIB_SSCurvaIV(deviceID,0,channel,probe,ilimit,nplc,delay)
-//	sweepIV_K2600(deviceID,step,vmin,vmax,channel,forward)
+	switch (type)
+	case 0:		//meas IV
+//		configK2600_GPIB_SSCurvaIV(deviceID,type,channel,probe,ilimit,nplc,delay)
+//		sweepIV_K2600(deviceID,step,vmin,vmax,channel,forward)
+		break
+	case 2:		//Meas V
+		variable voc
+		configK2600_GPIB(deviceID,type,channel,probe,ilimit,nplc,delay) // o second argument means iv meas
+		voc=measureV_K2600(deviceID,channel)
+		ValDisplay valdispVoc,value= #"root:SolarSimulator:Storage:Voc"
+		return voc
+	case 3:		//Meas I ( Jsc)
+		variable jsc
+		configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay) // 
+		jsc=-1*measureI_K2600(deviceID,channel)
+		jsc*=(1e3/darea)		
+		return jsc
+	endswitch		
 End
 
 Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
@@ -1724,46 +1853,8 @@ endswitch
 	//print cmdList
 end
 
+//*******************Keithley K2600***********************************************************************************************************//	
 
-Function PressEscapeToAbort(phase, title, message)
-	Variable phase				// 0: Display control panel with message.
-									// 1: Test if Escape is pressed.
-									// 2: Close control panel.
-	String title				// Title for control panel.
-	String message				// Tells user what you are doing.
-	
-	if (phase == 0)			// Create panel
-		DoWindow/F PressEscapePanel
-		if (V_flag == 0)
-			NewPanel/K=1 /W=(100,100,350,200)
-			DoWindow/C PressEscapePanel
-			DoWindow/T PressEscapePanel, title
-		endif
-		TitleBox Message,pos={7,8},size={69,20},title=message
-		String abortStr = "Press escape to abort"
-		TitleBox Press,pos={6,59},size={106,20},title=abortStr
-		DoUpdate
-	endif
-	
-	if (phase == 1)							// Test for Escape
-		Variable doAbort = 0
-		if (GetKeyState(0) & 32)			// Is Escape pressed now?
-			doAbort = 1
-		else
-			if (strlen(message) != 0)		// Want to change message?
-				TitleBox Message,title=message
-				DoUpdate
-			endif
-		endif
-		return doAbort
-	endif
-	
-	if (phase == 2)							// Kill panel
-		DoWindow/K PressEscapePanel
-	endif
-	
-	return 0
-End
 
 Function CountDown_Jsc(deviceID, id, countdown)
 	variable deviceID
@@ -1789,29 +1880,15 @@ Function CountDown_Jsc(deviceID, id, countdown)
 			TitleBox countdown_message, title=message
 			lastMessageUpdate = ticks
 //			jsc[id] = Meas_Jsc (deviceID)
-			jsc[id] = count
-//			ValDisplay $valdispJX , value = #"get_JscMeas(id)"
-//			ValDisplay valdispJ0,valueColor=(1,16019,65535),value = #"get_JscMeas(0)"
-//			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #"root:SolarSimulator:Storage:jscMeas[0]"
+			jsc[id] = count //Just to get some auxiliary values
 			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #getJscMeas
-//			ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//			ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
-//			ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//			ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
-//			ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//			ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
-//			ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//			ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
-//			ValDisplay $valdispJX,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//			ValDisplay $valdispJX,format="",limits={0,0,0},barmisc={0,1000},value = #"get_JscMeas(0)"
 		endif
 
-		if (GetKeyState(0) && 32 || btnValues[id] != 1)
+		if (GetKeyState(0) && 32 || btnValues[id] != 1)		//Press Esc, Alt or CTRL
 //			abortStr = "Test aborted by Escape."
 //			message = "CANCELLED"
 //			TitleBox countdown_abort,title=abortStr
 //			TitleBox countdown_message,title=message
-//
 //			jsc [id] = Nan
 //			Dilay (500)	//ms
 			break			//Out of loop	
@@ -1825,14 +1902,6 @@ Function CountDown_Jsc(deviceID, id, countdown)
 
 End
 
-Function bucle ()
+
 	
-	wave jsc = root:SolarSimulator:Storage:jscMeas
-	variable i
-	jsc = 0
-	for (i=0; i<6; i++)
-		dilay (1000)
-		doUpdate
-		jsc[i]=i
-	endfor
-end
+	
