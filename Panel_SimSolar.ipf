@@ -24,8 +24,8 @@ Menu "S.Solar"
 		"Init Kethley", /Q, init_keithley_k2600()
 		"Close Keithley", /Q, close_keithley_k2600()
 	End
-	SubMenu "Mightex Panel"
-//		"Mightex Panel", /Q, init_mightexPanel()
+	SubMenu "Mightex"
+		"Mightex Panel", /Q, include_Mightex()
 	End
 End
 
@@ -227,10 +227,12 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "btnMeasJsc":
 					nvar jsc  = root:SolarSimulator:Storage:jsc
 					jsc = Meas_Jsc(deviceID)
+//					jsc = meas_SSCurvaIV (deviceID, 3)
 					break
 				case "btnMeasVoc":
 					nvar voc = root:SolarSimulator:Storage:voc
 					voc = Meas_Voc(deviceID)
+					voc = meas_SSCurvaIV (deviceID, 2)
 					break
 				case "buttonLedApply":
 					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
@@ -322,7 +324,7 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 					break
 				case "popupCom":
 					svar /Z com = root:SolarSimulator:Storage:com					
-					if (init_OpenSerial(popStr,"LedController"))
+					if (init_OpenSerialLed(popStr,"LedController"))
 						com=popStr
 					else
 						PopupMenu popupCom, popvalue=" ", mode=1
@@ -398,14 +400,10 @@ Function Init_SP ([val])
 	Init_Keithley_2600()
 End
 
-Function Init_Keithley_2600()
-//	InitBoard_GPIB(0)
-//	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
-	//pending to catch errors
-//	print "Keithley Initialized"
-End
-Function  Close_Keithley_2600()
-//	DevClearList(0,26)
+function include_Mightex() // MightexPanel
+//	Execute/P/Q/Z "INSERTINCLUDE \"MightexPanel\""
+//	Execute/P/Q/Z "COMPILEPROCEDURES "
+//	Execute/P /Q/Z "init_MightexPanel()"
 End
 
 //In case we only export the procedure, not the experiment (in the fture it will make sense) 
@@ -1488,6 +1486,7 @@ Function Calc_JscM (id)
 	jsc[2] = qe2jscSS ( wsref, wavelamp )
 	jsc[3] = qe2jscSS ( wsdut, wavespectre )
 	
+	//Introducir Calculo de JscObj dentro de este
 //	JscObj[id] =  
 	JscM[id] = jsc[0]*jsc[1]/jsc[2]/jsc[3]	
 	
@@ -1500,37 +1499,7 @@ Function Calc_JscM (id)
 
 End
 
-//en meas_CurvaIV we implementate this fnction. 
-Function Meas_Jsc (deviceID)
-	variable deviceID
-	string sdf = GetDataFolder (1)
-	SetDataFolder "root:SolarSimulator:Storage"
-	nvar probe, probe, ilimit, nplc, delay
-	svar channel
-	nvar darea = root:SolarSimulator:Storage:darea
-	variable jsc
-//	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	
-//	jsc = -1*measI_K2600(deviceID,channel)
-	jsc*=(1e3/darea)
-	return jsc
-	SetDataFolder sdf
-End
 
-//en meas_CurvaIV we implementate this fnction. 
-Function Meas_Voc(deviceID)
-	variable deviceID
-	string sdf = GetDataFolder (1)
-	SetDataFolder "root:SolarSimulator:Storage"
-	nvar probe, probe, ilimit, nplc, delay
-	svar channel
-	nvar darea
-	variable voc
-//	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)
-//	voc=-1*measI_K2600(deviceID,channel)
-//	voc*=(1e3/darea)
-	return voc
-	SetDataFolder sdf
-End
  
  
 Function get_JscObj (i)
@@ -1552,6 +1521,48 @@ Function get_JscM (i)
 end
 
 //*******************Keithley K2600***********************************************************************************************************//	
+Function Init_Keithley_2600()
+	InitBoard_GPIB(0) 		//	****
+	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
+	//pending to catch errors
+	print "Keithley Initialized"
+End
+Function  Close_Keithley_2600()
+	DevClearList(0,26)
+End
+
+//en meas_SSCurvaIV we implementate this fnction. 
+Function Meas_Jsc (deviceID)
+	variable deviceID
+	string sdf = GetDataFolder (1)
+	SetDataFolder "root:SolarSimulator:Storage"
+	nvar probe, probe, ilimit, nplc, delay
+	svar channel
+	nvar darea = root:SolarSimulator:Storage:darea
+	variable jsc
+	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 	// ****
+	jsc = -1*measI_K2600(deviceID,channel)
+	jsc*=(1e3/darea)
+	return jsc
+	SetDataFolder sdf
+End
+
+//en meas_SSCurvaIV we implementate this fnction. 
+Function Meas_Voc(deviceID)
+	variable deviceID
+	string sdf = GetDataFolder (1)
+	SetDataFolder "root:SolarSimulator:Storage"
+	nvar probe, probe, ilimit, nplc, delay
+	svar channel
+	nvar darea
+	variable voc
+	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)		// ****
+	voc=-1*measI_K2600(deviceID,channel)
+	voc*=(1e3/darea)
+	return voc
+	SetDataFolder sdf
+End
+
 Function measI_K2600 (deviceID, channel)
 	variable deviceID
 	String channel
@@ -1611,25 +1622,25 @@ Function meas_SSCurvaIV (deviceID, type)
 	nvar darea = root:SolarSimulator:Storage:darea
 	
 	switch (type)
-	case 0:		//meas IV
-//		configK2600_GPIB_SSCurvaIV(deviceID,type,channel,probe,ilimit,nplc,delay)
-//		sweepIV_K2600(deviceID,step,vmin,vmax,channel,forward)
+	case 0:		//Meas IV
+		configK2600_GPIB_SSCurvaIV(deviceID,type,channel,probe,ilimit,nplc,delay)
+		measIV_K2600(deviceID,step,vmin,vmax,channel,forward)
 		break
 	case 2:		//Meas V
 		variable voc
-//		configK2600_GPIB(deviceID,type,channel,probe,ilimit,nplc,delay) // o second argument means iv meas
-//		voc=measureV_K2600(deviceID,channel)
+		configK2600_GPIB_SSCurvaIV(deviceID,type,channel,probe,ilimit,nplc,delay) // o second argument means iv meas
+		voc=measV_K2600(deviceID,channel)	// ****
 		ValDisplay valdispVoc,value= #"root:SolarSimulator:Storage:Voc"
 		return voc
 	case 3:		//Meas I ( Jsc)
 		variable jsc
-//		configK2600_GPIB(deviceID,3,channel,probe,ilimit,nplc,delay) // 
-//		jsc=-1*measureI_K2600(deviceID,channel)
+		configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay) // ****
+		jsc=-1*measI_K2600(deviceID,channel)
 		jsc*=(1e3/darea)		
 		return jsc
 	endswitch		
 End
-
+//*********************************************************************************DO NOT UNCOMMENT***********************//
 Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	// make function where you can build the command
 	// Performs IV , at the moment sweeps V and measures I
@@ -1896,7 +1907,7 @@ Function CountDown_Jsc(deviceID, id, countdown)
 			sprintf message, "Time remaining: %d seconds", remaining
 			TitleBox countdown_message, title=message
 			lastMessageUpdate = ticks
-//			jsc[id] = Meas_Jsc (deviceID)
+//			jsc[id] = Meas_Jsc (deviceID)		// ****
 			jsc[id] = count //Just to get some auxiliary values
 			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #getJscMeas
 		endif

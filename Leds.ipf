@@ -4,7 +4,7 @@
 #include "serialcomB"
 
 //In a future it will be merged with Mario´s InitOpenSerial() 
-Function init_OpenSerial (com, Device)
+Function init_OpenSerialLed (com, Device)
 
 	string com, Device
 	string cmd, DeviceCommands
