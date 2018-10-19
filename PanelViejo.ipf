@@ -440,22 +440,20 @@ Function Load_Spectre ()
 	SetDataFolder sp
 End
 
-Function Init_SolarVar ()
-	string path = "root:MyGlobals:HWControl"
-	if(!DataFolderExists(path))
-		genDFolders(path)
-	endif
+Function Init_SolarVar ([val])
+	variable val
 	string path = "root:SolarSimulator"
-	if(!DatafolderExists(path))
-//		string smsg = "You have to initialize first.\n"
-//		smsg += "Do you want to initialize?\n"
-//		DoAlert /T="Unable to open the program" 1, smsg
-//		if (V_flag == 2)		//Clicked <"NO">
-////			Abort "Execution aborted.... Restart IGOR"
-//			return NaN
-//		elseif (V_flag == 1)	//Clicked <"YES">
+	//If never initialized
+	if(!DatafolderExists(path) || val == 1)
+		string smsg = "You have to initialize first.\n"
+		smsg += "Do you want to initialize?\n"
+		DoAlert /T="Unable to open the program" 1, smsg
+		if (V_flag == 2)		//Clicked <"NO">
+//			Abort "Execution aborted.... Restart IGOR"
+			return NaN
+		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
-//			genDFolders(path + ":Storage")	
+			genDFolders(path + ":Storage")	
 //			genDFolders(path + ":Storage:K2600")
 			genDFolders(path + ":GraphWaves")
 			genDFolders(path + ":Spectre")
@@ -466,8 +464,9 @@ Function Init_SolarVar ()
 		endif
 	endif
 	
+	SetDataFolder path
 	//Initial wave for #GraphPanel
-	make /N=1 /O		root:MyGlobals:HWControl:sa
+	make /N=1 /O		root:SolarSimulator:Storage:sa
 	//reference to draw in the scene before even give them the value of the selected subcell in the panel.
 	//They will be all drawn in the graqph but not showed until we give them a value. Otherwise, it is nan 
 	make /O 	root:SolarSimulator:GraphWaves:wavesubdut0 = Nan
@@ -488,8 +487,7 @@ Function Init_SolarVar ()
 	make /O 	root:SolarSimulator:GraphWaves:waveled740 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled940 = Nan
 		
-	path = "root:MyGlobals:HWControl"
-	SetDataFolder path	
+	SetDataFolder ":Storage"	
 	//Disable/Enable Dropdowns things on the panel
 	make /N=6 /O  popvalues
 	wave popValues = popvalues
@@ -513,7 +511,7 @@ Function Init_SolarVar ()
 	make /O led940 = Nan
 	 
 	//Values of LedCurrents
-	make /N=3	/O 	Iset = Nan
+	make /N=3	/O 		root:SolarSimulator:Storage:Iset = Nan
 	
 	//LedChannel
 //	variable/G root:SolarSimulator:Storage:channel
@@ -521,31 +519,31 @@ Function Init_SolarVar ()
 //	channel = 1
 	
 	//ComPort
-	string/G COM = " " //Connected by serial port
-//	svar com = root:SolarSimulator:Storage:COM
-//	com = " "
+	string/G root:SolarSimulator:Storage:COM //Connected by serial port
+	svar com = root:SolarSimulator:Storage:COM
+	com = " "
 	
 	//Jsc
-	make /N=6 /O JscObj 	= {0,0,0,0,0,0}
-	make /N=6 /O JscMeas 	= {0,0,0,0,0,0}
-	make /N=6 /O JscM		= {0,0,0,0,0,0}
-//	wave JscObj = root:SolarSimulator:Storage:JscObj 
-//	wave JscMeas = root:SolarSimulator:Storage:JscMeas 
-//	wave JscM = root:SolarSimulator:Storage:JscM
-//	JscMeas = {0,0,0,0,0,0}
-//	JscObj = {0,0,0,0,0,0}
-//	JscM = {0,0,0,0,0,0}
+	make /N=6 /O root:SolarSimulator:Storage:JscObj 
+	make /N=6 /O root:SolarSimulator:Storage:JscMeas 
+	make /N=6 /O root:SolarSimulator:Storage:JscM
+	wave JscObj = root:SolarSimulator:Storage:JscObj 
+	wave JscMeas = root:SolarSimulator:Storage:JscMeas 
+	wave JscM = root:SolarSimulator:Storage:JscM
+	JscMeas = {0,0,0,0,0,0}
+	JscObj = {0,0,0,0,0,0}
+	JscM = {0,0,0,0,0,0}
 	
 	
-	variable/G darea = 0
+	variable/G darea
 	variable/G iarea
-//	darea = 0
+	darea = 0
 	
 	//Keithley K2600
 //	SetDataFolder "Jsc-K2600"	
 	Variable/G probe, probe, ilimit, nplc, delay, vmax, vmin, step, light_dark, forward;
-	String /G channel, dname, notes;
-	variable /G ff, eff, jsc, jmp,vmp,voc;
+	String /G channel, dname, notes
+	variable /G ff, eff, jsc, jmp,vmp,voc
 	dname="Test_25C"
 	notes=""
 	channel = "A"
@@ -560,43 +558,51 @@ Function Init_SolarVar ()
 	forward = 1	 //Reverse => forward=2 
 	ff=0; jsc=0; jmp= 0; vmp=0; voc=0;		
 		
+	SetDataFolder path
 End
 
 Function Solar_Panel()
 	
-	string path = "root:MyGlobals:HWControl"
-	string sdf = GetDataFolder (1) 
+	string path = "root:SolarSimulator"
+	string savedatafolder = GetDataFolder (1) 
 	SetDataFolder path
 	
 	//Initial wave for #GraphPanel
-	wave sa 
+	wave sa = :Storage:sa
 	
 	//Disable/Enable Dropdowns things on the panel
-	wave popValues
+	wave popValues = :Storage:popvalues
+	popValues = {1, 1, 1, 0, 0, 0}
 	string popVal = translate (popValues)//Yes;No; Selection
 	
 	string wlampname = "XT10open2012"
 	string wspecname = "AMG173DIRECT"
 	
-	Copy ("root:SolarSimulator:Spectre:SLamp:"+wlampname, "root:SolarSimulator:GraphWaves:wavelamp")
-	Copy ("root:SolarSimulator:Spectre:SRef:" +wspecname, "root:SolarSimulator:GraphWaves:wavespectre")
+	Copy ("root:SolarSimulator:Spectre:SLamp:"+wlampname, "GraphWaves:wavelamp")
+	Copy ("root:SolarSimulator:Spectre:SRef:" +wspecname, "GraphWaves:wavespectre")
 	
 	//Leds	
+	SetDataFolder :Storage
 	//We dont wave the 530 spectre. We use for now the 470 spectre instead of the 530
 	Copy ("root:SolarSimulator:Spectre:SLeds:LED470", "led530")
 	Copy ("root:SolarSimulator:Spectre:SLeds:LED740", "led740")
 	Copy ("root:SolarSimulator:Spectre:SLeds:LED940", "led940")
+	SetDataFolder path
 	
 	
 	//The leds' power
-	wave LedLevel
+	wave LedLevel = :Storage:LedLevel
 	
 	//Loops
 	variable i
 	
 	//It has been created  when Leds Procedure initialize. 
-	svar com 
-	nvar spectrechecked
+	svar com = root:SolarSimulator:Storage:com
+	nvar spectrechecked = :Storage:spectrechecked
+	//Jsc
+//	wave JscMeas = root:SolarSimulator:Storage:JscMeas
+//	wave JscObj = root:SolarSimulator:Storage:JscObj
+//	nvar darea = root:SolarSimulator:Storage:darea
 	
 	PauseUpdate; Silent 1		// building window...
 	
@@ -1062,13 +1068,16 @@ Function Check_PlotEnable (id[, checked])
 		
 	SetDataFolder savedatafolder	
 End
-
+gi
 Function Button_JscEnable (id)
 	//id is the selected box that we want to enable or disable
 	//checked is the state that the selected checkbox has got
 	variable id
-	wave btnValues = root:MyGlobals:HWControl:btnValues
-	nvar ledchecked = root:MyGlobals:HWControl:LedChecked
+	string path = "root:SolarSimulator"
+	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path	
+	wave btnValues = :Storage:btnValues
+	nvar ledchecked = :Storage:LedChecked
 	variable i
 	//*********Coming Soon: refresh*************//
 	variable refresh //Selected
@@ -1108,18 +1117,19 @@ end
 Function Clean ([btn])
 	variable btn
 	string sdf = getdatafolder (1)
-	SetDataFolder root:MyGlobals:HWControl:
-	nvar ledchecked
+	SetDataFolder root:SolarSimulator
+	nvar ledchecked = :Storage:ledchecked
 	switch (btn)
 	case 1://if btn==1 -> Included Leds
 		ledchecked = 0
 	case 2://if btn==2 -> Total Clean (included jsc_buttons)
-		wave btnValues = {0,0,0,0,0,0}
+		wave btnValues = :Storage:btnValues
+		btnValues = {0,0,0,0,0,0}
 		Button_jscEnable (-1)
 		break
 	endswitch
 	KillWindow SSPanel#SSGraph
-	Display/W=(0,0,594,292)/HOST=#  sa vs sa 
+	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
 	RenameWindow #,SSGraph	
 	ModifyGraph /W=SSPanel#SSGraph  tick=2
 	ModifyGraph /W=SSPanel#SSGraph  zero=2
@@ -1181,12 +1191,13 @@ End
 //Generates the different led waves gradient from the input values ( 0% --- 100% )
 Function Led_Gauss (num)
 	variable num	
-	string path = "root:MyGlobals:HWControl"
+	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
+	SetDataFolder path + ":Storage"
 	wave led530, led740, led940;
 	wave ledlevel	
 	wave  Iset;
-	SetDataFolder "root:SolarSimulator:GraphWaves"
+	SetDataFolder path + ":GraphWaves"
 	wave waveled530, waveled740, waveled940;	
 	
 	//Originally led740 spectrum is not scaled equally as the others
