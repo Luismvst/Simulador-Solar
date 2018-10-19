@@ -620,8 +620,9 @@ Function Solar_Panel()
 	DoWindow/K SSPanel; DelayUpdate
 //	NewPanel /K=0 /W=(150,105,1215,776) as "SSPanel"
 //	NewPanel /K=0 /W=(30,59,1329,709) as "SSPanel"		//Large Panel
-	NewPanel /K=0 /W=(56,85,1232,735) as "SSPanel"		//Short Panel	
-	DoWindow /C SSPanel
+//	NewPanel /K=0 /W=(56,85,1232,735) as "SSPanel"		//Short Panel	
+	NewPanel /W=(60,67,732,717) as "SSPanel"				//Half Panel
+	DoWindow /C SSPanel	
 	
 	//Text
 	SetDrawLayer UserBack
@@ -912,10 +913,20 @@ Function Solar_Panel()
 	SetAxis /W=$gname left*,1
 	SetAxis /W=$gname bottom*,2000
 	
-	gname = "SSPanel#SSCurvaIV"
+	
+//	NewPanel /K=0 /HOST=SSPanel /EXT=0 /W=(0,0,594,594) as "IVPanel"
+//(56,85,1232,735)
+//	NewPanel /FLT /W=(748,67,1342,563) as "IVPanel"	
+//	gname = "SSPanel#SSCurvaIV"
+	gname = "IVPanel#IVGraph"
+//	DoWindow /C IVPanel
+	
 	//ControlBar?
-	Display/W=(674,0,1329,295)/HOST=SSPanel  :Storage:sa vs :Storage:sa
-	RenameWindow #,SSCurvaIV
+	Display/W=(0,0,594,292) /HOST=SSPanel :Storage:sa vs :Storage:sa
+	RenameWindow #,IVGraph
+	NewPanel/HOST=IVGraph/EXT=0/W=(10,0,100,100)
+	
+	DoWindow /C IVPanel
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
 	ModifyGraph /W=$gname tick=2
