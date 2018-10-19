@@ -217,8 +217,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 	switch( ba.eventCode )
 		case 2: // mouse up
 			string baName = ba.ctrlname
-//			variable deviceID = getDeviceID("K2600")
-			variable deviceID = 26	//Me lo invento, the other function does not work yet
+			variable deviceID = getDeviceID("K2600")
+//			variable deviceID = 31269	//Me lo invento, the other function does not work yet
 			strswitch (ba.ctrlname)
 //				case "buttonLog":
 				case "btnMeasIV":					
@@ -254,7 +254,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 							Calc_JscObj(id)	
 							Calc_JscM (id)	
 							if (btnValues[id])
-								CountDown_Jsc (deviceID, id, 1 )					
+								CountDown_Jsc (deviceID, id, 10 )					
 							endif
 						endif
 					endif
@@ -330,6 +330,16 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 						PopupMenu popupCom, popvalue=" ", mode=1
 					endif
 					break
+				case "popupProbe":
+					nvar /Z probe = root:SolarSimulator:Storage:probe
+					print popnum
+					probe = popNum
+					break
+				case "popupDir":
+					nvar /z forward = root:SolarSimulator:Storage:forward
+					forward = popNum
+					break
+								
 				//CODIGO DE IVAN PARA LOS POPUP DROPDOWNS.
 				//My idea here is to use eqlist to display the sref and slamp as we do in the normal spectres.
 				case "popupSubSref":	//Cargar Sref
@@ -547,7 +557,7 @@ Function Init_SolarVar ([val])
 	dname="Test_25C"
 	notes=""
 	channel = "A"
-	probe = 1 //2-Wire = 0, 4-Wire = 1
+	probe = 2 //2-Wire = 1, 4-Wire = 2
 	nplc = 1
 	ilimit = 0.1
 	delay = 1 
@@ -1525,7 +1535,7 @@ Function Init_Keithley_2600()
 	InitBoard_GPIB(0) 		//	****
 	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
 	//pending to catch errors
-	print "Keithley Initialized"
+//	print "Keithley Initialized"
 End
 Function  Close_Keithley_2600()
 	DevClearList(0,26)
@@ -1536,10 +1546,15 @@ Function Meas_Jsc (deviceID)
 	variable deviceID
 	string sdf = GetDataFolder (1)
 	SetDataFolder "root:SolarSimulator:Storage"
-	nvar probe, probe, ilimit, nplc, delay
-	svar channel
-	nvar darea = root:SolarSimulator:Storage:darea
+	nvar probe, probe, ilimit, nplc, delay, darea
+	svar channeL
 	variable jsc
+	if (darea == 0)
+		SetVariable setvarDArea, valueBackColor= (57933,66846,1573)
+		
+	else 
+		SetVariable setvarDArea, valueBackColor=0
+	endif
 	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 	// ****
 	jsc = -1*measI_K2600(deviceID,channel)
 	jsc*=(1e3/darea)
@@ -1907,9 +1922,10 @@ Function CountDown_Jsc(deviceID, id, countdown)
 			sprintf message, "Time remaining: %d seconds", remaining
 			TitleBox countdown_message, title=message
 			lastMessageUpdate = ticks
-//			jsc[id] = Meas_Jsc (deviceID)		// ****
-			jsc[id] = count //Just to get some auxiliary values
+			jsc[id] = Meas_Jsc (deviceID)		// ****
+//			jsc[id] = count //Just to get some auxiliary values
 			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #getJscMeas
+			ValDisplay $valdispJX,format = "%.3g"
 		endif
 
 		if (GetKeyState(0) && 32 || btnValues[id] != 1)		//Press Esc, Alt or CTRL
