@@ -209,7 +209,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 	return 0
 End
 
-Function ButtonProc_SimSolar(ba) : ButtonControl
+fFunction ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventcode == -1 || ba.eventcode == 2 || ba.eventcode == 6)
 		ba.blockReentry=1
@@ -653,57 +653,57 @@ Function Solar_Panel()
 	
 	//Buttons
 //	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG",fColor=(16385,65535,41303)
-	Button buttonLedApply,pos={506.00,501.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="APPLY",fColor=(16385,65535,41303)
-	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
-	Button btncheck0,pos={450.00,360.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button btncheck1,pos={450.00,380.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button btncheck2,pos={450.00,400.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button btncheck3,pos={450.00,420.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button btncheck4,pos={450.00,440.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button btncheck5,pos={450.00,460.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button buttonLedApply,pos={502.00,206.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="APPLY",fColor=(16385,65535,41303)
+	Button buttonClean,pos={486.00,2.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
+	Button btncheck0,pos={446.00,65.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck1,pos={446.00,85.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck2,pos={446.00,105.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck3,pos={446.00,125.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck4,pos={446.00,145.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
+	Button btncheck5,pos={446.00,165.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 
-	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubSref,pos={11.00,18.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSref,mode=100,popvalue=wspecname,value= #"QEWaveList(1)"
-	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubSlamp,pos={157.00,18.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSlamp,mode=100,popvalue=wlampname,value= #"QEWaveList(2)"
-	PopupMenu popupSub0,pos={5.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
+	PopupMenu popupSub0,pos={1.00,65.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
-	PopupMenu popupSub1,pos={5.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
+	PopupMenu popupSub1,pos={1.00,85.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
 	PopupMenu popupSub1,mode=1,popvalue=stringfromlist(1,popVal),value= #"\"Yes;No\""
-	PopupMenu popupSub2,pos={5.00,400.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
+	PopupMenu popupSub2,pos={1.00,105.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
 	PopupMenu popupSub2,mode=1,popvalue=stringfromlist(2,popVal),value= #"\"Yes;No\""
-	PopupMenu popupSub3,pos={5.00,420.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
+	PopupMenu popupSub3,pos={1.00,125.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
 	PopupMenu popupSub3,mode=2,popvalue=stringfromlist(3,popVal),value= #"\"Yes;No\""
-	PopupMenu popupSub4,pos={5.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
+	PopupMenu popupSub4,pos={1.00,145.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
 	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\""
-	PopupMenu popupSub5,pos={5.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
+	PopupMenu popupSub5,pos={1.00,165.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
 	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""	
-	PopupMenu popupLedCom,pos={142.00,502.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
+	PopupMenu popupLedCom,pos={11.00,219.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
 	PopupMenu popupLedCom,mode=100,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
-	PopupMenu popupSubREF0,pos={110.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF0,pos={106.00,65.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF0,mode=100,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT0,pos={275.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT0,pos={271.00,65.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT0,mode=100,popvalue=" ",value= #"QEList(2)"
-	PopupMenu popupSubREF1,pos={110.00,380.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF1,pos={106.00,85.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF1,mode=100,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT1,pos={275.00,380.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT1,pos={271.00,85.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT1,mode=100,popvalue=" ",value= #"QEList(2)"
-	PopupMenu popupSubREF2,pos={110.00,400.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF2,pos={106.00,105.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF2,mode=100,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT2,pos={275.00,400.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT2,pos={271.00,105.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT2,mode=100,popvalue=" ",value= #"QEList(2)"
-	PopupMenu popupSubREF3,pos={110.00,420.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF3,pos={106.00,125.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF3,mode=100,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT3,pos={275.00,420.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT3,pos={271.00,125.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT3,mode=100,popvalue=" ",value= #"QEList(2)"
-	PopupMenu popupSubREF4,pos={110.00,440.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF4,pos={106.00,145.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF4,mode=100,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT4,pos={275.00,440.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT4,pos={271.00,145.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT4,mode=100,popvalue=" ",value= #"QEList(2)"
-	PopupMenu popupSubREF5,pos={110.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubREF5,pos={106.00,165.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF5,mode=100,popvalue=" ",value= #"QElist(1)"
-	PopupMenu popupSubDUT5,pos={275.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
+	PopupMenu popupSubDUT5,pos={271.00,165.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(2)"
 	
 //	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
@@ -1473,8 +1473,8 @@ end
 
 //*******************Keithley K2600***********************************************************************************************************//	
 Function Init_Keithley_2600()
-	InitBoard_GPIB(0) 		//	****
-	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
+//	InitBoard_GPIB(0) 		//	****
+//	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
 	//pending to catch errors
 //	print "Keithley Initialized"
 End
