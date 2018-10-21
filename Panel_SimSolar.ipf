@@ -322,12 +322,12 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 					nvar /z light_dark = root:SolarSimulator:Storage:light_dark
 					light_dark = popNum
 					break
-				case "popupCom":
+				case "popupLedCom":
 					svar /Z com = root:SolarSimulator:Storage:com					
 					if (init_OpenSerialLed(popStr,"LedController"))
 						com=popStr
 					else
-						PopupMenu popupCom, popvalue=" ", mode=1
+						PopupMenu popupLedCom, popvalue=" ", mode=1
 					endif
 					break
 				case "popupProbe":
@@ -617,6 +617,7 @@ Function Solar_Panel()
 	PauseUpdate; Silent 1		// building window...
 	
 	//Panel
+	
 	DoWindow/K SSPanel; DelayUpdate
 //	NewPanel /K=0 /W=(150,105,1215,776) as "SSPanel"
 //	NewPanel /K=0 /W=(30,59,1329,709) as "SSPanel"		//Large Panel
@@ -631,44 +632,40 @@ Function Solar_Panel()
 //	DrawText 728,72,"   Set  \rCurrent "
 	SetDrawEnv linethick= 1.5
 	DrawLine 672,639,672,24
-	DrawText 43,313,"Cargar S\\BSTD"
-	DrawText 179,314,"Cargar S\\BLAMP"
-	DrawText 169,357,"Cargar EQE\\BREF"
-	DrawText 319,355,"Cargar EQE\\BDUT"
-	DrawText 482,355,"Jsc\\BOBJ"
-	DrawText 585,355,"Jsc\\BMEAS"
-	DrawText 546,355,"M"	
-	DrawText 633,355,"Nº\\BSOLES"
+	
+//	DrawText 43,313,"Cargar S\\BSTD"
+//	DrawText 179,314,"Cargar S\\BLAMP"
+//	DrawText 169,357,"Cargar EQE\\BREF"
+//	DrawText 319,355,"Cargar EQE\\BDUT"
+//	DrawText 482,355,"Jsc\\BOBJ"
+//	DrawText 585,355,"Jsc\\BMEAS"
+//	DrawText 546,355,"M"	
+//	DrawText 633,355,"Nº\\BSOLES"
+	
+	DrawText 39,18,"Cargar S\\BSTD"
+	DrawText 175,19,"Cargar S\\BLAMP"
+	DrawText 165,62,"Cargar EQE\\BREF"
+	DrawText 315,60,"Cargar EQE\\BDUT"
+	DrawText 478,60,"Jsc\\BOBJ"
+	DrawText 581,60,"Jsc\\BMEAS"
+	DrawText 542,60,"M"
+	DrawText 629,60,"Nº\\BSOLES"
 	
 	//Buttons
-	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG",fColor=(16385,65535,41303)
+//	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG",fColor=(16385,65535,41303)
 	Button buttonLedApply,pos={506.00,501.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="APPLY",fColor=(16385,65535,41303)
-	
 	Button buttonClean,pos={490.00,297.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
-	
 	Button btncheck0,pos={450.00,360.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={450.00,380.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck2,pos={450.00,400.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck3,pos={450.00,420.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck4,pos={450.00,440.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck5,pos={450.00,460.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	
-	//Curve I-V
-	Button btnMeasIV,pos={900,400},size={96,25},proc=ButtonProc_SimSolar,title="\\f01Measure IV"
-	Button btnAbort,pos={715,605},size={57,20},title="ABORT",labelBack=(65280,0,0)
-	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0)
-	Button btnAbort, disable=2
-	Button btnMeasJsc,pos={1045.00,302.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Jsc"
-	Button btnMeasJsc,fColor=(65535,65532,16385)
-	Button btnMeasVoc,pos={1045.00,333.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Voc"
-	Button btnMeasVoc,fColor=(16385,65535,65535)
-	
-	//PopUps
+
 	PopupMenu popupSubSref,pos={15.00,313.00},size={143.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSref,mode=100,popvalue=wspecname,value= #"QEWaveList(1)"
 	PopupMenu popupSubSlamp,pos={161.00,314.00},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubSlamp,mode=100,popvalue=wlampname,value= #"QEWaveList(2)"	
-
+	PopupMenu popupSubSlamp,mode=100,popvalue=wlampname,value= #"QEWaveList(2)"
 	PopupMenu popupSub0,pos={5.00,360.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
 	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
 	PopupMenu popupSub1,pos={5.00,380.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
@@ -680,11 +677,9 @@ Function Solar_Panel()
 	PopupMenu popupSub4,pos={5.00,440.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
 	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\""
 	PopupMenu popupSub5,pos={5.00,460.00},size={99.00,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
-	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""
-	
-	PopupMenu popupCom,pos={142.00,502.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
-	PopupMenu popupCom,mode=100,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
-
+	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""	
+	PopupMenu popupLedCom,pos={142.00,502.00},size={111.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
+	PopupMenu popupLedCom,mode=100,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
 	PopupMenu popupSubREF0,pos={110.00,360.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubREF0,mode=100,popvalue=" ",value= #"QElist(1)"
@@ -711,18 +706,6 @@ Function Solar_Panel()
 	PopupMenu popupSubDUT5,pos={275.00,460.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(2)"
 	
-	PopupMenu popupDir,pos={705.00,340.00},size={113.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Bias Type"
-	PopupMenu popupDir,mode=1,popvalue="Forward",value= #"\"Forward;Reverse\""
-	PopupMenu popupChannel,pos={711.00,415.00},size={107.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Channel"
-	PopupMenu popupChannel,mode=1,popvalue="A",value= #"\"A;B\""
-	PopupMenu popupAmbient,pos={724.00,390.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Curve"
-	PopupMenu popupAmbient,mode=1,popvalue="Light",value= #"\"Light;Dark\""
-	PopupMenu popupProbe,pos={725.00,366.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Probe"
-	PopupMenu popupProbe,mode=1,popvalue="4-Wire",value= #"\"2-Wire;4-Wire\""
-	
-	
-	
-	//CheckBox
 //	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 //	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 //	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
@@ -735,35 +718,13 @@ Function Solar_Panel()
 	
 	CheckBox checkgraph_spectre,pos={274.00,315.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="On/Off"
 	CheckBox checkgraph_spectre,value= spectrechecked
-	CheckBox checklog,pos={700.00,308.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
-	
-	//SetVariable
+
 	SetVariable setvarLed530,pos={263.00,500.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 530"
 	SetVariable setvarLed530,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[0],live= 1
 	SetVariable setvarLed740,pos={263.00,520.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 740"
 	SetVariable setvarLed740,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
 	SetVariable setvarLed940,pos={263.00,540.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 940"
 	SetVariable setvarLed940,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
-	SetVariable setvarstep,pos={714.00,449.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Step (V)"
-	SetVariable setvarstep,limits={0,1,0.1},value= root:SolarSimulator:Storage:step,live= 1
-	SetVariable setvarvmin,pos={715.00,473.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Min (V)"
-	SetVariable setvarvmin,limits={0,1,0.1},value= root:SolarSimulator:Storage:vmin,live= 1
-	SetVariable setvarilimit,pos={714.00,551.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Limit (A)"
-	SetVariable setvarilimit,limits={0,1,0.1},value= root:SolarSimulator:Storage:ilimit,live= 1
-	SetVariable setvardelay,pos={715.00,522.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Delay (V)"
-	SetVariable setvardelay,limits={0,1,0.1},value= root:SolarSimulator:Storage:delay,live= 1
-	SetVariable setvarvmax,pos={716.00,497.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Max (V)"
-	SetVariable setvarvmax,limits={0,1,0.1},value= root:SolarSimulator:Storage:vmax,live= 1
-	SetVariable setvarnplc,pos={717.00,578.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Nplc"
-	SetVariable setvarnplc,limits={0,1,0.1},value= root:SolarSimulator:Storage:nplc,live= 1
-	SetVariable setvarDArea,pos={843.00,339.00},size={169.00,18.00},title="Total Area (cm2)"
-	SetVariable setvarDArea,value= root:SolarSimulator:Storage:darea
-	
-	SetVariable setvarNotes,pos={829.00,609.00},size={336.00,18.00},title="\\f01Notes"
-	SetVariable setvarNotes,value= root:SolarSimulator:Storage:notes	
-	SetVariable setvarName,pos={870.00,583.00},size={293.00,18.00},title="\\f01DUT name"
-	SetVariable setvarName,value= root:SolarSimulator:Storage:dname
-	//ValDisplay
 	
 	ValDisplay valdispJREF0,pos={473.00,362.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
 	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
@@ -789,7 +750,6 @@ Function Solar_Panel()
 	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
 	ValDisplay valdispJ5,pos={581,462.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
 	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
-	
 	ValDisplay valdispJM0,pos={527.00,362.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
 	ValDisplay valdispJM0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(0)"
 	ValDisplay valdispJM1,pos={527.00,382.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
@@ -802,7 +762,6 @@ Function Solar_Panel()
 	ValDisplay valdispJM4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(4)"
 	ValDisplay valdispJM5,pos={527.00,462.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
 	ValDisplay valdispJM5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(5)"
-	
 	ValDisplay valdispSol0,pos={635.00,362.00},size={29.00,17.00},bodyWidth=29,disable=2
 	ValDisplay valdispSol0,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
 	ValDisplay valdispSol1,pos={635.00,382.00},size={29.00,17.00},bodyWidth=29,disable=2
@@ -815,65 +774,6 @@ Function Solar_Panel()
 	ValDisplay valdispSol4,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
 	ValDisplay valdispSol5,pos={635.00,462.00},size={29.00,17.00},bodyWidth=29,disable=2
 	ValDisplay valdispSol5,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
-	
-	
-//	ValDisplay valdispJREF0,pos={488.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-//	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
-//	ValDisplay valdispJREF1,pos={488.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-//	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(1)"
-//	ValDisplay valdispJREF2,pos={488.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-//	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(2)"
-//	ValDisplay valdispJREF3,pos={488.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-//	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(3)"
-//	ValDisplay valdispJREF4,pos={488.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-//	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(4)"
-//	ValDisplay valdispJREF5,pos={488.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(52428,1,20971)
-//	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(5)"
-//	ValDisplay valdispJ0,pos={573.00,362.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(0)"
-//	ValDisplay valdispJ1,pos={573.00,382.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
-//	ValDisplay valdispJ2,pos={573.00,402.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
-//	ValDisplay valdispJ3,pos={573.00,422.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
-//	ValDisplay valdispJ4,pos={573.00,442.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
-//	ValDisplay valdispJ5,pos={573.00,462.00},size={75.00,17.00},bodyWidth=75,valueColor=(1,16019,65535)
-//	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
-
-
-	//Doisposicion 1
-//	ValDisplay valdispJsc,pos={1185.00,310.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
-//	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
-//	ValDisplay valdispVoc,pos={1185.00,340.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
-//	ValDisplay valdispVoc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Voc"
-//	ValDisplay valdispff,pos={1185.00,370.00},size={99.00,17.00},bodyWidth=75,disable=2,title="FF(%)"
-//	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value=0
-//	ValDisplay valdisph,pos={1185.00,400.00},size={99.00,17.00},bodyWidth=75,disable=2,title="h(%)"
-//	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= 0
-//	ValDisplay valdispJmp,pos={1185.00,430.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
-//	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value=0
-//	ValDisplay valdispVmp,pos={1185.00,460.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
-//	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value=0
-//	When used in sqared screens, this is a better implementation
-// 	ScreenResolution ()
-
-	//Disposicion 2
-//	ValDisplay valdispJsc,pos={1015.00,450.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
-//	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Jsc"
-//	ValDisplay valdispVoc,pos={1015.00,480.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
-//	ValDisplay valdispVoc,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:Voc"
-//	ValDisplay valdispff,pos={1015.00,510.00},size={99.00,17.00},bodyWidth=75,disable=2,title="FF(%)"
-//	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value=0
-//	ValDisplay valdisph,pos={1015.00,540.00},size={99.00,17.00},bodyWidth=75,disable=2,title="h(%)"
-//	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= 0
-//	ValDisplay valdispJmp,pos={1015.00,570.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
-//	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value=0
-//	ValDisplay valdispVmp,pos={1015.00,600.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Voc\\B(V)"
-//	ValDisplay valdispVmp,limits={0,0,0},barmisc={0,1000},value=0
-	
-	//disposicion final
 	ValDisplay valdispJsc,pos={1040.00,380.00},size={99.00,17.00},bodyWidth=75,disable=2,title="Jsc\\B(mA/cm2)"
 	ValDisplay valdispJsc,limits={0,0,0},barmisc={0,1000}
 	ValDisplay valdispJsc,value= #"root:SolarSimulator:Storage:Jsc"
@@ -911,6 +811,47 @@ Function Solar_Panel()
 	//Label right "Spectrum"
 	SetAxis /W=$gname left*,1
 	SetAxis /W=$gname bottom*,2000
+	
+	
+	//Curve I-V
+	Button btnMeasIV,pos={900,400},size={96,25},proc=ButtonProc_SimSolar,title="\\f01Measure IV"
+	Button btnAbort,pos={715,605},size={57,20},title="ABORT",labelBack=(65280,0,0)
+	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0)
+	Button btnAbort, disable=2
+	Button btnMeasJsc,pos={1045.00,302.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Jsc"
+	Button btnMeasJsc,fColor=(65535,65532,16385)
+	Button btnMeasVoc,pos={1045.00,333.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="Measure Voc"
+	Button btnMeasVoc,fColor=(16385,65535,65535)
+	
+	CheckBox checklog,pos={700.00,308.00},size={36.00,15.00},proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
+	
+	SetVariable setvarstep,pos={714.00,449.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Step (V)"
+	SetVariable setvarstep,limits={0,1,0.1},value= root:SolarSimulator:Storage:step,live= 1
+	SetVariable setvarvmin,pos={715.00,473.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Min (V)"
+	SetVariable setvarvmin,limits={0,1,0.1},value= root:SolarSimulator:Storage:vmin,live= 1
+	SetVariable setvarilimit,pos={714.00,551.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Limit (A)"
+	SetVariable setvarilimit,limits={0,1,0.1},value= root:SolarSimulator:Storage:ilimit,live= 1
+	SetVariable setvardelay,pos={715.00,522.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Delay (V)"
+	SetVariable setvardelay,limits={0,1,0.1},value= root:SolarSimulator:Storage:delay,live= 1
+	SetVariable setvarvmax,pos={716.00,497.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Max (V)"
+	SetVariable setvarvmax,limits={0,1,0.1},value= root:SolarSimulator:Storage:vmax,live= 1
+	SetVariable setvarnplc,pos={717.00,578.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Nplc"
+	SetVariable setvarnplc,limits={0,1,0.1},value= root:SolarSimulator:Storage:nplc,live= 1
+	SetVariable setvarDArea,pos={843.00,339.00},size={169.00,18.00},title="Total Area (cm2)"
+	SetVariable setvarDArea,value= root:SolarSimulator:Storage:darea
+	SetVariable setvarNotes,pos={829.00,609.00},size={336.00,18.00},title="\\f01Notes"
+	SetVariable setvarNotes,value= root:SolarSimulator:Storage:notes	
+	SetVariable setvarName,pos={870.00,583.00},size={293.00,18.00},title="\\f01DUT name"
+	SetVariable setvarName,value= root:SolarSimulator:Storage:dname
+	
+	PopupMenu popupDir,pos={705.00,340.00},size={113.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Bias Type"
+	PopupMenu popupDir,mode=1,popvalue="Forward",value= #"\"Forward;Reverse\""
+	PopupMenu popupChannel,pos={711.00,415.00},size={107.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Channel"
+	PopupMenu popupChannel,mode=1,popvalue="A",value= #"\"A;B\""
+	PopupMenu popupAmbient,pos={724.00,390.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Curve"
+	PopupMenu popupAmbient,mode=1,popvalue="Light",value= #"\"Light;Dark\""
+	PopupMenu popupProbe,pos={725.00,366.00},size={94.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="Probe"
+	PopupMenu popupProbe,mode=1,popvalue="4-Wire",value= #"\"2-Wire;4-Wire\""
 	
 	gname = "SSPanel#SSCurvaIV"
 	//ControlBar?
