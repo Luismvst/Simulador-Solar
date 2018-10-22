@@ -16,8 +16,7 @@ static constant imax = 800
 
 Menu "S.Solar"
 	SubMenu "Solar Panel"	
-		"Display /ç",/Q, Init_SP ()
-		"Init SolarPanel /ñ", /Q, Init_SP (val = 1)	
+		"Display SolarPanel /ç", /Q, Init_SP ()	
 		"KillPanel /´", /Q, killPanel()
 	End
 	SubMenu "Keithley 2600"
@@ -209,7 +208,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 	return 0
 End
 
-fFunction ButtonProc_SimSolar(ba) : ButtonControl
+Function ButtonProc_SimSolar(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventcode == -1 || ba.eventcode == 2 || ba.eventcode == 6)
 		ba.blockReentry=1
@@ -247,14 +246,14 @@ fFunction ButtonProc_SimSolar(ba) : ButtonControl
 					if (stringmatch (baName, "btncheck*"))
 						if (str2num(baName[8])>=0 && str2num(baName[8])<=5)
 							wave btnValues = root:SolarSimulator:Storage:btnValues
-//							wave JscMeas = root:SolarSimulator:Storage:jscMeas
+//							wave IscMeas = root:SolarSimulator:Storage:IscMeas
 							variable id = str2num(baName[8])
 							btnValues[id]=!btnValues[id]							
-							Button_JscEnable(id)
-							Calc_JscObj(id)	
-							Calc_JscM (id)	
+							Button_IscEnable(id)
+							Calc_IscObj(id)	
+							Calc_IscM (id)	
 							if (btnValues[id])
-								CountDown_Jsc (deviceID, id, 10 )					
+								CountDown_Isc (deviceID, id, 10 )					
 							endif
 						endif
 					endif
@@ -397,14 +396,14 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 	return 0
 end
 
-Function Init_SP ([val])
+Function Init_SP ()
 	variable val
-	if (ItemsinList (WinList("SSPanel", ";", "")) > 0 && val == 1)
+	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
 		SetDrawLayer /W=SSPanel  Progfront
 		DoWindow /F SSPanel
 		return 0
 	endif 
-	init_solarVar (val=val)	
+	init_solarVar ()	
 //	Load_Spectre()
 	Solar_Panel ()
 	Init_Keithley_2600()
@@ -450,11 +449,11 @@ Function Load_Spectre ()
 	SetDataFolder sp
 End
 
-Function Init_SolarVar ([val])
+Function Init_SolarVar ()
 	variable val
 	string path = "root:SolarSimulator"
 	//If never initialized
-	if(!DatafolderExists(path) || val == 1)
+	if(!DatafolderExists(path))
 		string smsg = "You have to initialize first.\n"
 		smsg += "Do you want to initialize?\n"
 		DoAlert /T="Unable to open the program" 1, smsg
@@ -463,8 +462,7 @@ Function Init_SolarVar ([val])
 			return NaN
 		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
-			genDFolders(path + ":Storage")	
-//			genDFolders(path + ":Storage:K2600")
+			genDFolders(path + ":Storage")
 			genDFolders(path + ":GraphWaves")
 			genDFolders(path + ":Spectre")
 			//Here we have to load Sstd and Slamp manually 
@@ -523,34 +521,30 @@ Function Init_SolarVar ([val])
 	//Values of LedCurrents
 	make /N=3	/O 		root:SolarSimulator:Storage:Iset = Nan
 	
-	//LedChannel
-//	variable/G root:SolarSimulator:Storage:channel
-//	nvar channel = root:SolarSimulator:Storage:channel
-//	channel = 1
-	
 	//ComPort
 	string/G root:SolarSimulator:Storage:COM //Connected by serial port
 	svar com = root:SolarSimulator:Storage:COM
 	com = " "
 	
-	//Jsc
-	make /N=6 /O root:SolarSimulator:Storage:JscObj 
-	make /N=6 /O root:SolarSimulator:Storage:JscMeas 
-	make /N=6 /O root:SolarSimulator:Storage:JscM
-	wave JscObj = root:SolarSimulator:Storage:JscObj 
-	wave JscMeas = root:SolarSimulator:Storage:JscMeas 
-	wave JscM = root:SolarSimulator:Storage:JscM
-	JscMeas = {0,0,0,0,0,0}
-	JscObj = {0,0,0,0,0,0}
-	JscM = {0,0,0,0,0,0}
-	
+	//Isc
+	make /N=6 /O root:SolarSimulator:Storage:IscObj 
+	make /N=6 /O root:SolarSimulator:Storage:IscMeas 
+	make /N=6 /O root:SolarSimulator:Storage:IscM
+	make /N=6 /O root:SolarSimulator:Storage:Iref
+	wave IscObj = root:SolarSimulator:Storage:IscObj 
+	wave IscMeas = root:SolarSimulator:Storage:IscMeas 
+	wave IscM = root:SolarSimulator:Storage:IscM
+	wave Iref = root:SolarSimulator:Storage:Iref
+	IscMeas = {0,0,0,0,0,0}
+	IscObj = {0,0,0,0,0,0}
+	IscM = {0,0,0,0,0,0}
+	Iref = {0,0,0,0,0,0}
 	
 	variable/G darea
 	variable/G iarea
 	darea = 0
 	
 	//Keithley K2600
-//	SetDataFolder "Jsc-K2600"	
 	Variable/G probe, probe, ilimit, nplc, delay, vmax, vmin, step, light_dark, forward;
 	String /G channel, dname, notes
 	variable /G ff, eff, jsc, jmp,vmp,voc
@@ -609,10 +603,6 @@ Function Solar_Panel()
 	//It has been created  when Leds Procedure initialize. 
 	svar com = root:SolarSimulator:Storage:com
 	nvar spectrechecked = :Storage:spectrechecked
-	//Jsc
-//	wave JscMeas = root:SolarSimulator:Storage:JscMeas
-//	wave JscObj = root:SolarSimulator:Storage:JscObj
-//	nvar darea = root:SolarSimulator:Storage:darea
 	
 	PauseUpdate; Silent 1		// building window...
 	
@@ -633,15 +623,6 @@ Function Solar_Panel()
 	SetDrawEnv linethick= 1.5
 //	DrawLine 672,639,672,24
 	
-//	DrawText 43,313,"Cargar S\\BSTD"
-//	DrawText 179,314,"Cargar S\\BLAMP"
-//	DrawText 169,357,"Cargar EQE\\BREF"
-//	DrawText 319,355,"Cargar EQE\\BDUT"
-//	DrawText 482,355,"Jsc\\BOBJ"
-//	DrawText 585,355,"Jsc\\BMEAS"
-//	DrawText 546,355,"M"	
-//	DrawText 633,355,"Nº\\BSOLES"
-	
 	DrawText 39,18,"Cargar S\\BSTD"
 	DrawText 175,19,"Cargar S\\BLAMP"
 	DrawText 149,62,"Cargar EQE\\BREF"
@@ -653,7 +634,6 @@ Function Solar_Panel()
 	DrawText 286,62,"Isc\\BREF"
 	
 	//Buttons
-//	Button buttonLog,pos={29.00,617.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Print LOG",fColor=(16385,65535,41303)
 	Button buttonLedApply,pos={258.00,240.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="APPLY",fColor=(16385,65535,41303)
 	Button buttonClean,pos={11.00,317.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={500.00,65.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
@@ -706,13 +686,6 @@ Function Solar_Panel()
 	PopupMenu popupSubREF5,mode=100,popvalue=" ",value= #"QElist(1)"
 	PopupMenu popupSubDUT5,pos={329.00,165.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(2)"
-	
-//	CheckBox check0,pos={465.00,360.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-//	CheckBox check1,pos={465.00,380.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-//	CheckBox check2,pos={465.00,400.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-//	CheckBox check3,pos={465.00,420.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-//	CheckBox check4,pos={465.00,440.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
-//	CheckBox check5,pos={465.00,460.00},size={13.00,13.00},proc=CheckProc_SimSolar,title="", value=0
 
 	CheckBox checkgraph_leds,pos={259.00,285.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
 	CheckBox checkgraph_leds,value= 0
@@ -726,61 +699,73 @@ Function Solar_Panel()
 	SetVariable setvarLed740,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[1],live= 1
 	SetVariable setvarLed940,pos={13.00,281.00},size={229.00,18.00},proc=SetVarProc_SimSol,title="Led 940"
 	SetVariable setvarLed940,limits={0,1,0.1},value= root:SolarSimulator:Storage:LedLevel[2],live= 1
-	
+	SetVariable setvariref0,pos={275.00,65.00},size={52.00,19.00},disable=2,proc=SetVarProc_SimSol, title =" "
+	SetVariable setvariref0,limits={0,2,0.01},value= root:SolarSimulator:Storage:Iref[0],live= 1	
+	SetVariable setvariref1,pos={275.00,85.00},size={52.00,19.00},disable=2,proc=SetVarProc_SimSol, title =" "
+	SetVariable setvariref1,limits={0,2,0.01},value= root:SolarSimulator:Storage:Iref[1],live= 1	
+	SetVariable setvariref2,pos={275.00,105.00},size={52.00,19.00},disable=2,proc=SetVarProc_SimSol, title =" "
+	SetVariable setvariref2,limits={0,2,0.01},value= root:SolarSimulator:Storage:Iref[2],live= 1	
+	SetVariable setvariref3,pos={275.00,125.00},size={52.00,19.00},disable=2,proc=SetVarProc_SimSol, title =" "
+	SetVariable setvariref3,limits={0,2,0.01},value= root:SolarSimulator:Storage:Iref[3],live= 1
+	SetVariable setvariref4,pos={275.00,145.00},size={52.00,19.00},disable=2,proc=SetVarProc_SimSol, title =" "
+	SetVariable setvariref4,limits={0,2,0.01},value= root:SolarSimulator:Storage:Iref[4],live= 1
+	SetVariable setvariref5,pos={275.00,165.00},size={52.00,19.00},disable=2,proc=SetVarProc_SimSol, title =" "
+	SetVariable setvariref5,limits={0,2,0.01},value= root:SolarSimulator:Storage:Iref[5],live= 1
+
 	ValDisplay valdispJREF0,pos={527.00,67.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(0)"
+	ValDisplay valdispJREF0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscObj(0)"
 	ValDisplay valdispJREF1,pos={527.00,87.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(1)"
+	ValDisplay valdispJREF1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscObj(1)"
 	ValDisplay valdispJREF2,pos={527.00,107.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(2)"
+	ValDisplay valdispJREF2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscObj(2)"
 	ValDisplay valdispJREF3,pos={527.00,127.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(3)"
+	ValDisplay valdispJREF3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscObj(3)"
 	ValDisplay valdispJREF4,pos={527.00,147.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(4)"
+	ValDisplay valdispJREF4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscObj(4)"
 	ValDisplay valdispJREF5,pos={527.00,167.00},size={50.00,17.00},bodyWidth=50,valueColor=(52428,1,20971)
-	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscObj(5)"
+	ValDisplay valdispJREF5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscObj(5)"
 	ValDisplay valdispJM0,pos={581.00,67.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
-	ValDisplay valdispJM0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(0)"
+	ValDisplay valdispJM0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscM(0)"
 	ValDisplay valdispJM1,pos={581.00,87.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
-	ValDisplay valdispJM1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(1)"
+	ValDisplay valdispJM1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscM(1)"
 	ValDisplay valdispJM2,pos={581.00,107.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
-	ValDisplay valdispJM2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(2)"
+	ValDisplay valdispJM2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscM(2)"
 	ValDisplay valdispJM3,pos={581.00,127.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
-	ValDisplay valdispJM3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(3)"
+	ValDisplay valdispJM3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscM(3)"
 	ValDisplay valdispJM4,pos={581.00,147.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
-	ValDisplay valdispJM4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(4)"
+	ValDisplay valdispJM4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscM(4)"
 	ValDisplay valdispJM5,pos={581.00,167.00},size={50.00,17.00},bodyWidth=50,valueColor=(30000,20000,60000)
-	ValDisplay valdispJM5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscM(5)"
+	ValDisplay valdispJM5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscM(5)"
 	ValDisplay valdispJ0,pos={635.00,67.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
-	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(0)"
+	ValDisplay valdispJ0,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscMeas(0)"
 	ValDisplay valdispJ1,pos={635.00,87.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
-	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(1)"
+	ValDisplay valdispJ1,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscMeas(1)"
 	ValDisplay valdispJ2,pos={635.00,107.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
-	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(2)"
+	ValDisplay valdispJ2,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscMeas(2)"
 	ValDisplay valdispJ3,pos={635.00,127.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
-	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(3)"
+	ValDisplay valdispJ3,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscMeas(3)"
 	ValDisplay valdispJ4,pos={635.00,147.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
-	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(4)"
+	ValDisplay valdispJ4,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscMeas(4)"
 	ValDisplay valdispJ5,pos={635.00,167.00},size={50.00,17.00},bodyWidth=50,valueColor=(1,16019,65535)
-	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_JscMeas(5)"
-	ValDisplay valdispSol0,pos={689.00,67.00},size={29.00,17.00},bodyWidth=40,disable=2
-	ValDisplay valdispSol0,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
-	ValDisplay valdispSol1,pos={689.00,87.00},size={29.00,17.00},bodyWidth=40,disable=2
-	ValDisplay valdispSol1,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
-	ValDisplay valdispSol2,pos={689.00,107.00},size={29.00,17.00},bodyWidth=40,disable=2
-	ValDisplay valdispSol2,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
-	ValDisplay valdispSol3,pos={689.00,127.00},size={29.00,17.00},bodyWidth=40,disable=2
-	ValDisplay valdispSol3,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
-	ValDisplay valdispSol4,pos={689.00,147.00},size={29.00,17.00},bodyWidth=40,disable=2
-	ValDisplay valdispSol4,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
-	ValDisplay valdispSol5,pos={689.00,167.00},size={29.00,17.00},bodyWidth=40,disable=2
-	ValDisplay valdispSol5,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_JscMeas(0)"
+	ValDisplay valdispJ5,format="",limits={0,0,0},barmisc={0,1000},disable=2,value = #"get_IscMeas(5)"
+	ValDisplay valdispSol0,pos={689.00,67.00},size={40.00,17.00},bodyWidth=40,disable=2
+	ValDisplay valdispSol0,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_IscMeas(0)"
+	ValDisplay valdispSol1,pos={689.00,87.00},size={40.00,17.00},bodyWidth=40,disable=2
+	ValDisplay valdispSol1,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_IscMeas(0)"
+	ValDisplay valdispSol2,pos={689.00,107.00},size={40.00,17.00},bodyWidth=40,disable=2
+	ValDisplay valdispSol2,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_IscMeas(0)"
+	ValDisplay valdispSol3,pos={689.00,127.00},size={40.00,17.00},bodyWidth=40,disable=2
+	ValDisplay valdispSol3,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_IscMeas(0)"
+	ValDisplay valdispSol4,pos={689.00,147.00},size={40.00,17.00},bodyWidth=40,disable=2
+	ValDisplay valdispSol4,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_IscMeas(0)"
+	ValDisplay valdispSol5,pos={689.00,167.00},size={40.00,17.00},bodyWidth=40,disable=2
+	ValDisplay valdispSol5,valueColor=(1,16019,65535),limits={0,0,0},barmisc={0,1000},value= #"get_IscMeas(0)"
 
 	//Functions to initialize panel
 	for (i = 0; i<6; i++)
 		Pop_Action (i, popValues)
 	endfor 
-	//Check_JscEnable (-1, 0)
+	//Check_IscEnable (-1, 0)
 	
 	//Display 
 	string gname = "SSPanel#SSGraph"
@@ -867,38 +852,12 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname minor=1
 	ModifyGraph /W=$gname standoff=0
 	Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
-	Label /W=$gname bottom "Voltage (V)"
-	SetAxis /A
+	Label /W=$gname bottom "Voltage (V)"	
+	SetAxis /W=$gname left*,1
+	SetAxis /W=$gname bottom*,2000
+	
 	SetDrawLayer UserFront
-	
-
 	SetActiveSubwindow ##	
-	
-	//Waves drawn in the graph
-//	SetDataFolder root:SolarSimulator:GraphWaves
-//	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
-//	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
-//	wave wavelamp, wavespectre;
-//	wave waveled530, waveled740, waveled940;
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut0 
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut1 	
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut2
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut3
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut4 
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubdut5
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubref0
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubref1
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubref2
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubref3
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubref4
-//	AppendtoGraph /W=SSPanel#SSGraph wavesubref5
-////	AppendtoGraph /W=SSPanel#SSGraph waveled530
-////	AppendtoGraph /W=SSPanel#SSGraph waveled740
-////	AppendtoGraph /W=SSPanel#SSGraph waveled940	
-//	AppendtoGraph/R /W=SSPanel#SSGraph wavelamp	
-//	AppendtoGraph/R /W=SSPanel#SSGraph wavespectre
-//	Label/W=SSPanel#SSGraph right "Spectrum"
-//	ModifyGraph /W=SSPanel#SSGraph minor=1
 end
 
 //DropDown "Yes-No" Selection
@@ -926,26 +885,26 @@ Function Pop_Action (popNum, popValues)
 	//popValues is the boolean array that carries the FMS information
 	variable popNum
 	wave popValues
-	string checkX
+	string setvarX
 	string btnX
 	string popupX
 	string popupY
 	string valdisp1
 	string valdisp2
-	checkX = "check" + num2str(popNum)
-	btnX = "btn"+checkX
+	setvarX = "setvariref" + num2str(popNum)
+	btnX = "btncheck" + num2str(popNum)
 	popupX = "popupSubREF" + num2str(popNum)
 	popupY = "popupSubDUT" + num2str(popNum)
 	if (popValues[popNum])
-//		CheckBox $checkX, 	disable = 0
 		Button $btnX, disable = 0
 		PopupMenu $popupX,	disable = 0
 		PopupMenu $popupY,	disable = 0	
+		SetVariable $setvarX, disable = 0
 	else
-//		CheckBox $checkX, 	disable = 1
 		Button $btnX,	disable = 1
 		PopupMenu $popupX,	disable = 2
 		PopupMenu $popupY,	disable = 2
+		SetVariable $setvarX, disable = 2
 	endif	
 end
 
@@ -1023,7 +982,7 @@ Function Check_PlotEnable (id[, checked])
 	SetDataFolder savedatafolder	
 End
 gi
-Function Button_JscEnable (id)
+Function Button_IscEnable (id)
 	//id is the selected box that we want to enable or disable
 	//checked is the state that the selected checkbox has got
 	variable id
@@ -1037,15 +996,15 @@ Function Button_JscEnable (id)
 	variable refresh //Selected
 	string btncheck
 	string valdisp1, valdisp2, valdisp3;
-	string getJscObj, getJscMeas, getJscM;
+	string getIscObj, getIscMeas, getIscM;
 	for (i=0;i<6; i++)
 		btncheck = "btncheck" + num2str(i)
 		valdisp1 = "valdispJREF" + num2str(i)
 		valdisp2 = "valdispJ" + num2str(i)
 		valdisp3 = "valdispJM" + num2str(i)
-		getJscObj = "get_JscObj("+num2str(i)+")"
-		getJscMeas = "get_JscMeas("+num2str(i)+")"
-		getJscM = "get_JscM("+num2str(i)+")"
+		getIscObj = "get_IscObj("+num2str(i)+")"
+		getIscMeas = "get_IscMeas("+num2str(i)+")"
+		getIscM = "get_IscM("+num2str(i)+")"
 		if (id != i || !btnValues[i])
 			Button $btncheck, fColor=(16385,65535,41303)
 			ValDisplay $valdisp1, disable = 2
@@ -1055,9 +1014,9 @@ Function Button_JscEnable (id)
 		elseif (btnValues[i])
 			//I dont know why color does not change when checked.
 			Button $btncheck, fColor=(65535, 0, 0)
-			ValDisplay $valdisp1, disable = 0,value = #getJscObj
-			ValDisplay $valdisp2, disable = 0,value = #getJscMeas
-			ValDisplay $valdisp3, disable = 0,value = #getJscM
+			ValDisplay $valdisp1, disable = 0,value = #getIscObj
+			ValDisplay $valdisp2, disable = 0,value = #getIscMeas
+			ValDisplay $valdisp3, disable = 0,value = #getIscM
 			//Lets draw only the correspondant EQE waves
 //			Check_PlotEnable (id)
 //			Check_PlotEnable (7, checked = ledchecked)
@@ -1076,14 +1035,14 @@ Function Clean ([btn])
 	switch (btn)
 	case 1://if btn==1 -> Included Leds
 		ledchecked = 0
-	case 2://if btn==2 -> Total Clean (included jsc_buttons)
-		wave btnValues = :Storage:btnValues
-		btnValues = {0,0,0,0,0,0}
-		Button_jscEnable (-1)
+	case 2://if btn==2 -> Total Clean (included Isc_buttons)
+//		wave btnValues = :Storage:btnValues
+//		btnValues = {0,0,0,0,0,0}
+//		Button_IscEnable (-1)
 		break
 	endswitch
 	KillWindow SSPanel#SSGraph
-	Display/W=(0,0,594,292)/HOST=#  :Storage:sa vs :Storage:sa 
+	Display/W=(0,358,594,650)/HOST=#  :Storage:sa vs :Storage:sa 
 	RenameWindow #,SSGraph	
 	ModifyGraph /W=SSPanel#SSGraph  tick=2
 	ModifyGraph /W=SSPanel#SSGraph  zero=2
@@ -1093,8 +1052,8 @@ Function Clean ([btn])
 //	Label left "%"
 //	Label bottom "nm"
 //	Label right "Spectrum"
-	SetAxis left*,1
-	SetAxis bottom*,2000
+	SetAxis /W=SSPanel#SSGraph left*,1
+	SetAxis /W=SSPanel#SSGraph bottom*,2000
 	string checkspectre = "checkgraph_spectre"
 	string checkleds = "checkgraph_leds"
 	CheckBox $checkspectre, value = 0//, labelBack = (0, 0, 0)
@@ -1102,31 +1061,6 @@ Function Clean ([btn])
 	
 	Setdatafolder sdf
 end
-
-//Different Functions for Scaling . We will use them maybe in the future
-//Get Delta from start parameter
-//Function newDeltaStart (wav, newstart)
-//	wave wav
-//	variable newstart
-//	variable start = leftx (wav)					
-//	variable ending = rightx (wav)
-//	variable newending = newstart/start*ending
-//	variable rows = DimSize (wav, 0)
-//	variable newdelta = (newending - newstart)/rows
-//	return newdelta	
-//End
-
-//Get delta from End parameter
-//Function newDeltaEnding (wav, newending)
-//	wave wav
-//	variable newending
-//	variable start = leftx (wav)					
-//	variable ending = rightx (wav)
-//	variable newstart = newending*start/ending
-//	variable rows = DimSize (wav, 0)
-//	variable newdelta = (newending - newstart)/rows
-//	return newdelta	
-//End
 
 //is this wave scaled as i want?
 Function isScaled (wav)
@@ -1342,7 +1276,7 @@ End
 //	endswitch	
 //End
 
-////My own Function to calculate jsc from qe and s.spectre
+////My own Function to calculate Isc from qe and s.spectre
 Function qe2JscSS (qe, specw)
 	wave qe , specw	//qeSubCellRef y solar spectre (am0, amgd, amgg..)
 	variable jsc
@@ -1369,61 +1303,61 @@ Function qe2JscSS (qe, specw)
 	return jsc
 End
 
-//Function Calc_JscObj_v1(id)
+//Function Calc_IscObj_v1(id)
 //	variable id
-//	wave jscObj = root:SolarSimulator:Storage:jscObj
+//	wave IscObj = root:SolarSimulator:Storage:IscObj
 //	wave wavespectre = root:SolarSimulator:GraphWaves:wavespectre
 //	switch (id)
 //	case 0:
 //		wave qe = root:SolarSimulator:GraphWaves:wavesubref0		
-//		jscObj[0] = qe2JscSS (qe, wavespectre)
+//		IscObj[0] = qe2JscSS (qe, wavespectre)
 //		break
 //	case 1:
 //		wave qe = root:SolarSimulator:GraphWaves:wavesubref1
-//		jscObj[1] = qe2JscSS (qe, wavespectre)
+//		IscObj[1] = qe2JscSS (qe, wavespectre)
 //		break
 //	case 2:
 //		wave qe = root:SolarSimulator:GraphWaves:wavesubref2		
-//		jscObj[2] = qe2JscSS (qe, wavespectre)
+//		IscObj[2] = qe2JscSS (qe, wavespectre)
 //		break
 //	case 3:
 //		wave qe = root:SolarSimulator:GraphWaves:wavesubref3		
-//		jscObj[3] = qe2JscSS (qe, wavespectre)
+//		IscObj[3] = qe2JscSS (qe, wavespectre)
 //		break
 //	case 4:
 //		wave qe = root:SolarSimulator:GraphWaves:wavesubref4		
-//		jscObj[4] = qe2JscSS (qe, wavespectre)
+//		IscObj[4] = qe2JscSS (qe, wavespectre)
 //		break
 //	case 5:
 //		wave qe = root:SolarSimulator:GraphWaves:wavesubref5		
-//		jscObj[5] = qe2JscSS (qe, wavespectre)
+//		IscObj[5] = qe2JscSS (qe, wavespectre)
 //		break
 //	endSwitch
 //	string valdispJx = "valdispJREF"+num2str(id)
-//	string getJsc = "get_JscObj ("+num2str(id)+")"
-//	ValDisplay $valdispJx, value= #getJsc
+//	string getIsc = "get_IscObj ("+num2str(id)+")"
+//	ValDisplay $valdispJx, value= #getIsc
 //	
 //End
 
-Function Calc_JscObj(id)
+Function Calc_IscObj(id)
 	variable id
-	wave jscObj = root:SolarSimulator:Storage:jscObj
+	wave IscObj = root:SolarSimulator:Storage:IscObj
 	wave wavespectre = root:SolarSimulator:GraphWaves:wavespectre
 	string sdf = GetDataFolder (1)
 	SetDataFolder root:SolarSimulator:GraphWaves
 	string sref = "wavesubref"+num2str(id)
 	wave qe = $sref
 	SetDataFolder sdf
-	JscObj[id] = qe2JscSS ( qe, wavespectre)
+	IscObj[id] = qe2JscSS ( qe, wavespectre)
 	string valdispJx = "valdispJREF"+num2str(id)
-	string getJsc = "get_JscObj ("+num2str(id)+")"
-	ValDisplay $valdispJx, value= #getJsc
+	string getIsc = "get_IscObj ("+num2str(id)+")"
+	ValDisplay $valdispJx, value= #getIsc
 End
 
-Function Calc_JscM (id)
+Function Calc_IscM (id)
 	variable id
-	wave JscM = root:SolarSimulator:Storage:JscM
-	wave JscObj = root:SolarSimulator:Storage:JscObj
+	wave IscM = root:SolarSimulator:Storage:IscM
+	wave IscObj = root:SolarSimulator:Storage:IscObj
 	string wavesubrefX = "wavesubref" + num2str(id)
 	string wavesubdutX = "wavesubdut" + num2str(id)
 	string sdf = GetDataFOlder (1)
@@ -1441,12 +1375,12 @@ Function Calc_JscM (id)
 	jsc[3] = qe2jscSS ( wsdut, wavespectre )
 	
 	//Introducir Calculo de JscObj dentro de este
-//	JscObj[id] =  
-	JscM[id] = jsc[0]*jsc[1]/jsc[2]/jsc[3]	
+//	IscObj[id] =  
+	IscM[id] = jsc[0]*jsc[1]/jsc[2]/jsc[3]	
 	
 	string valdispJx = "valdispJREF"+num2str(id)
-	string getJsc = "get_JscObj ("+num2str(id)+")"
-	ValDisplay $valdispJx, value= #getJsc
+	string getIsc = "get_IscObj ("+num2str(id)+")"
+	ValDisplay $valdispJx, value= #getIsc
 	
 	wavekiller ("jsc")	
 	SetDataFolder sdf
@@ -1456,22 +1390,22 @@ End
 
  
  
-Function get_JscObj (i)
+Function get_IscObj (i)
 	variable i
-	wave JscObj = root:SolarSimulator:Storage:JscObj
-	return JscObj[i]
+	wave IscObj = root:SolarSimulator:Storage:IscObj
+	return IscObj[i]
 end
 
-Function get_JscMeas (i)
+Function get_IscMeas (i)
 	variable i
-	wave JscMeas = root:SolarSimulator:Storage:JscMeas
-	return JscMeas[i]
+	wave IscMeas = root:SolarSimulator:Storage:IscMeas
+	return IscMeas[i]
 end
 
-Function get_JscM (i)
+Function get_IscM (i)
 	variable i
-	wave JscM = root:SolarSimulator:Storage:JscM
-	return JscM[i]
+	wave IscM = root:SolarSimulator:Storage:IscM
+	return IscM[i]
 end
 
 //*******************Keithley K2600***********************************************************************************************************//	
@@ -1485,23 +1419,26 @@ Function  Close_Keithley_2600()
 	DevClearList(0,26)
 End
 
-//en meas_SSCurvaIV we implementate this fnction. 
-Function Meas_Jsc (deviceID)
-	variable deviceID
+//on meas_SSCurvaIV we implementate this function. 
+Function Meas_Jsc (deviceID, [Isc])
+	variable deviceID, isc
+	if (paramisdefault(Isc))
+		isc = 0
+	endif
 	string sdf = GetDataFolder (1)
 	SetDataFolder "root:SolarSimulator:Storage"
 	nvar probe, probe, ilimit, nplc, delay, darea
 	svar channeL
 	variable jsc
-	if (darea == 0)
-		SetVariable setvarDArea, valueBackColor= (57933,66846,1573)
 		
-	else 
-		SetVariable setvarDArea, valueBackColor=0
-	endif
 	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 	// ****
 	jsc = -1*measI_K2600(deviceID,channel)
-	jsc*=(1e3/darea)
+	if (darea == 0 && Isc == 0)
+		SetVariable setvarDArea, valueBackColor= (57933,66846,1573)		
+	else 
+		SetVariable setvarDArea, valueBackColor=0		
+		jsc*=(1e3/darea)
+	endif
 	return jsc
 	SetDataFolder sdf
 End
@@ -1843,13 +1780,13 @@ end
 //*******************Keithley K2600***********************************************************************************************************//	
 
 
-Function CountDown_Jsc(deviceID, id, countdown)
+Function CountDown_Isc(deviceID, id, countdown)
 	variable deviceID
 	variable id, countdown	
-	wave jsc = root:SolarSimulator:Storage:jscMeas
+	wave Isc = root:SolarSimulator:Storage:IscMeas
 	wave btnValues = root:SolarSimulator:Storage:btnValues
 	string valdispJX = "valdispJ" + num2str(id)
-	string getJscMeas = "get_JscMeas(" + num2str (id) + ")"
+	string getIscMeas = "get_IscMeas(" + num2str (id) + ")"
 	String message = "Initializing measurement"
 	TitleBox countdown_message,pos={340,617},size={100,20},title=message
 	String abortStr = "Press escape to abort"
@@ -1866,9 +1803,9 @@ Function CountDown_Jsc(deviceID, id, countdown)
 			sprintf message, "Time remaining: %d seconds", remaining
 			TitleBox countdown_message, title=message
 			lastMessageUpdate = ticks
-			jsc[id] = Meas_Jsc (deviceID)		// ****
-//			jsc[id] = count //Just to get some auxiliary values
-			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #getJscMeas
+			Isc[id] = Meas_Jsc (deviceID, Isc=1)		// ****
+//			Isc[id] = count //Just to get some auxiliary values
+			ValDisplay $valdispJX,valueColor=(1,16019,65535),value = #getIscMeas
 			ValDisplay $valdispJX,format = "%.3g"
 		endif
 
@@ -1877,7 +1814,7 @@ Function CountDown_Jsc(deviceID, id, countdown)
 //			message = "CANCELLED"
 //			TitleBox countdown_abort,title=abortStr
 //			TitleBox countdown_message,title=message
-//			jsc [id] = Nan
+//			Isc [id] = Nan
 //			Dilay (500)	//ms
 			break			//Out of loop	
 		endif
