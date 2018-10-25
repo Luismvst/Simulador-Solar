@@ -1417,9 +1417,6 @@ End
 
 Function Meas_Isc (deviceID)
 	variable deviceID
-	string sdf = GetDataFolder (1)
-	SetDataFolder "root:SolarSimulator:Storage"
-	svar channeL
 	variable jsc
 		
 //	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 	// çç
