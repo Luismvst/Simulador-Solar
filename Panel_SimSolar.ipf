@@ -1415,6 +1415,22 @@ Function Meas_Jsc (deviceID, [Isc])
 	SetDataFolder sdf
 End
 
+Function Meas_Isc (deviceID)
+	variable deviceID
+	string sdf = GetDataFolder (1)
+	SetDataFolder "root:SolarSimulator:Storage"
+	svar channeL
+	variable jsc
+		
+//	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 	// çç
+	configK2600_GPIB_SSCurvaIV(deviceID,3,"A"    ,2    ,0.1   ,1   , 1 )
+	jsc = -1*measI_K2600(deviceID,"A")
+	return jsc
+	SetDataFolder sdf
+End
+
+
+
 //en meas_SSCurvaIV we implementate this fnction. 
 Function Meas_Voc(deviceID)
 	variable deviceID
@@ -1780,7 +1796,8 @@ Function CountDown_Isc(deviceID, id, countdown)
 			TitleBox countdown_message, title=message
 			lastMessageUpdate = ticks
 //			Isc[id] = Meas_Jsc (deviceID, Isc=1)		// çççç
-			Isc[id] = count //Just to get some auxiliary values
+			Isc[id] = Meas_Isc (deviceID)		// çççç
+//			Isc[id] = count //Just to get some auxiliary values
 			if (Iref[id] == 0)
 //				SetVar	//ççç pendiente de terminar
 			endif
