@@ -413,10 +413,10 @@ Function Init_SP ()
 		return 0
 	endif 
 	init_solarVar ()	
-//	Load_Spectre()
+	Load_Spectre()
 	Solar_Panel ()
 //	Init_Keithley_2600()	// çççç
-End
+End 
 
 function include_Mightex() // MightexPanel
 //	Execute/P/Q/Z "INSERTINCLUDE \"MightexPanel\""
@@ -436,9 +436,11 @@ Function Load_Spectre ()
 	
 	//LED_DATA	
 //	string led_path = general_path + "\SLeds"
+//	C:Users:III-V:Documents:WaveMetrics:Igor Pro 7 User Files:SolarSimulatorData:SLeds:
 	SetDataFolder root:SolarSimulator:Spectre:SLeds
-	newpath/O/Q lpath, general_path + ":SLeds"
-	LoadWave/C/O/Q /P=lpath	"LED530.ibw"
+	newpath/O/Q lpath, general_path + ":SLeds" 
+	
+	LoadWave/C/O/Q /P=lpath	"LED470.ibw"
 	LoadWave/C/O/Q /P=lpath	"LED740.ibw"
 	LoadWave/C/O/Q /P=lpath	"LED940.ibw"
 	
@@ -451,8 +453,8 @@ Function Load_Spectre ()
 	LoadWave/C/O/Q /P=rpath	"AMO.ibw"
 	
 	SetDataFolder root:SolarSimulator:Spectre:SLamp
-	NewPath/O/Q 	lpath, general_path + ":SLamp"
-	LoadWave/C/O/Q /P=lpath	"XT10open2012.ibw"
+	NewPath/O/Q 	spath, general_path + ":SLamp"
+	LoadWave/C/O/Q /P=spath	"XT10open2012.ibw"
 	
 	killPath /A 
 	SetDataFolder sp
@@ -461,15 +463,15 @@ End
 Function Init_SolarVar ()
 	variable val
 	string path = "root:SolarSimulator"
-	//If never initialized
-	if(!DatafolderExists(path))
-		string smsg = "You have to initialize first.\n"
-		smsg += "Do you want to initialize?\n"
-		DoAlert /T="Unable to open the program" 1, smsg
-		if (V_flag == 2)		//Clicked <"NO">
-//			Abort "Execution aborted.... Restart IGOR"
-			return NaN
-		elseif (V_flag == 1)	//Clicked <"YES">
+//	//If never initialized
+//	if(!DatafolderExists(path))
+//		string smsg = "You have to initialize first.\n"
+//		smsg += "Do you want to initialize?\n"
+//		DoAlert /T="Unable to open the program" 1, smsg
+//		if (V_flag == 2)		//Clicked <"NO">
+////			Abort "Execution aborted.... Restart IGOR"
+//			return NaN
+//		elseif (V_flag == 1)	//Clicked <"YES">
 			genDFolders(path)
 			genDFolders(path + ":Storage")
 			genDFolders(path + ":GraphWaves")
@@ -478,9 +480,23 @@ Function Init_SolarVar ()
 			genDFolders(path + ":Spectre:SRef")
 			genDFolders(path + ":Spectre:SLamp")
 			genDFolders(path + ":Spectre:SLeds")
-		endif
-	endif
-	
+			
+			//*********PRUEBA DE CREAR NOSOTROS CARPETAS*******//
+			genDFolders("root:EQEREF1")
+			genDFolders("root:EQEREF2")
+			genDFolders("root:EQEREF3")
+			genDFolders("root:EQEREF1:EQE")
+			genDFolders("root:EQEREF2:EQE")
+			genDFolders("root:EQEREF3:EQE")
+			genDFolders("root:EQEDUT1")
+			genDFolders("root:EQEDUT2")
+			genDFolders("root:EQEDUT3")
+			genDFolders("root:EQEDUT1:EQE")
+			genDFolders("root:EQEDUT2:EQE")
+			genDFolders("root:EQEDUT3:EQE")
+//		endif
+//	endif
+//	
 	SetDataFolder path
 	//Initial wave for #GraphPanel
 	make /N=1 /O		root:SolarSimulator:Storage:sa
@@ -1417,8 +1433,7 @@ End
 
 Function Meas_Isc (deviceID)
 	variable deviceID
-	variable jsc
-		
+	variable jsc		
 //	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 	// çç
 	configK2600_GPIB_SSCurvaIV(deviceID,3,"A"    ,2    ,0.1   ,1   , 1 )
 	jsc = -1*measI_K2600(deviceID,"A")
@@ -1792,7 +1807,7 @@ Function CountDown_Isc(deviceID, id, countdown)
 			sprintf message, "Time remaining: %d seconds", remaining
 			TitleBox countdown_message, title=message
 			lastMessageUpdate = ticks
-//			Isc[id] = Meas_Jsc (deviceID, Isc=1)		// çççç
+//			Isc[id] = Meas_Jsc (deviceID, Isc=1)		
 			Isc[id] = Meas_Isc (deviceID)		// çççç
 //			Isc[id] = count //Just to get some auxiliary values
 			if (Iref[id] == 0)
