@@ -20,11 +20,20 @@ Function init_OpenSerialLed (com, Device)
 		// is the port available in the computer?
 	if (WhichListItem(com,sports)!=-1)
 		cmd = "VDT2 /P=" + com + DeviceCommands
-		Execute cmd
+		Execute/Z cmd
 		cmd = "VDTOperationsPort2 " + com
-		Execute cmd
+		Execute/Z cmd
 		cmd = "VDTOpenPort2 " + com
-		Execute cmd
+		Execute/Z cmd
+		//Port available but VDT can not openPort..
+		if (V_Flag)	//V_Flag returns the number 0 if no error. The error number if there's error oppressed by /Z
+			string smsg1="Problem openning port:" +com+". Try the following:\r"
+			smsg1+="0.- TURN IT ON!\r"
+			smsg1+="1.- Verify is not being used by another program\r"
+			smsg1+="2.- Verify the PORT is available in Device Manager (Ports COM). If not, rigth-click and scan hardware changes or disable and enable it.\r"
+			DoAlert /T="Unable to open Serial Port" 0, smsg1
+			return 0
+		endif
 		flag = 1
 	else
 		//Error Message with an OK button

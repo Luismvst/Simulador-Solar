@@ -168,14 +168,15 @@ function/S QErefoptions(reflab)
 	endswitch
 end
 
+//For SimSolar Only
 Function /S QEWaveList(num)
 	variable num
 	string list="_none_;"
 	String fldrSav= GetDataFolder(1)
 	if (num == 1)
-		SetDataFolder root:SolarSimulator:Spectre:SRef			
+		SetDataFolder root:SolarSimulator:Spectra:SRef			
 	elseif (num == 2)
-		SetDataFolder root:SolarSimulator:Spectre:SLamp		
+		SetDataFolder root:SolarSimulator:Spectra:SLamp		
 	endif
 	list+= wavelist ("*", ";", "")
 	SetDataFolder fldrSav
