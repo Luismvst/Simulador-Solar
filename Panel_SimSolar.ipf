@@ -12,7 +12,7 @@
 static constant channel1 = 1
 static constant channel2 = 2
 static constant channel3 = 3
-static constant imax = 800
+static constant imax = 1000
 
 Menu "S.Solar"
 	SubMenu "Solar Panel"	
@@ -92,9 +92,9 @@ Function/S Load (fname, num)
 	wave destwave = $destwavename
 	Duplicate /O originwave, destwave
 	
-	if (!isScaled(destwave))
-		SetScale /I x, 0, 2000 , destwave
-	endif
+//	if (!isScaled(destwave))
+//		SetScale /I x, 0, 2000 , destwave
+//	endif
 	/////////****we will see this in the future***///
 	//It has been reviewed, my decision is to comment Draw at Load.
 //	if (!Draw (destwave, id))
@@ -216,10 +216,14 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 	switch( ba.eventCode )
 		case 2: // mouse up
 			string baName = ba.ctrlname
-			variable deviceID = getDeviceID("K2600")
-//			variable deviceID = 31269	//Me lo invento, the other function does not work yet
+			variable deviceID = getDeviceID("K2600")	
+			if (deviceID == 0 )
+				string ms = "Unable to connect with Keithley 2602A\n\n"
+				ms += "\nExecution aborted.... Restart Program and Initialize correctly"	
+				Abort ms
+			endif
+//			variable deviceID = 31269	
 			strswitch (ba.ctrlname)
-//				case "buttonLog":
 				case "btnMeasIV":					
 					meas_SSCurvaIV(deviceID, 0)
 					break
@@ -232,6 +236,9 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					nvar voc = root:SolarSimulator:Storage:voc
 					voc = Meas_Voc(deviceID)
 					voc = meas_SSCurvaIV (deviceID, 2)
+					break
+				case "btnMeasValues":
+					calc_IVvalues()
 					break
 				case "buttonLedApply":
 					nvar ledchecked = root:SolarSimulator:Storage:ledchecked
@@ -246,7 +253,6 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					if (stringmatch (baName, "btncheck*"))
 						if (str2num(baName[8])>=0 && str2num(baName[8])<=5)
 							wave btnValues = root:SolarSimulator:Storage:btnValues
-//							wave IscMeas = root:SolarSimulator:Storage:IscMeas
 							variable id = str2num(baName[8])
 							btnValues[id]=!btnValues[id]							
 							Button_IscEnable(id)
@@ -263,7 +269,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":		//Button Disable being killed
 				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
 				//When killed, it wont reinitialize, but it will do the rest actions.
-//					Disable_All(1)					
+					Disable_All()					
 				break
 			endswitch
 			break
@@ -415,7 +421,7 @@ Function Init_SP ()
 	init_solarVar ()	
 	Load_Spectre()
 	Solar_Panel ()
-//	Init_Keithley_2600()	// çççç
+	Init_Keithley_2600()	// çççç
 End 
 
 function include_Mightex() // MightexPanel
@@ -480,20 +486,7 @@ Function Init_SolarVar ()
 			genDFolders(path + ":Spectre:SRef")
 			genDFolders(path + ":Spectre:SLamp")
 			genDFolders(path + ":Spectre:SLeds")
-			
-			//*********PRUEBA DE CREAR NOSOTROS CARPETAS*******//
-			genDFolders("root:EQEREF1")
-			genDFolders("root:EQEREF2")
-			genDFolders("root:EQEREF3")
-			genDFolders("root:EQEREF1:EQE")
-			genDFolders("root:EQEREF2:EQE")
-			genDFolders("root:EQEREF3:EQE")
-			genDFolders("root:EQEDUT1")
-			genDFolders("root:EQEDUT2")
-			genDFolders("root:EQEDUT3")
-			genDFolders("root:EQEDUT1:EQE")
-			genDFolders("root:EQEDUT2:EQE")
-			genDFolders("root:EQEDUT3:EQE")
+
 //		endif
 //	endif
 //	
@@ -589,7 +582,8 @@ Function Init_SolarVar ()
 	step = 0.01
 	light_dark = 0	//1 - Light / 2 - Dark
 	forward = 1	 //Reverse => forward=2 
-	ff=0; jsc=0; jmp= 0; vmp=0; voc=0;		
+	ff=0		//Fill factor 
+	jsc=0; jmp= 0; vmp=0; voc=0;		
 		
 	SetDataFolder path
 End
@@ -642,6 +636,8 @@ Function Solar_Panel()
 //	NewPanel /K=0 /W=(30,59,1329,709) as "SSPanel"		//Large Panel
 	NewPanel /K=0 /W=(56,85,1232,735) as "SSPanel"		//Short Panel	
 	DoWindow /C SSPanel
+
+//	ModifyPanel /W=SSPanel cbRGB=(64507,65535,64764)
 	
 	//Text
 	SetDrawLayer UserBack
@@ -649,8 +645,8 @@ Function Solar_Panel()
 //	DrawText 675,71,"   Max \rCurrent"
 //	SetDrawEnv fstyle= 1
 //	DrawText 728,72,"   Set  \rCurrent "
-	SetDrawEnv linethick= 1.5
-//	DrawLine 672,639,672,24
+	SetDrawEnv linethick= 2,dash= 1
+	DrawLine 588,322,587,651
 	
 	DrawText 39,18,"Cargar S\\BSTD"
 	DrawText 175,19,"Cargar S\\BLAMP"
@@ -664,7 +660,7 @@ Function Solar_Panel()
 	
 	//Buttons
 	Button buttonLedApply,pos={258.00,240.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="APPLY",fColor=(16385,65535,41303)
-	Button buttonClean,pos={11.00,317.00},size={102.00,36.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
+	Button buttonClean,pos={379.00,287.00},size={162.00,22.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={500.00,65.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={500.00,85.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck2,pos={500.00,105.00},size={13.00,13.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
@@ -692,29 +688,29 @@ Function Solar_Panel()
 	PopupMenu popupLedCom,mode=100,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
 	PopupMenu popupSubREF0,pos={110.00,65.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubREF0,mode=100,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubREF0,mode=100,popvalue=" ",value= #"QElist(0)"
 	PopupMenu popupSubDUT0,pos={329.00,65.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubDUT0,mode=100,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubDUT0,mode=100,popvalue=" ",value= #"QEList(0)"
 	PopupMenu popupSubREF1,pos={110.00,85.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubREF1,mode=100,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubREF1,mode=100,popvalue=" ",value= #"QElist(0)"
 	PopupMenu popupSubDUT1,pos={329.00,85.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubDUT1,mode=100,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubDUT1,mode=100,popvalue=" ",value= #"QEList(0)"
 	PopupMenu popupSubREF2,pos={110.00,105.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubREF2,mode=100,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubREF2,mode=100,popvalue=" ",value= #"QElist(0)"
 	PopupMenu popupSubDUT2,pos={329.00,105.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubDUT2,mode=100,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubDUT2,mode=100,popvalue=" ",value= #"QEList(0)"
 	PopupMenu popupSubREF3,pos={110.00,125.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubREF3,mode=100,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubREF3,mode=100,popvalue=" ",value= #"QElist(0)"
 	PopupMenu popupSubDUT3,pos={329.00,125.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubDUT3,mode=100,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubDUT3,mode=100,popvalue=" ",value= #"QEList(0)"
 	PopupMenu popupSubREF4,pos={110.00,145.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubREF4,mode=100,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubREF4,mode=100,popvalue=" ",value= #"QElist(0)"
 	PopupMenu popupSubDUT4,pos={329.00,145.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubDUT4,mode=100,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubDUT4,mode=100,popvalue=" ",value= #"QEList(0)"
 	PopupMenu popupSubREF5,pos={110.00,165.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubREF5,mode=100,popvalue=" ",value= #"QElist(1)"
+	PopupMenu popupSubREF5,mode=100,popvalue=" ",value= #"QElist(0)"
 	PopupMenu popupSubDUT5,pos={329.00,165.00},size={163.00,19.00},bodyWidth=163,proc=PopMenuProc_SimSolar
-	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(2)"
+	PopupMenu popupSubDUT5,mode=100,popvalue=" ",value= #"QEList(0)"
 
 	CheckBox checkgraph_leds,pos={259.00,285.00},size={80.00,15.00},proc=CheckProc_SimSolar,title="On/Off Leds"
 	CheckBox checkgraph_leds,value= 0
@@ -790,8 +786,6 @@ Function Solar_Panel()
 	ValDisplay valdispNSol5,pos={689.00,167.00},size={40.00,17.00},bodyWidth=40,disable=2
 	ValDisplay valdispNSol5,valueColor=(65535,50115,0),limits={0,0,0},barmisc={0,1000},value= #"get_NSol(5)"
 
-	
-	
 	//Functions to initialize panel
 	for (i = 0; i<6; i++)
 		Pop_Action (i, popValues)
@@ -800,7 +794,9 @@ Function Solar_Panel()
 	
 	//Display 
 	string gname = "SSPanel#SSGraph"
-	Display/W=(0,358,594,650)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	
+//	Display/W=(0,358,594,650)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	Display/W=(0,320,584,650)/HOST=SSPanel  :Storage:sa vs :Storage:sa
 	RenameWindow #,SSGraph
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
@@ -809,6 +805,8 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname mirror=1
 	ModifyGraph /W=$gname minor=1
 	ModifyGraph /W=$gname standoff=0
+	ModifyGraph /W=$gname alblRGB(left)=(52428,1,1),alblRGB(bottom)=(1,39321,19939)
+	ModifyGraph /W=$gname wbRGB=(63479,65535,65535)
 	Label /W=$gname left "%"
 	Label /W=$gname bottom "nm"
 	//Label right "Spectrum"
@@ -825,8 +823,10 @@ Function Solar_Panel()
 	Button btnMeasJsc,fColor=(65535,65532,16385)
 	Button btnMeasVoc,pos={960.00,140.00},size={40.00,20.00},proc=ButtonProc_SimSolar,title="Voc"
 	Button btnMeasVoc,fColor=(16385,65535,65535)
+	Button btnMeasValues,pos={922.00,241.00},size={96.00,25.00},proc=ButtonProc_SimSolar,title="\\f01Meas Values"
+	Button btnMeasValues,fColor=(52428,1,41942)
 	
-	CheckBox checklog,pos={1027.00,338.00},size={36.00,15.00},value=0,proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
+	CheckBox checklog,pos={1050.00,300.00},size={36.00,15.00},value=0,proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
 	
 	SetVariable setvarstep,pos={755.00,180.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="Step (V)"
 	SetVariable setvarstep,limits={0,1,0.1},value= root:SolarSimulator:Storage:step,live= 1
@@ -873,7 +873,8 @@ Function Solar_Panel()
 	
 	gname = "SSPanel#SSCurvaIV"
 	//ControlBar?
-	Display/W=(648,355,1150,650)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	Display/W=(592,320,1176,650)/HOST=SSPanel  :Storage:sa vs :Storage:sa
+	
 	RenameWindow #,SSCurvaIV
 //	ModifyGraph mode=3
 //	ModifyGraph lSize=2
@@ -881,7 +882,10 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname zero=2
 	ModifyGraph /W=$gname mirror=1
 	ModifyGraph /W=$gname minor=1
-	ModifyGraph /W=$gname standoff=0
+	ModifyGraph /W=$gname standoff=0	
+	ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
+//	ModifyPanel /W=$gname cbRGB=(56576,56576,56576)//, frameStyle=1, frameInset=3
+	ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
 	Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
 	Label /W=$gname bottom "Voltage (V)"	
 	SetAxis /W=$gname left -0.1, 0.5
@@ -1242,22 +1246,20 @@ End
 //Tema Leds//******************
 //Switching on and off
 Function TurnOn_Leds()
+	wave Iset = root:SolarSimulator:Storage:Iset
 	setMode (channel1, 1)	//Normal mode
 	setMode (channel2, 1)
 	setMode (channel3, 1)
-	setNormalParameters (channel1, Imax, 0)
-	setNormalParameters (channel2, Imax, 0)
-	setNormalParameters (channel3, Imax, 0)
+	setNormalParameters (channel1, Imax, Iset[0])
+	setNormalParameters (channel2, Imax, Iset[1])
+	setNormalParameters (channel3, Imax, Iset[2])
 End
 
-Function TurnOff_Leds()
-	variable channel	
-	for (channel=1;channel<4;channel+=1)	//12 channels, 3 used
-		setMode (channel, 0)	//Disable
-	endfor
+Function TurnOff_Leds()	
+	setMode (channel1, 0)
+	setMode (channel2, 0)
+	setMode (channel3, 0)
 End
-
-
 
 Function Led_Apply ()
 	
@@ -1270,46 +1272,21 @@ Function Led_Apply ()
 	SetDataFolder savedatafolder
 End
 
-Function Led_Disable (option)
-	variable option
-	variable channel
-		string smsg = "Do you want to disable all channels?\n"
-		DoAlert /T="Disable before Exit" 1, smsg
-		if (V_flag == 2)		//Clicked <"NO">
-			return 0
-		elseif (V_flag == 1)	//Clicked <"YES">	
-			for (channel=1;channel<13;channel+=1)	//12 channels
-				setMode (channel, 0)	//Disable
-			endfor
-		endif
+//*************************************************************************
+Function Calc_IVvalues()
+	nvar voc = root:SolarSimulator:Storage:voc
+	nvar jsc = root:SolarSimulator:Storage:jsc
+	print "Not implemented yet"
+	
 End
 
-//Function Disable_All ([option])
-//	variable option
-//	if (paramisdefault (option))
-//		option = 0
-//	endif
-//	
-//	variable channel
-//	switch (option)
-//		case 1:
-//			string smsg = "Do you want to disable all channels?\n"
-//			DoAlert /T="Disable before Exit" 1, smsg
-//			if (V_flag == 2)		//Clicked <"NO">
-//			//Abort "Execution aborted.... Restart IGOR"
-//				return 0
-//			elseif (V_flag == 1)	//Clicked <"YES">	
-//				TurnOff_leds()
-//			endif
-//			break
-//		case 2:
-//			KillDataFolder root:SolarSimulator:Storage
-////			KillPath ref_path
-////			KillPath led_path
-////			KillPath lamp_path
-//			break
-//	endswitch	
-//End
+//When the panel is closed, this function turn off the leds and the keithley
+Function Disable_All ()
+	TurnOff_Leds ()
+	Close_Keithley_2600()
+//	print "Turned Off Leds"
+//	print "Closed Keithley"
+End
 
 ////My own Function to calculate Isc from qe and s.spectre
 Function qe2JscSS (qe, specw)
@@ -1370,8 +1347,6 @@ Function Calc_Isc (id)
 
 End
 
-
- 
  
 Function get_IscObj (i)
 	variable i
@@ -1438,7 +1413,6 @@ Function Meas_Isc (deviceID)
 	configK2600_GPIB_SSCurvaIV(deviceID,3,"A"    ,2    ,0.1   ,1   , 1 )
 	jsc = -1*measI_K2600(deviceID,"A")
 	return jsc
-	SetDataFolder sdf
 End
 
 

@@ -28,6 +28,7 @@ function/S QElist(ref)
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_Ext",","),";")
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_EQE",","),";")
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_RM",","),";")
+			break
 			case 1:
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_XExt",","),";")
 				QE1list+=ReplaceString(",",ListMatch( StringByKey("WAVES",DataFolderDir(2,QEDFR),":"),"*_Ext",","),";")
