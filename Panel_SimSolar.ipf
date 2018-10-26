@@ -1092,22 +1092,42 @@ Function Clean (graph)
 	variable graph	//1 = SSCurvaIV, 0 = SSGraph
 	string sdf = getdatafolder (1)
 	SetDataFolder root:SolarSimulator
-
-	KillWindow SSPanel#SSGraph
-	Display/W=(0,320,584,650)/HOST=#  :Storage:sa vs :Storage:sa 
-	RenameWindow #,SSGraph	
-	ModifyGraph /W=SSPanel#SSGraph  tick=2
-	ModifyGraph /W=SSPanel#SSGraph  zero=2
-	ModifyGraph /W=SSPanel#SSGraph  mirror=1
-	ModifyGraph /W=SSPanel#SSGraph  minor=1
-	ModifyGraph /W=SSPanel#SSGraph  standoff=0
-//	Label left "%"
-//	Label bottom "nm"
-//	Label right "Spectrum"
-	SetAxis /W=SSPanel#SSGraph left*,1
-	SetAxis /W=SSPanel#SSGraph bottom*,2000
-	string checkSpectra = "checkgraph_Spectra"
-	CheckBox $checkSpectra, value = 0//, labelBack = (0, 0, 0)
+	if (graph == 0)
+		KillWindow SSPanel#SSGraph
+		Display/W=(0,320,584,650)/HOST=#  :Storage:sa vs :Storage:sa 
+		RenameWindow #,SSGraph	
+		ModifyGraph /W=SSPanel#SSGraph  tick=2
+		ModifyGraph /W=SSPanel#SSGraph  zero=2
+		ModifyGraph /W=SSPanel#SSGraph  mirror=1
+		ModifyGraph /W=SSPanel#SSGraph  minor=1
+		ModifyGraph /W=SSPanel#SSGraph  standoff=0
+//		Label left "%"
+//		Label bottom "nm"
+//		Label right "Spectrum"
+		SetAxis /W=SSPanel#SSGraph left*,1
+		SetAxis /W=SSPanel#SSGraph bottom*,2000
+		string checkSpectra = "checkgraph_Spectra"
+		CheckBox $checkSpectra, value = 0//, labelBack = (0, 0, 0)
+	elseif (graph == 1)
+		KillWindow SSPanel#SSCurvaIV
+		string gname = "SSPanel#SSCurvaIV"
+		Display/W=(592,320,1176,650)/HOST=SSPanel  :Storage:sa vs :Storage:sa	
+		RenameWindow #,SSCurvaIV
+//		ModifyGraph mode=3
+//		ModifyGraph lSize=2
+		ModifyGraph /W=$gname tick=2
+		ModifyGraph /W=$gname zero=2
+		ModifyGraph /W=$gname mirror=1
+		ModifyGraph /W=$gname minor=1
+		ModifyGraph /W=$gname standoff=0	
+		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
+//		ModifyPanel /W=$gname cbRGB=(56576,56576,56576)//, frameStyle=1, frameInset=3
+		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
+		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
+		Label /W=$gname bottom "Voltage (V)"	
+		SetAxis /W=$gname left -0.1, 0.5
+		SetAxis /W=$gname bottom -1, 5	
+	endif
 	
 	Setdatafolder sdf
 end
