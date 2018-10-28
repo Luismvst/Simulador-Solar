@@ -241,21 +241,16 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				Abort ms
 			endif
 			strswitch (ba.ctrlname)
-				case "buttonaux":
-					Calc_Isc (0)
-					break
 				case "btnMeasIV":					
-					meas_SSCurvaIV(deviceID, 0)
+					meas_IV(deviceID)
 					break
 				case "btnMeasJsc":
 					nvar jsc  = root:SolarSimulator:Storage:jsc
 					jsc = Meas_Jsc(deviceID)
-//					jsc = meas_SSCurvaIV (deviceID, 3)
 					break
 				case "btnMeasVoc":
 					nvar voc = root:SolarSimulator:Storage:voc
 					voc = Meas_Voc(deviceID)
-					voc = meas_SSCurvaIV (deviceID, 2)
 					break
 				case "btnMeasValues":
 					calc_IVvalues()
@@ -279,7 +274,12 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 							Button_IscEnable(id)
 							Calc_Isc (id)	
 							if (btnValues[id])
-								CountDown_Isc (deviceID, id, 10 )					
+								nvar idtask = root:SolarSimulator:Storage:idtask
+								idtask = id 
+								nvar deviceIDtask = root:SolarSimulator:Storage:deviceidtask
+								deviceIDtask = deviceID
+//								CountDown_Isc (deviceID, id)//, 10 )	
+								StartCountdown ()	
 							endif
 						endif
 					endif
@@ -566,6 +566,13 @@ Function Init_SolarVar ()
 	svar com = root:SolarSimulator:Storage:COM
 	com = " "
 	
+	//ThreadTasks
+	variable/G root:SolarSimulator:Storage:DeviceIDtask
+	variable/G root:SolarSimulator:Storage:idtask
+	variable/G root:SolarSimulator:Storage:Count
+	nvar count =root:SolarSimulator:Storage:Count
+	count = 0 
+	
 	//Isc
 	make /N=6 /O root:SolarSimulator:Storage:IscObj 
 	make /N=6 /O root:SolarSimulator:Storage:IscMeas 
@@ -602,7 +609,7 @@ Function Init_SolarVar ()
 	vmax = 1
 	vmin = 0
 	step = 0.01
-	light_dark = 0	//1 - Light / 2 - Dark
+	light_dark = 1	//1 - Light / 2 - Dark
 	forward = 1	 //Reverse => forward=2 
 	ff=0		//Fill factor 
 	jsc=0; jmp= 0; vmp=0; voc=0;		
@@ -683,9 +690,9 @@ Function Solar_Panel()
 	DrawText 286,62,"Isc\\BREF"
 	
 	
-	
-	Button buttonAux, title="Calc Things",pos={454,215},size={103,23},proc=ButtonProc_SimSolar,fColor=(65535,0,0)
-	
+//	
+//	Button buttonAux, title="Calc Things",pos={454,215},size={103,23},proc=ButtonProc_SimSolar,fColor=(65535,0,0)
+//	
 	
 	//Buttons
 	Button buttonLedOff,pos={160.00,277.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="TURN OFF",fColor=(16385,65535,41303)
@@ -1354,19 +1361,14 @@ Function qe2JscSS (qe, specw)
 	//Las ondas que no empiezan por 300 sino por 280 lambda 
 	//hay que re-escalar todo para qeu no haya fallos?
 	
-//	SetScale /I x, leftx(specw), rightx(specw), qe
 	variable numPoints=(numpnts(qe)-1)*deltax(qe)+1
 	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
+	interpolate2 /T=1 /N=(numPoints) /Y=tmpw2 specw
 	Duplicate /O tmpw, sr
 	
-//	SetScale /P x, leftx(specw), 1, specw
-	
-	variable a = deltax(specw)
-	variable b = deltax (qe)
-	variable c = leftx(specw)
-	variable d = leftx(qe)
 	sr=(1.602e-19*tmpw*x*1e-9)/(6.62606957e-34*2.99792458e8) // A/W/m2
-	sr=specw(x)*sr(x)*1000/10000 //mA/cm2
+	sr*=tmpw2*x*1000/10000 //mA/cm2
+//	sr/=specw(x)*1000/10000
 	
 	// Pasar a corriente!!!. Ñapa temporal
 	sr*=0.1  //Asume un área de 0.1 cm en la célula
@@ -1378,8 +1380,6 @@ Function qe2JscSS (qe, specw)
 //	jsc=sr[numpnts(sr)-1]
 	wavekiller("tmpw")
 	wavekiller("tmpw2")
-	wavekiller("sr2")
-	wavekiller("specw_interpolated")
 	wavekiller("sr")
 
 	return jsc
@@ -1421,12 +1421,17 @@ End
 //
 //	return jsc
 //End
+
 Function Calc_Isc (id)
 	variable id
 	wave IscM = root:SolarSimulator:Storage:IscM
 	wave IscObj = root:SolarSimulator:Storage:IscObj
 	string wavesubrefX = "wavesubref" + num2str(id)
-	string wavesubdutX = "wavesubdut" + num2str(id)
+	string wavesubdutX = "wavesubdut" + num2str(id)	
+	string valdispIx = "valdispIREF"+num2str(id)
+	string valdispIMx = "valdispIM" +num2str(id)
+	string getIsc = "get_IscObj ("+num2str(id)+")"
+	string getIscM = "get_IscM ("+num2str(id)+")"
 	string sdf = GetDataFOlder (1)
 	SetDataFolder root:SolarSimulator:GraphWaves
 	wave wsref = $wavesubrefX
@@ -1437,6 +1442,10 @@ Function Calc_Isc (id)
 	//We are not ready to calc the Values
 	//Identify if the wave contains Nan on its first positin.
 	if ( numtype (wsref[0]) == 2 || numtype (wsdut[0]) == 2 || numtype(waveSpectra[0]) == 2 || numtype (waveLamp[0]) == 2) 
+		IscM[id]=0
+		IscObj[id]=0		
+		ValDisplay $valdispIx, value= #getIsc
+		ValDisplay $valdispIMx, value= #getIscM
 		return 0
 	endif
 	
@@ -1447,19 +1456,9 @@ Function Calc_Isc (id)
 	jsc[2] = qe2jscSS ( wsref, waveLamp )
 	jsc[3] = qe2jscSS ( wsdut, waveSpectra )
 	
-//	WaveStats/M=1/Q jsc
-//	if (V_numnans)
-//		wavekiller("jsc")
-//		return 0
-//	endif
-	
 	IscM[id] = jsc[0]*jsc[1]/jsc[2]/jsc[3]	
 	IscObj[id] =  jsc[1]*IscM[id]
 	
-	string valdispIx = "valdispIREF"+num2str(id)
-	string valdispIMx = "valdispIM" +num2str(id)
-	string getIsc = "get_IscObj ("+num2str(id)+")"
-	string getIscM = "get_IscM ("+num2str(id)+")"
 	ValDisplay $valdispIx, value= #getIsc
 	ValDisplay $valdispIMx, value= #getIscM
 	
@@ -1503,7 +1502,18 @@ Function  Close_Keithley_2600()
 	DevClearList(0,26)
 End
 
-//on meas_SSCurvaIV we implementate this function. 
+Function Meas_IV (deviceID)
+	variable deviceID
+	string sdf = GetDataFolder (1)
+	SetDataFolder "root:SolarSimulator:Storage"
+	nvar probe, ilimit, nplc, delay, step, vmin, vmax, forward
+	svar channeL
+	configK2600_GPIB_SSCurvaIV(deviceID,0,channel,probe,ilimit,nplc,delay)
+	measIV_K2600(deviceID,step,vmin,vmax,channel,forward)
+	
+	SetDataFolder sdf
+End
+
 Function Meas_Jsc (deviceID)
 	variable deviceID
 	string sdf = GetDataFolder (1)
@@ -1533,9 +1543,6 @@ Function Meas_Isc (deviceID)
 	return jsc
 End
 
-
-
-//en meas_SSCurvaIV we implementate this fnction. 
 Function Meas_Voc(deviceID)
 	variable deviceID
 	string sdf = GetDataFolder (1)
@@ -1544,9 +1551,8 @@ Function Meas_Voc(deviceID)
 	svar channel
 	nvar darea
 	variable voc
-	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	//çç
-	voc=-1*measI_K2600(deviceID,channel)
-	voc*=(1e3/darea)
+	configK2600_GPIB_SSCurvaIV(deviceID,2,channel,probe,ilimit,nplc,delay)	//çç
+	voc=measV_K2600(deviceID,channel)
 	return voc
 	SetDataFolder sdf
 End
@@ -1596,39 +1602,6 @@ Function measV_K2600(deviceID,channel)
 	return vmeas
 End
 
-Function meas_SSCurvaIV (deviceID, type)
-	variable deviceID, type;
-	svar channel = root:SolarSimulator:Storage:channel
-	nvar probe = root:SolarSimulator:Storage:probe
-	nvar ilimit = root:SolarSimulator:Storage:ilimit
-	nvar nplc = root:SolarSimulator:Storage:nplc
-	nvar delay = root:SolarSimulator:Storage:delay
-	nvar step = root:SolarSimulator:Storage:step
-	nvar vmin = root:SolarSimulator:Storage:vmin
-	nvar vmax = root:SolarSimulator:Storage:vmax
-	nvar forward = root:SolarSimulator:Storage:forward
-	nvar darea = root:SolarSimulator:Storage:darea
-	
-	switch (type)
-	case 0:		//Meas IV
-		configK2600_GPIB_SSCurvaIV(deviceID,type,channel,probe,ilimit,nplc,delay)
-		measIV_K2600(deviceID,step,vmin,vmax,channel,forward)
-		break
-	case 2:		//Meas V
-		variable voc
-		configK2600_GPIB_SSCurvaIV(deviceID,type,channel,probe,ilimit,nplc,delay) // o second argument means iv meas
-		voc=measV_K2600(deviceID,channel)	// ****
-		ValDisplay valdispVoc,value= #"root:SolarSimulator:Storage:Voc"
-		return voc
-	case 3:		//Meas I ( Jsc)
-		variable jsc
-		configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay) // ****
-		jsc=-1*measI_K2600(deviceID,channel)
-		jsc*=(1e3/darea)		
-		return jsc
-	endswitch		
-End
-//*********************************************************************************DO NOT UNCOMMENT***********************//
 Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	// make function where you can build the command
 	// Performs IV , at the moment sweeps V and measures I
@@ -1717,9 +1690,10 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		NVAR eff=root:SolarSimulator:Storage:eff
 		NVAR vmp=root:SolarSimulator:Storage:vmp 
 		NVAR jmp=root:SolarSimulator:Storage:jmp		
-		
+
 		// For the moment we replace Amperes and Area. This is good for using general function for SC parameters
 		// Next version will split functions of SC params and standarized areas for sim and exp data.
+		
 		nots=note(ww)
 		
 		jsc=getVarWaveNote(ww,"Jsc(mA/cm2)")
@@ -1728,6 +1702,8 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		eff=getVarWaveNote(ww,"Efficiency(%)")
 		vmp=getVarWaveNote(ww,"Vm(V)")
 		jmp=getVarWaveNote(ww,"Jm(mA/cm2)")
+		
+		
 		//mario did this. Lets reach the next level
 		nots=RemoveByKey("\rAmperes", nots,"=",";")
 		nots=RemoveByKey("\rArea(cm2)", nots,"=",";")
@@ -1869,13 +1845,25 @@ endswitch
 	//print cmdList
 end
 
-//*******************Keithley K2600***********************************************************************************************************//	
+//**********************Keithley K2600***********************************************************************************************************//	
 
+Function StartCountdown ()
+	variable numticks = 30
+	CtrlNamedBackground Countdown, period = numticks, proc=Countdown_Isc
+	CtrlNamedBackground Countdown, start
+ENd
 
-Function CountDown_Isc(deviceID, id, countdown)
-	variable deviceID
-	variable id, countdown	
-	wave Isc = root:SolarSimulator:Storage:IscMeas
+//This function is not needed. Return 1 pressing other buttons or escape is enough to kill the bgtask
+Function StopCountDown ()
+	CtrlNamedBackground Countdown, stop
+End
+
+Function CountDown_Isc(s)
+	STRUCT WMBackgroundStruct &s
+	
+	nvar deviceID = root:SolarSImulator:storage:deviceIDtask
+	nvar id = root:SolarSimulator:Storage:idtask	
+	wave IscMeas = root:SolarSimulator:Storage:IscMeas
 	wave NSol = root:SolarSimulator:Storage:NSol 
 	wave IscObj = root:SolarSimulator:Storage:IscObj
 	wave btnValues = root:SolarSimulator:Storage:btnValues
@@ -1884,96 +1872,43 @@ Function CountDown_Isc(deviceID, id, countdown)
 	string setvarIrefX = "setvariref"+num2str(id)
 	string getIscMeas = "get_IscMeas(" + num2str (id) + ")"
 	string getNSol = "get_Nsol(" + num2str(id) +")"
-	String message = "Initializing measurement"
+	String message = "---------Measuring--------"
 	TitleBox countdown_message,pos={357.00,13.00},size={100,20},title=message
-	String abortStr = "Press escape to abort"
+	String abortStr = "Hold escape to abort"
 	TitleBox countdown_abort,pos={510.00,13.00},size={100,20},title=abortStr
-	Dilay (500)
 	Variable startTicks = ticks
-	Variable endTicks = startTicks + 60*countdown
 	Variable lastMessageUpdate = startTicks
-	variable count = 1 //borrar***
-	do		
-		DoUpdate /W=SSPanel#SSGraph /E=1
-		if (ticks>=lastMessageUpdate+60)			// Time to update message?
-			Variable remaining = (endTicks - ticks) / 60
-			sprintf message, "Time remaining: %d seconds", remaining
-			TitleBox countdown_message, title=message
-			lastMessageUpdate = ticks		
-//			Isc[id] = Meas_Isc (deviceID)		// çççç
-			Isc[id] = count //Just to get some auxiliary values
-//			if (Iref[id] == 0)
-//				SetVariable $setvarIrefX, valueBackColor = (57933,66846,1573)
-//			else
-//				SetVariable $setvarIrefX, valueBackColor = 0
-//			endif
-			
-			NSol[id] = Isc[id]/IscObj[id]
+	nvar count = root:SolarSimulator:Storage:count
+	count +=1
+			IscMeas[id] = Meas_Isc (deviceID)		// çççç
+//			IscMeas[id] = count //Just to get some auxiliary values
+			NSol[id] = IscMeas[id]/IscObj[id]
 			
 			ValDisplay $valdispIX,value = #getIscMeas
 			ValDisplay $valdispIX,format = "%.5g"
 			ValDisplay $valdispNSolX,value = #getNSol
-		endif
 
 		if (GetKeyState(0) && 32 || btnValues[id] != 1)		//Press Esc, Alt or CTRL
 			btnValues[id] = 0
-			Button_IscEnable(id)
-			break			//Out of loop	
+			Button_IscEnable(id)			
+			abortStr = ""
+			message = ""
+			TitleBox countdown_message, title = message
+			TitleBox countdown_abort, title = abortStr
+			//this return 1 kills the background task
+			return 1
 		endif
-		count ++
-	while(1)
-	abortStr = ""
-	message = ""
-	TitleBox countdown_message, title = message
-	TitleBox countdown_abort, title = abortStr
-
+		return 0
 End
-
-Function calc ()
-//	wave wav1 = root:SolarSimulator:Storage:led530
-//	wave wav2 = root:SolarSImulator:storage:led740
-	make /N=3/O wav2 
-	make /N=2/O wav3
-	wave wav2 
-	wave wav3
-	wav2 = {1, 2, 2, 2, 2}
-	wav3 = { 1, 1, 2}
-	variable numPoints=(numpnts(wav2)-1)*deltax(wav2)+1
-	variable numPoints1=(numpnts(wav3)-1)*deltax(wav3)+1
-	print numpoints
-	print wav2
-	print wav3
-	interpolate2 /T=1 /N=(numPoints) /Y=tmpw wav2
-	interpolate2 /T=1 /N=(numPoints) /Y=tmpw2 wav3
-	Duplicate /O tmpw wav22
-	Duplicate /O tmpw2 wav32
-	print " "
-	print wav22
-	print wav32
-	wav22 = (x)
-	print " "
-	print wav22
-	wav32*=wav22(x)
-	print " "
-	print wav22
-	print wav32
-	wavekiller("wav2")
-	wavekiller("wav1")
-	wavekiller("wav3")
-	waveKiller("tmpw")
-	
-end
-
 
 Function read_IscRef(wavepath,id )
 	string wavepath
 	variable id
 	string notes = note($wavepath)
 	variable i
-	if (stringmatch (notes, "*Jsc*") || 0)
-		if (stringmatch (notes, "*mA/cm2*"))
-			variable pos = strsearch (notes, "Jsc (AMG173DIRECT_1000Wm2)=", 0)
-			if (pos)
+	if (stringmatch (notes, "*Jsc (AMG173DIRECT_1000Wm2)=*"))
+		variable pos = strsearch (notes, "Jsc (AMG173DIRECT_1000Wm2)=", 0)
+		if (pos)
 				variable post_coma, num
 				//Cojo de Ireferencia de este espectro, por ejemplo
 				pos +=strlen ("Jsc (AMG173DIRECT_1000Wm2)=")
@@ -1999,7 +1934,6 @@ Function read_IscRef(wavepath,id )
 				endfor
 				num/=post_coma		// mA/cm2				
 				Iref[id] = num
-			endif
 		endif
 	endif
 end
