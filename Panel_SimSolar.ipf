@@ -17,7 +17,8 @@ static constant imax = 500	//Max 1000 mA
 
 Menu "S.Solar"
 	SubMenu "Solar Panel"	
-		"Display SolarPanel /ç", /Q, Init_SP ()	
+		"Display SolarPanel /ç", /Q, Init_SP (val=1)	
+		"Initialize Solar Panel ", /Q, Init_SP ()
 		"KillPanel /´", /Q, killPanel()
 	End
 	SubMenu "Keithley 2600"
@@ -461,7 +462,7 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 	return 0
 end
 
-Function Init_SP ()
+Function Init_SP ([val])
 	variable val
 	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
 		SetDrawLayer /W=SSPanel  Progfront
@@ -470,7 +471,9 @@ Function Init_SP ()
 	endif 
 	init_solarVar ()	
 	Load_Spectrum()	
-//	Init_Keithley_2600()	// çççç
+	if (val==0)
+		Init_Keithley_2600()	// çççç
+	endif
 	Solar_Panel ()
 End 
 
