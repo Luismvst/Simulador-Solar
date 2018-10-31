@@ -12,7 +12,7 @@ static constant channel1 = 1
 static constant channel2 = 2
 static constant channel3 = 3
 static constant imax = 500	//Max 1000 mA
-
+wave imax 
 
 
 Menu "S.Solar"
@@ -99,6 +99,19 @@ Function/S Load (fname, num)
 	if(deltax(destwave)<0.01)  /// ÑAPAAA TEMPORAL!!!
 		// Escala en micras, pasarla a nm
 		SetScale/I x, (leftx(destwave)*1000), (rightx(destwave)*1000), destwave
+		//Improvising
+//		if (stringmatch (nameofwave (destwave), "waveLamp"))
+//			String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
+//			if(strlen(tracelist))
+//				variable i			
+//				for (i=0; strlen(cadena)!=0; i+=1)
+//					cadena = (StringFromList(i, traceList))
+//					if(stringmatch(cadena, "waveSpectra") )
+//						 CopyScales root:SolarSimulator:GraphWaves:waveSpectra, destwave
+//					endif				
+//				endfor
+//			endif
+//		endif
 	endif
 	
 	Draw (destwave, id)
@@ -489,10 +502,6 @@ Function Load_Spectrum ()
 	string sp = GetDataFolder(1)
 	string general_path = SpecialDirPath ("Igor Pro User Files", 0, 0, 0)
 	general_path += "SolarSimulatorData"
-//	string general_path1 = replaceString (":", general_path, "\ " )	
-//	general_path1 = replaceString ("C\ ", general_path1, "C:\ ") 
-//	general_path1 = replaceString (" ", general_path1, "")
-//	print general_path1	
 	
 	//LED_DATA	
 //	string led_path = general_path + "\SLeds"
@@ -509,9 +518,8 @@ Function Load_Spectrum ()
 //	string ref_path = general_path + ":SRef"
 	SetDataFolder root:SolarSimulator:Spectra:SRef
 	LoadWave/C/O/Q /P=rpath	"AMG173DIRECT.ibw"
-	LoadWave/C/O/Q /P=rpath	"AMG173GLOBAL.ibw"
-	LoadWave/C/O/Q /P=rpath	"AMO.ibw"
-	
+	LoadWave/C/O/Q /P=rpath	"am0.ibw"	
+	LoadWave/C/O/Q /P=rpath	"am15g_G173.ibw"
 	SetDataFolder root:SolarSimulator:Spectra:SLamp
 	NewPath/O/Q 	spath, general_path + ":SLamp"
 	LoadWave/C/O/Q /P=spath	"XT10open2012.ibw"
@@ -1409,6 +1417,8 @@ Function Disable_All ()
 End
 
 ////My own Function to calculate Isc from qe and s.Spectra
+/// We assume that qe and specw scales are in nm
+/// Scale range and deltax can be different
 Function qe2JscSS (qe, specw)
 	wave qe , specw	//qeSubCellRef y solar Spectrum (am0, amgd, amgg..)
 	variable jsc
@@ -1421,22 +1431,40 @@ Function qe2JscSS (qe, specw)
 	//Las ondas que no empiezan por 300 sino por 280 lambda 
 	//hay que re-escalar todo para qeu no haya fallos?
 	
+	
+	
+	
 	variable numPoints=(numpnts(qe)-1)*deltax(qe)+1
-	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
-	interpolate2 /T=1 /N=(numPoints) /Y=tmpw2 specw
-	Duplicate /O tmpw, sr
+	
+	Duplicate/O specw, wQE_ext
+	wQE_ext=(x<=rightx(qe) && x>=leftx(qe))?qe(x):0
+	
+	//display qe, wQE_ext
+	
+	//print leftx(specw)
+	//print leftx(wQE_ext)
+	
+//	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
+//	interpolate2 /T=1 /N=(numPoints) /Y=tmpw2 specw
+	Duplicate /O wQE_ext, sr
 //	if (stringmatch (nameofwave(specw), "wavelamp"))
 //		return 0
 //	endif
-	sr=(1.602e-19*tmpw*x*1e-9)/(6.62606957e-34*2.99792458e8) // A/W/m2
-	sr*=tmpw2(x)*1000/10000 //mA/cm2
-//	sr/=specw(x)*1000/10000
+	sr=(1.602e-19*wQE_ext[p]*x*1e-9)/(6.62606957e-34*2.99792458e8) // A/W/m2
+	//Display sr 
+//	sr*=tmpw2(x)*1000/10000 //mA/cm2
+	sr*=specw(x)*1000/10000
+	
+	
+	//sr=wQE_ext(x)*specw(x)  	// mA/cm2
+	
 	
 	// Pasar a corriente!!!. Ñapa temporal
-	sr*=0.1  //Asume un área de 0.1 cm en la célula
+	//sr*=0.1  //Asume un área de 0.1 cm en la célula
 	
 	
 	jsc=area(sr)
+	print jsc
 //	jsc = area ( src, rangex1, rangex2) //between a certain point-range
 //	integrate/t sr
 //	jsc=sr[numpnts(sr)-1]
@@ -1518,11 +1546,11 @@ Function Calc_Isc (id)
 	jsc[2] = qe2jscSS ( wsref, waveLamp )
 	jsc[3] = qe2jscSS ( wsdut, waveSpectra )
 	
-	IscM[id] = jsc[0]*jsc[1]/jsc[2]/jsc[3]	
+	IscM[id] = jsc[0]*jsc[1]/(jsc[2]*jsc[3])	
 	IscObj[id] =  jsc[1]*IscM[id]
 	
 	ValDisplay $valdispIx, value= #getIsc
-	ValDisplay $valdispIMx, value= #getIscM
+	ValDisplay $valdispIMx, value= #getIscM,format = "%.5g"
 	
 	wavekiller ("jsc")	
 	SetDataFolder sdf
