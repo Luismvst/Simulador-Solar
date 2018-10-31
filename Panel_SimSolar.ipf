@@ -201,22 +201,22 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			strswitch (sva.ctrlname)
 				//sva.dval -> variable value
 				case "setvarLedValue530":	
-					Led_Gauss(530,1)
+					Led_DrawGauss(530,1)
 				break
 				case "setvarLedValue740":
-					Led_Gauss(740,1)
+					Led_DrawGauss(740,1)
 				break
 				case "setvarLedValue940":
-					Led_Gauss(940,1)
+					Led_DrawGauss(940,1)
 				break
 				case "setvarLedIset530":	
-					Led_Gauss(530,0)
+					Led_DrawGauss(530,0)
 				break
 				case "setvarLedIset740":
-					Led_Gauss(740,0)
+					Led_DrawGauss(740,0)
 				break
 				case "setvarLedIset940":
-					Led_Gauss(940,0)
+					Led_DrawGauss(940,0)
 				break
 			endswitch
 			//If com is not selected, leds will not apply
@@ -259,17 +259,17 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonAutoscale1":
 					Autoscale(1)
 					break
-				case "buttonExtendSS":
-					Extend_SSGraph(0)
+				case "buttonExpandSS":
+					Expand_SSGraph(0)
 					break
 				case "buttonContractSS":
-					Extend_SSGraph(1)
+					Expand_SSGraph(1)
 					break
-				case "buttonExtendIV":
-					Extend_IVGraph(0)
+				case "buttonExpandIV":
+					Expand_IVGraph(0)
 					break
 				case "buttonContractIV":
-					Extend_IVGraph(1)
+					Expand_IVGraph(1)
 					break
 				case "btnMeasIV":					
 					meas_IV(deviceID)
@@ -472,7 +472,8 @@ Function Init_SP ([val])
 	init_solarVar ()	
 	Load_Spectrum()	
 	if (val==0)
-		Init_Keithley_2600()	// çççç
+		//MightexLeds doesnt need to be initialized. They are turned on or off in the Solar panel
+		Init_Keithley_2600()
 	endif
 	Solar_Panel ()
 End 
@@ -731,7 +732,7 @@ Function Solar_Panel()
 //	
 	
 	//Buttons
-	Button buttonLedOff,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF",fColor=(16385,65535,41303)
+	Button buttonLedOff,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
 	Button buttonClean,pos={438.00,265.00},size={163.00,25.00},proc=ButtonProc_SimSolar,title="Clean Graph",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={510.00,87.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={510.00,110.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
@@ -739,8 +740,8 @@ Function Solar_Panel()
 	Button btncheck3,pos={510.00,157.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck4,pos={510.00,179.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck5,pos={510.00,202.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button buttonExtendSS,pos={300,232},size={103.00,26.00},proc=ButtonProc_SimSolar,title="Extend"
-	Button buttonExtendSS,fColor=(16385,65535,41303)
+	Button buttonExpandSS,pos={300,232},size={103.00,26.00},proc=ButtonProc_SimSolar,title="Expand"
+	Button buttonExpandSS,fColor=(16385,65535,41303)
 	Button buttonContractSS,pos={300,262},size={103.00,26.00},proc=ButtonProc_SimSolar,title="Contract"
 	Button buttonContractSS,fColor=(16385,65535,41303)
 	Button buttonAutoscale0,pos={438,232},size={104.00,26.00},proc=ButtonProc_SimSolar,title="AutoScale"
@@ -915,8 +916,8 @@ Function Solar_Panel()
 	Button btnMeasJsc,fColor=(65535,65532,16385)
 	Button btnMeasVoc,pos={960.00,135.00},size={40.00,20.00},proc=ButtonProc_SimSolar,title="Voc"
 	Button btnMeasVoc,fColor=(16385,65535,65535)
-	Button buttonExtendIV,pos={900,240.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Extend"
-	Button buttonExtendIV,fColor=(16385,65535,41303)
+	Button buttonExpandIV,pos={900,240.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Expand"
+	Button buttonExpandIV,fColor=(16385,65535,41303)
 	Button buttonContractIV,pos={900,270.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Contract"
 	Button buttonContractIV,fColor=(16385,65535,41303)
 	Button buttonAutoscale1,pos={1050,270.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="AutoScale"
@@ -1231,20 +1232,22 @@ End
 
 //Generates the different led waves gradient from the input values ( 0% --- 100% )
 //And you can choose to set the current directly from its real value or from the 0-100%
-Function Led_Gauss (num, ref)
+Function Led_DrawGauss (num, ref)
 	variable num, ref
 	string path = "root:SolarSimulator"
 	string savedatafolder = GetDataFolder (1) 
+//	SetDataFolder path + ":Spectra:SLeds"
 	SetDataFolder path + ":Storage"
 	wave led530, led740, led940;
-	wave ledlevel	
-	wave  Iset;
+//	wave ledlevel	
+//	wave led530 = :led470
+//	wave led740, led940;
+	wave ledLevel = root:SolarSimulator:Storage:ledlevel
+	wave Iset = root:SolarSimulator:Storage:Iset
 	SetDataFolder path + ":GraphWaves"
 //	wave waveled530, waveled740, waveled940;	
-	
-	//Originally led740 and led940 spectrum is not scaled equally as the others
-//	CopyScales led530, led740
-//	CopyScales led530, led940
+	//We re-scale the 470led into 530led.
+//	SetScale/I x, (leftx(led530)+60), (rightx(led530)+60), led530 
 	
 	switch (num)
 	case 530:
@@ -1422,9 +1425,11 @@ Function qe2JscSS (qe, specw)
 	interpolate2 /T=1 /N=(numPoints) /Y=tmpw qe
 	interpolate2 /T=1 /N=(numPoints) /Y=tmpw2 specw
 	Duplicate /O tmpw, sr
-	
+//	if (stringmatch (nameofwave(specw), "wavelamp"))
+//		return 0
+//	endif
 	sr=(1.602e-19*tmpw*x*1e-9)/(6.62606957e-34*2.99792458e8) // A/W/m2
-	sr*=tmpw2*x*1000/10000 //mA/cm2
+	sr*=tmpw2(x)*1000/10000 //mA/cm2
 //	sr/=specw(x)*1000/10000
 	
 	// Pasar a corriente!!!. Ñapa temporal
@@ -1994,7 +1999,7 @@ Function read_IscRef(wavepath,id )
 	endif
 end
 
-Function Extend_SSGraph (num)
+Function Expand_SSGraph (num)
 	variable num
 	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
 	
@@ -2047,7 +2052,7 @@ Function Extend_SSGraph (num)
 	endif
 End
 
-Function Extend_ivGraph(num)
+Function Expand_ivGraph(num)
 	variable num
 	String traceList = TraceNameList("SSPanel#SSCurvaIV", ";", 1)
 	string gname
