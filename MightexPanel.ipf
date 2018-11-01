@@ -1,10 +1,6 @@
 
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-Menu "SolarSimulator"
-
-"Mightex Panel", /Q, init_mightexPanel()
-end
 
  Function init_mightexPanel()
  
