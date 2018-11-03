@@ -2,6 +2,7 @@
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
+
  Function init_mightexPanel()
  
 	if (ItemsinList (WinList("LedPanel", ";", "")) > 0)
@@ -28,7 +29,7 @@
 	PauseUpdate; Silent 1		// building window...
 	
 	DoWindow /K LedPanel;DelayUpdate
-	NewPanel /K=0 /W=(1008,53,1296,255) as "LedPanel"
+	NewPanel /K=0 /W=(1063,55,1351,223) as "LedPanel"
 	DoWindow /C LedPanel
 	
 	Sliders(Imax)
@@ -38,21 +39,23 @@
 	DrawText 8,58,"   Max \rCurrent"
 	SetDrawEnv fstyle= 1
 	DrawText 67,59,"   Set  \rCurrent "
+//	SetDrawEnv fstyle= 1
 	
+	DrawText 153,54,"1º"
+	DrawText 149,119,"2º"
+	DrawText 117,129,"3º"
 	//Buttons
 	
-	Button buttonApplyCurrent,pos={109.00,140.00},size={45.00,21.00},proc=ButtonProc_Led,title="Apply"
+	Button buttonApplyCurrent,pos={109.00,131.00},size={167.00,30.00},proc=ButtonProc_Led,title="Apply"
 	Button buttonApplyCurrent,help={"Click to Apply changes in current"},fSize=12
 	Button buttonApplyCurrent,fColor=(1,16019,65535)
-	Button buttonSetParameters,pos={11.00,171.00},size={97.00,22.00},proc=ButtonProc_Led,title="Parameters"
+	Button buttonSetParameters,pos={172.00,97.00},size={102.00,31.00},proc=ButtonProc_Led,title="Parameters"
 	Button buttonSetParameters,help={"Click to Apply changes in parametes"},fSize=12
 	Button buttonSetParameters,fColor=(40000,20000,65535)
-	Button buttonMode1,pos={170.00,35.00},size={107.00,30.00},proc=ButtonProc_Led,title="Normal Mode"
+	Button buttonMode1,pos={169.00,28.00},size={107.00,30.00},proc=ButtonProc_Led,title="Normal Mode"
 	Button buttonMode1,fSize=12,fColor=(65535,49157,16385)
-	Button buttonMode0,pos={170.00,75.00},size={107.00,30.00},proc=ButtonProc_Led,title="Disable Mode"
+	Button buttonMode0,pos={169.00,62.00},size={107.00,30.00},proc=ButtonProc_Led,title="Disable Mode"
 	Button buttonMode0,fSize=12,fColor=(32792,65535,1)
-	Button buttonInit,pos={180.00,110.00},size={89.00,58.00},proc=ButtonProc_Led,title="Init Serial Port "
-	Button buttonInit,fSize=12,fColor=(52428,1,20971)
 	//PopUps
 	PopupMenu popupchannel,pos={164.00,4.00},size={113.00,19.00},proc=PopMenuProc_Led,title="\\f01Select Channel"
 	PopupMenu popupchannel,help={"Selecction of the channel the panel will affect to"}
@@ -151,7 +154,7 @@ End
 				case "buttonSetParameters":
 					//Defect parameters to start 
 					Imax = 100
-					Iset = 50
+					Iset = 0
 					setMode (channel, 1)
 					setNormalParameters (channel, Imax, Iset)
 					Sliders(Imax) //To refresh the sliders
@@ -167,16 +170,13 @@ End
 					//Disable
 					setMode (channel, 0)
 				break
-				case "buttonInit":
-					TurnOn_leds()
-				break
 			endswitch
 			
 			break
 		case -1: // control being killed
 			strswitch (ba.ctrlname)	
 				case "buttonMode0":		//Button Disable being killed
-					TurnOff_Leds()					
+					TurnOffLeds()					
 				break
 			endswitch
 			break
@@ -223,4 +223,11 @@ End
 	SetVariable setvariset,fColor=(65535,65535,65535)
 	SetVariable setvariset,limits={0,Imax,1},value= root:SolarSimulator:MightexPanel:Iset
 	//May be Imax in setvariset is not necessary. Lets see if this configuration works 
+End
+
+Function TurnOffLeds()
+	variable i
+	for (i = 0; i<13; i++)
+		setMode (i, 0)
+	endfor
 End
