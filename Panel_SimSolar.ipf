@@ -1,40 +1,49 @@
 #pragma TextEncoding = "Windows-1252"
 //#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-//#include "gpibcom"
+
+static constant numLeds = 6	//This number is the total quantity of leds you are going to control
+static constant laser_channel = 7
+Function User_LedVarValues ()
+//The Mightex Channel is set here.
+//If you want to increase the number of leds over 6, look at function setVar_Leds()
+//To modify Laser, go to buttonproc_SimSol->btnLaser 
+	wave Led = root:SolarSimulator:Storage:wLed
+//	if (numLeds>6)
+//		numleds = 6
+//	endif
+	switch(numLeds)
+	case 6:
+		led[5][0] = 4500			//Led WaveLenght	
+		led[5][1] = 6			//Mightex Channel
+		led[5][2] = 900			//Imax (mA)
+	case 5:
+		led[4][0] = 1240
+		led[4][1] = 5
+		led[4][2] = 900
+	case 4:
+		led[3][0] = 1040	
+		led[3][1] = 4
+		led[3][2] = 900	
+	case 3:
+		led[2][0] = 940
+		led[2][1] = 3
+		led[2][2] = 900	
+	case 2:
+		led[1][0] = 740
+		led[1][1] = 2	
+		led[1][2] = 700	
+	case 1:
+		led[0][0] = 530	
+		led[0][1] = 1	
+		led[0][2] = 900
+	endswitch
+End
+
 
 //IMPROTANT: 
 //To make this program work, we have to introduce the folder called "SolarSimulatorData" into the "Igor Pro User Files" Folder.
 //The path to that folder is "C:User:Documents:Wavemetric:IgorProUserFiles:" for most computers
-static constant numLeds = 4	//This number is the total quantity of leds you are going to control
-static constant laser_channel = 7
-Function User_LedVarValues ()
-//The Mightex Channel is set here.
-	wave Led = root:SolarSimulator:Storage:wLed
-	//WaveLenght
-	led[0][0] = 530
-	led[1][0] = 740
-	led[2][0] = 940	
-	led[3][0] = 1040
-//	led[4][0] = 1240
-//	led[5][0] = 4500	
-	//Mightex Channel
-	led[0][1] = 1
-	led[1][1] = 2	
-	led[2][1] = 3	
-	led[3][1] = 4
-//	led[4][1] = 5
-//	led[5][1] = 6	
-	//Imax (mA)
-	led[0][2] = 900	
-	led[1][2] = 700	
-	led[2][2] = 900	
-	led[3][2] = 900	
-//	led[4][2] = 900	
-//	led[5][2] = 900	
-
-End
-
 Menu "S.Solar"
 	SubMenu "Solar Panel"	
 		"Display SolarPanel /ç", /Q, Init_SP (val=1)	
@@ -352,9 +361,18 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Clean(0)
 					break
 				case "btnLaser":	
-//					setMode (laser_channel, 0)
-//					setNormalParameters (laser_channel, 1000, 0)
-//					setNormalCurrent (laser_channel, 800 )
+					nvar check = root:SolarSimulator:Storage:laserchecked
+					check = !check
+					if (check)
+//						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
+//						setNormalParameters (laser_channel, 1000, 0)		//Defalt parameters (Imax, Iset)
+//						setNormalCurrent (laser_channel, 800 )			//Iset 
+						Button btnlaser, fColor=(16385,65535,41303),labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0)
+						
+					else
+//						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
+						Button btnlaser, fColor=(16385,65535,41303)
+					endif						
 					break
 				default: 
 					if (stringmatch (baName, "btncheck*"))
@@ -644,9 +662,10 @@ Function Init_SolarVar ()
 	wave btnValues = btnValues
 	btnValues = 0
 	
-	variable /G SpectracheckedSun, SpectracheckedLamp
+	variable /G SpectracheckedSun, SpectracheckedLamp, lasercheck
 	SpectracheckedSun = 1
 	SpectracheckedLamp = 1
+	laserCheck = 0
 	//Increase power of leds
 	make /N=(numleds) /O LedLevel
 	wave LedLevel = LedLevel 
@@ -792,22 +811,22 @@ Function Solar_Panel()
 	
 	//Buttons
 	Button buttonLedOff,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
-	Button buttonClean,pos={514.00,279.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
+	Button buttonClean,pos={351.00,662.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={510.00,87.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={510.00,110.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck2,pos={510.00,133.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck3,pos={510.00,157.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck4,pos={510.00,179.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck5,pos={510.00,202.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button buttonExpandSS,pos={449.00,245.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Expand"
+	Button buttonExpandSS,pos={126.00,660.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Expand"
 	Button buttonExpandSS,fColor=(16385,65535,41303)
-	Button buttonContractSS,pos={449.00,279.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Contract"
+	Button buttonContractSS,pos={202.00,661.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Contract"
 	Button buttonContractSS,fColor=(16385,65535,41303)
-	Button buttonAutoscale0,pos={514.00,245.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="AutoScale"
+	Button buttonAutoscale0,pos={276.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="AutoScale"
 	Button buttonAutoscale0,fColor=(16385,65535,41303)
-	Button buttonSave,pos={631.00,231.00},size={100.00,25.00},proc=ButtonProc_SimSolar,title="\\f01SAVE"
-	Button buttonExport,pos={632.00,262.00},size={100.00,25.00},disable=2,title="EXPORT"
-	Button buttonExport,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0)
+//	Button buttonSave,pos={631.00,231.00},size={100.00,25.00},proc=ButtonProc_SimSolar,title="\\f01SAVE"
+//	Button buttonExport,pos={632.00,262.00},size={100.00,25.00},disable=2,title="EXPORT"
+//	Button buttonExport,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0)
 	
 	PopupMenu popupSubSref,pos={17.00,33.00},size={144.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSref,mode=100,popvalue=wspecname,value= #"QEWaveList(1)"
@@ -964,11 +983,11 @@ Function Solar_Panel()
 	Button btnMeasJsc,fColor=(65535,65532,16385)
 	Button btnMeasVoc,pos={960.00,135.00},size={40.00,20.00},proc=ButtonProc_SimSolar,title="Voc"
 	Button btnMeasVoc,fColor=(16385,65535,65535)
-	Button buttonExpandIV,pos={900,240.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Expand"
+	Button buttonExpandIV,pos={766.00,660.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Expand"
 	Button buttonExpandIV,fColor=(16385,65535,41303)
-	Button buttonContractIV,pos={900,270.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="Contract"
+	Button buttonContractIV,pos={842.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Contract"
 	Button buttonContractIV,fColor=(16385,65535,41303)
-	Button buttonAutoscale1,pos={1050,270.00},size={103.00,23.00},proc=ButtonProc_SimSolar,title="AutoScale"
+	Button buttonAutoscale1,pos={916.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="AutoScale"
 	Button buttonAutoscale1,fColor=(16385,65535,41303)
 	
 	CheckBox checklog,pos={1050.00,300.00},size={116.00,15.00},value=0,proc=CheckProc_SimSolar,title="Logarithmic_Graph",value= 0
@@ -1066,7 +1085,7 @@ Function setVar_leds(wled)
 	variable aux
 	variable posx, posy
 	variable i
-	for (i=0; i<DimSize(wLed,0);i+=1)
+	for (i=0; i<6;i+=1)
 		if (i>=3)
 			posx = 288
 			posy = 235 - 3*23
@@ -1084,7 +1103,7 @@ Function setVar_leds(wled)
 		name = "setvarLedIset"+num2str(i)
 		SetVariable $name, pos={posx, posy}, size={40, 18}, proc=SetVarProc_SimSol, limits={0, wLed[i][2], 0}
 		SetVariable $name, title = " ", value = root:SolarSimulator:Storage:Iset[i], live=1
-		endfor
+	endfor
 	if (DimSize(wLed,0)<=3)
 //		DrawRect 12,228,292,305		
 		DrawRect 12,228,440,306
@@ -1093,7 +1112,8 @@ Function setVar_leds(wled)
 		DrawRect 12,228,440,306				
 		Button btnLaser,pos={287.00,258.00},size={150.00,41.00}
 	elseif (DimSize (wLed,0) >=5)
-		DrawRect 12,228,440,306	
+		DrawRect 12,228,593,306	
+		Button btnLaser,pos={437.00,234.00},size={152.00,67.00},title="LASER"
 		
 	endif
 		Button btnLaser,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0),title="LASER"
@@ -1521,7 +1541,7 @@ Function TurnOff_Leds()
 	wave wled = root:SolarSimulator:Storage:wled
 	variable i
 	for (i=0; i<DimSize (wLed, 0);i++)		
-		setMode (wled[0][i], 0)	//Normal mode
+		setMode (wled[0][i], 0)	//Disable mode
 	endfor
 End
 
@@ -1552,6 +1572,7 @@ Function qe2JscSS (qe, specw, [darea])
 	variable darea
 	variable jsc
 	variable num
+	variable iii
 	if (paramisdefault(darea))
 		darea = 1 //cm2
 	endif
@@ -1562,8 +1583,9 @@ Function qe2JscSS (qe, specw, [darea])
 	
 	Duplicate/O specw, wQE_ext
 	
-	//!!**We eliminate the last interpolation becouse it cause troubles. I dont know why
-	wQE_ext=(x<=rightx(qe)-1 && x>=leftx(qe))?qe(x):0
+	wQE_ext=(x<=pnt2x(qe, numpnts(qe)-1) && x>=leftx(qe))?qe(x):0
+
+	
 	Duplicate wQE_ext, sr
 	sr=(1.602e-19*wQE_ext[p]*x*1e-9)/(6.62606957e-34*2.99792458e8) // A/W/m2
 
@@ -2122,41 +2144,41 @@ End
 //This function reads the JscRef from the notes of the own wave
 //It gets more confortable to user experience
 //Nevertheless we are going to calculate Jsc from the EQE way.
-Function read_JscRef(wavepath,id )
-	string wavepath
-	variable id
-	string notes = note($wavepath)
-	variable i
-	if (stringmatch (notes, "*Jsc (AMG173DIRECT_1000Wm2)=*"))
-		variable pos = strsearch (notes, "Jsc (AMG173DIRECT_1000Wm2)=", 0)
-		if (pos)
-				variable post_coma, num
-				//Cojo de Jscreferencia de este espectro, por ejemplo
-				pos +=strlen ("Jsc (AMG173DIRECT_1000Wm2)=")
-				wave Jscref = root:SolarSimulator:Storage:Jscref
-				for (i = pos; i<pos+8; i++)						
-					post_coma*=10		
-					if (!cmpstr(notes[i],"."))
-						post_coma=1
-					else
-						num*=10	
-					endif	
-					if (str2num(notes[i])>=0 && str2num(notes[i])<=10)//Different from a number do not enter the condition
-						//traducimos el string a numero,teniendo en cuenta las unidades contadas antes y después de la coma
-						//NOTA: la coma no está contemplada como string, sino como parte del numero
-						num += str2num(notes[i])
-					endif		
-					//the number has ended					
-					if (!cmpstr(notes[i]," "))
-						break
-					endif
-									
-				endfor
-				num/=post_coma		// mA/cm2				
-				Jscref[id] = num
-		endif
-	endif
-end
+//Function read_JscRef(wavepath,id )
+//	string wavepath
+//	variable id
+//	string notes = note($wavepath)
+//	variable i
+//	if (stringmatch (notes, "*Jsc (AMG173DIRECT_1000Wm2)=*"))
+//		variable pos = strsearch (notes, "Jsc (AMG173DIRECT_1000Wm2)=", 0)
+//		if (pos)
+//				variable post_coma, num
+//				//Cojo de Jscreferencia de este espectro, por ejemplo
+//				pos +=strlen ("Jsc (AMG173DIRECT_1000Wm2)=")
+//				wave Jscref = root:SolarSimulator:Storage:Jscref
+//				for (i = pos; i<pos+8; i++)						
+//					post_coma*=10		
+//					if (!cmpstr(notes[i],"."))
+//						post_coma=1
+//					else
+//						num*=10	
+//					endif	
+//					if (str2num(notes[i])>=0 && str2num(notes[i])<=10)//Different from a number do not enter the condition
+//						//traducimos el string a numero,teniendo en cuenta las unidades contadas antes y después de la coma
+//						//NOTA: la coma no está contemplada como string, sino como parte del numero
+//						num += str2num(notes[i])
+//					endif		
+//					//the number has ended					
+//					if (!cmpstr(notes[i]," "))
+//						break
+//					endif
+//									
+//				endfor
+//				num/=post_coma		// mA/cm2				
+//				Jscref[id] = num
+//		endif
+//	endif
+//end
 
 Function Expand_SSGraph (num)
 	variable num
