@@ -11,8 +11,8 @@ Function init_OpenSerialLed (com, Device)
 	//string reply
 	variable flag
 	string sports=getSerialPorts()
-		print "Available Ports:"
-		print sports
+//		print "Available Ports:"
+//		print sports
 	if (StringMatch(Device, "LedController"))
 		//9600 N81 (No hw flow ctrl)
 		DeviceCommands=" baud=9600, parity=0, databits=8, stopbits=1"
@@ -140,7 +140,7 @@ Function getMode(channel)
 //	delay (40)
 //	VDTRead2 /O=1 /T=" " reply
 //	//return 
-//	print reply
+	print reply
 end
 
 //Set Current Working Mode

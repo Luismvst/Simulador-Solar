@@ -2,17 +2,19 @@
 //#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-static constant numLeds = 6	//This number is the total quantity of leds you are going to control
-static constant laser_channel = 7
+static constant numLeds = 3	//This number is the total quantity of leds you are going to control
+static constant laser_channel = 7	//The channel of the laser in the mightexLedCOntrller.
 Function User_LedVarValues ()
 //The Mightex Channel is set here.
 //If you want to increase the number of leds over 6, look at function setVar_Leds()
 //To modify Laser, go to buttonproc_SimSol->btnLaser 
 	wave Led = root:SolarSimulator:Storage:wLed
-//	if (numLeds>6)
-//		numleds = 6
-//	endif
-	switch(numLeds)
+	variable num = numLeds
+	//We assegurate the switch condition 
+	if (num > 6)
+		num=6
+	endif
+	switch(num)	
 	case 6:
 		led[5][0] = 4500			//Led WaveLenght	
 		led[5][1] = 6			//Mightex Channel
@@ -65,7 +67,6 @@ End
 //This kills the actual SSPanel
 Function killPanel ()
 	KillWindow/Z SSpanel
-//	print "Panel dead"
 end
 
 function doMenuMightexControl() // IV
@@ -135,19 +136,6 @@ Function/S Load (fname, num)
 	if(deltax(destwave)<0.01)  /// ÑAPAAA TEMPORAL!!!
 		// Escala en micras, pasarla a nm
 		SetScale/I x, (leftx(destwave)*1000), (rightx(destwave)*1000), destwave
-		//Improvising
-//		if (stringmatch (nameofwave (destwave), "waveLamp"))
-//			String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
-//			if(strlen(tracelist))
-//				variable i			
-//				for (i=0; strlen(cadena)!=0; i+=1)
-//					cadena = (StringFromList(i, traceList))
-//					if(stringmatch(cadena, "waveSpectra") )
-//						 CopyScales root:SolarSimulator:GraphWaves:waveSpectra, destwave
-//					endif				
-//				endfor
-//			endif
-//		endif
 	endif
 	
 	Draw (destwave, id)
@@ -394,17 +382,17 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					Clean(0)
 					break
 				case "btnLaser":	
-					nvar check = root:SolarSimulator:Storage:laserchecked
+					nvar check = root:SolarSimulator:Storage:lasercheck
 					check = !check
 					if (check)
 //						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
 //						setNormalParameters (laser_channel, 1000, 0)		//Defalt parameters (Imax, Iset)
 //						setNormalCurrent (laser_channel, 800 )			//Iset 
-						Button btnlaser, fColor=(16385,65535,41303),labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0)
+						Button btnlaser, fColor=(47545,5397,65535),valueColor=(65535,65535,65535)
 						
 					else
 //						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
-						Button btnlaser, fColor=(16385,65535,41303)
+						Button btnlaser, fColor=(65280,0,0),valueColor=(0,0,0)
 					endif						
 					break
 				default: 
@@ -431,7 +419,9 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":		//Button Disable being killed
 				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
 				//When killed, it wont reinitialize, but it will do the rest actions.
-//					Disable_All()		// çççç 					
+//					Disable_All()		// çççç 	
+				//Just in case we close the panel meanwhile we are taking measurements
+				StopCountdown()				
 				break
 			endswitch
 			break
@@ -507,7 +497,6 @@ Function PopMenuProc_SimSolar( pa) : PopupMenuControl
 					break
 				case "popupProbe":
 					nvar /Z probe = root:SolarSimulator:Storage:probe
-//					print popnum
 					probe = popNum
 					break
 				case "popupDir":
@@ -586,6 +575,13 @@ Function Init_SP ([val])
 	if (val==0)
 		//MightexLeds doesnt need to be initialized. They are turned on or off in the Solar panel
 		Init_Keithley_2600()
+		svar /Z com = root:SolarSimulator:Storage:com	
+		// We init first the COM1 as main init value		
+		if (init_OpenSerialLed("COM1","LedController"))
+			com="COM1"
+		else
+			PopupMenu popupLedCom, popvalue=" ", mode=1
+		endif
 	endif
 	Solar_Panel ()
 End 
@@ -715,16 +711,14 @@ Function Init_SolarVar ()
 	SetDimLabel 1, 0, wvlenght, wLed
 	SetDimLabel 1, 1, channel_Mightex, wLed
 	SetDimLabel 1, 2, Imax, wLed
-	//Giving values to Imax and channel num
+	
+	//Giving values to wavelenght, Imax and channel num
 	User_LedVarValues()
 	 
 	//ComPort
 	string/G root:SolarSimulator:Storage:COM //Connected by serial port
 	svar com = root:SolarSimulator:Storage:COM
 	com = " "
-	string/G root:SolarSimulator:Storage:message
-	svar message = root:SolarSimulator:Storage:message 
-	message = "---------Measuring--------"
 	
 	//ThreadTasks
 	variable/G root:SolarSimulator:Storage:DeviceIDtask
@@ -817,24 +811,38 @@ Function Solar_Panel()
 	SetDrawEnv linethick= 2,dash= 1
 	DrawLine 588,322,587,651
 	
+	SetDrawEnv fstyle= 1
 	DrawText 45,31,"Cargar S\\BSTD"
+	SetDrawEnv fstyle= 1
 	DrawText 181,32,"Cargar S\\BLAMP"
 	
 	SetDrawEnv fstyle= 1
 	DrawText 155,83,"Cargar EQE\\BREF"
-//	DrawText 155,75,"Cargar EQE\\BREF"
-	DrawText 375,73,"Cargar EQE\\BDUT"
-	DrawText 538,73,"Jsc\\BOBJ"
-	DrawText 641,73,"Jsc\\BMEAS"
-	DrawText 602,73,"M"
-	DrawText 689,73,"Nº\\BSOLES"
-	DrawText 292,75,"Jsc\\BREF"
+	SetDrawEnv fstyle= 1
+	DrawText 375,83,"Cargar EQE\\BDUT"
+	SetDrawEnv fstyle= 1
+	DrawText 544,83,"Jsc\\BOBJ"
+	SetDrawEnv fstyle= 1
+	DrawText 648,83,"Jsc\\BMEAS"
+	SetDrawEnv fstyle= 1
+	DrawText 610,83,"M"
+	SetDrawEnv fstyle= 1
+	DrawText 698,83,"Nº\\BSOLES"
+	SetDrawEnv fstyle= 1
+	DrawText 292,83,"Jsc\\BREF"
+	SetDrawEnv fstyle= 1
 	SetDrawEnv fsize= 25
-	DrawText 434,43,"I-V Characterization"
+	SetDrawEnv fstyle= 1
+	DrawText 368,40,"I-V Characterization"
 	
 //	
 //	Button buttonAux, title="Calc Things",pos={454,215},size={103,23},proc=ButtonProc_SimSolar,fColor=(65535,0,0)
-//	
+	
+	
+//	string message = "------Measuring-----"
+//	String abortStr= "Hold escape to abort"
+//	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
+//	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
 	//Buttons
 	Button buttonLedOff,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
@@ -1029,14 +1037,12 @@ Function Solar_Panel()
 	SetVariable setvardelay,limits={0,1,0.1},value= root:SolarSimulator:Storage:delay,live= 1
 	SetVariable setvarilimit,pos={755.00,262},size={113.00,18.00},proc=SetVarProc_SimSol,title="Limit (A)"
 	SetVariable setvarilimit,limits={0,1,0.1},value= root:SolarSimulator:Storage:ilimit,live= 1
-	SetVariable setvarnplc,pos={755.00,280.00},size={113.00,18.00},proc=SetVarProc_SimSol,title="Nplc"
+	SetVariable setvarnplc,pos={755.00,284},size={113.00,18.00},proc=SetVarProc_SimSol,title="Nplc"
 	SetVariable setvarnplc,limits={0,1,0.1},value= root:SolarSimulator:Storage:nplc,live= 1
-	SetVariable setvarDAreaiV,pos={975.00,80.00},size={169.00,18.00},title="Total Area (cm2)"
-	SetVariable setvarDAreaiV,value= root:SolarSimulator:Storage:darea
-	SetVariable setvarDAreaSS,pos={600.00,229.00},size={141.00,18.00},title="Dut Area (cm2)"
+	SetVariable setvarDAreaiV,pos={975.00,80.0},size={169.00,18.00},title="Total Area (cm2)"
+	SetVariable setvarDAreaiV,limits={-inf,inf,0},value= root:SolarSimulator:Storage:darea
+	SetVariable setvarDAreaSS,pos={559.00,45.00},size={136.00,18.00},title="Dut Area (cm2)"
 	SetVariable setvarDAreaSS,limits={-inf,inf,0},value= root:SolarSimulator:Storage:dareaSS
-	SetVariable setvarDAreaSS2,pos={390.00,67.00},size={108.00,18.00},title="DutArea(cm2)"
-	SetVariable setvarDAreaSS2,limits={-inf,inf,0},value= root:SolarSimulator:Storage:dareaSS
 
 	SetVariable setvarNotes,pos={752.00,42.00},size={390.00,18.00},title="\\f01Notes"
 	SetVariable setvarNotes,value= root:SolarSimulator:Storage:notes	
@@ -1139,6 +1145,7 @@ Function setVar_leds(wled)
 		
 	endif
 		Button btnLaser,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0),title="LASER"
+		Button btnLaser, proc=ButtonProc_SimSolar
 
 end
 //DropDown "Yes-No" Selection
@@ -2047,7 +2054,8 @@ Function CountDown_Jsc(s)
 	string getJscMeas = "get_JscMeas(" + num2str (id) + ")"
 	string getNSol = "get_Nsol(" + num2str(id) +")"
 //	svar message = root:SolarSimulator:Storage:message
-	string message = "---------Measuring--------"
+	string message = "------Measuring-----"
+	String abortStr= "Hold escape to abort"
 //			variable i
 //			for (i = 0; i<strlen(message); i++)
 //				message[i]=message[i+1]
@@ -2057,10 +2065,10 @@ Function CountDown_Jsc(s)
 //				endif
 //			endfor
 	nvar count = root:SolarSimulator:Storage:count
-	count +=1
-	TitleBox countdown_message,pos={189.00,296.00},size={149.00,23.00},title=message
-	String abortStr = "Hold escape to abort"
-	TitleBox countdown_abort,pos={341.00,296.00},size={118.00,23.00},title=abortStr
+	count +=1	
+	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
+	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
+	
 	Variable startTicks = ticks
 	Variable lastMessageUpdate = startTicks
 
