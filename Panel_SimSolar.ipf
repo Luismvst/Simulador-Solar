@@ -14,7 +14,7 @@ Function User_LedVarValues ()
 	if (num > 6)
 		num=6
 	endif
-	switch(num)	
+	switch(num)		
 	case 6:
 		led[5][0] = 4500			//Led WaveLenght	
 		led[5][1] = 6			//Mightex Channel
@@ -36,9 +36,9 @@ Function User_LedVarValues ()
 		led[1][1] = 2	
 		led[1][2] = 700	
 	case 1:
-		led[0][0] = 530	
-		led[0][1] = 1	
-		led[0][2] = 900
+		led[0][0] = 530		//Led WaveLenght	
+		led[0][1] = 1		//Mightex Channel
+		led[0][2] = 900		//Imax (mA)
 	endswitch
 End
 
@@ -146,6 +146,7 @@ end
 Function Draw (trace, id)
 	wave trace
 	variable id
+	variable id2
 	string cadena
 	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
 	if(strlen(tracelist))
@@ -158,30 +159,36 @@ Function Draw (trace, id)
 		endfor
 	endif
 		string realname = nameofwave (trace)
+		//We differ from dut and ref traces
+		if (stringmatch(realname, "wavesubdut*"))
+			id2=2
+		elseif (stringmatch(realname, "wavesubref*"))
+			id2=1
+		endif
 		switch (id)
 		case 0:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(22806,20185,30670)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(26411,1,52428)
 			break
 		case 1:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(43253,2359,56098)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,65535)
 			break
 		case 2:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,65535)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(3,52428,1)
 			break
 		case 3:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 0)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(52428,52425,1)
 			break
 		case 4:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 65535)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535,21845,0)
 			break
 		case 5:
 			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(0,0,0)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535,0,0)
 			break
 		case 6:	//it is Spectra SLamp or Sref
 		case 7:
@@ -221,10 +228,14 @@ Function Draw (trace, id)
 			ModifyGraph /W=SSPanel#SSGraph  zero=2
 			ModifyGraph /W=SSPanel#SSGraph  minor=1
 			ModifyGraph /W=SSPanel#SSGraph  standoff=0	
-			if (stringmatch (realname, "wavesub*"))
+			if (id2)
 				ModifyGraph /W=SSPanel#SSGraph lSize($realname)=1.5
 			endif
-			return 1		
+			if (id2 == 1)
+				ModifyGraph /W=SSPanel#SSGraph lstyle($realname)=7
+			endif
+			
+	return 1		
 End
 
 Function Autoscale (num)
@@ -868,17 +879,17 @@ Function Solar_Panel()
 	PopupMenu popupSubSlamp,pos={178.00,33},size={100.00,19.00},bodyWidth=100,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSlamp,mode=100,popvalue=wLampname,value= #"QEWaveList(2)"
 	PopupMenu popupSub0,pos={11,87},size={100,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #0"
-	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub0,mode=1,popvalue=stringfromlist(0,popVal),value= #"\"Yes;No\"",fStyle=1,fColor=(26411,1,52428)
 	PopupMenu popupSub1,pos={11,110},size={100,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #1"
-	PopupMenu popupSub1,mode=1,popvalue=stringfromlist(1,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub1,mode=1,popvalue=stringfromlist(1,popVal),value= #"\"Yes;No\"",fStyle=1,fColor=(0,0,65535)
 	PopupMenu popupSub2,pos={11,133},size={100,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #2"
-	PopupMenu popupSub2,mode=1,popvalue=stringfromlist(2,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub2,mode=1,popvalue=stringfromlist(2,popVal),value= #"\"Yes;No\"",fStyle=1,fColor=(3,52428,1)
 	PopupMenu popupSub3,pos={11,157},size={100,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #3"
-	PopupMenu popupSub3,mode=2,popvalue=stringfromlist(3,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub3,mode=2,popvalue=stringfromlist(3,popVal),value= #"\"Yes;No\"",fStyle=1,fColor=(52428,52425,1)
 	PopupMenu popupSub4,pos={11,179},size={100,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #4"
-	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\""
+	PopupMenu popupSub4,mode=2,popvalue=stringfromlist(4,popVal),value= #"\"Yes;No\"",fStyle=1,fColor=(65535,21845,0)
 	PopupMenu popupSub5,pos={11,202},size={100,19.00},bodyWidth=40,proc=PopMenuProc_SimSolar,title="SubCell #5"
-	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""	
+	PopupMenu popupSub5,mode=2,popvalue=stringfromlist(5,popVal),value= #"\"Yes;No\""	,fStyle=1,fColor=(65535,0,0)
 	PopupMenu popupLedCom,pos={16,233},size={112.00,19.00},bodyWidth=60,proc=PopMenuProc_SimSolar,title="ComPort"
 	PopupMenu popupLedCom,mode=100,popvalue=com,value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 	//Notes: Mode=100 -> at the beginning in the dropdowns it is shown the item number 100 ( apparently nothing )
