@@ -2,7 +2,7 @@
 //#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-static constant numLeds = 3	//This number is the total quantity of leds you are going to control
+static constant numLeds = 4	//This number is the total quantity of leds you are going to control
 static constant laser_channel = 7	//The channel of the laser in the mightexLedCOntrller.
 Function User_LedVarValues ()
 //The Mightex Channel is set here.
@@ -24,7 +24,7 @@ Function User_LedVarValues ()
 		led[4][1] = 5
 		led[4][2] = 900
 	case 4:
-		led[3][0] = 1040	
+		led[3][0] = 1140	
 		led[3][1] = 4
 		led[3][2] = 900	
 	case 3:
@@ -196,7 +196,7 @@ Function Draw (trace, id)
 			Label/W=SSPanel#SSGraph right "Spectrum"
 			ModifyGraph /W=SSPanel#SSGraph minor=1
 			ModifyGraph /W=SSPanel#SSGraph lSize($realname)=0.5
-			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(20000, 20000, 20000)
+			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(10000, 10000, 10000)//Dark-Grey
 			SetAxis /W=SSPanel#SSGraph right 0,120
 			break
 		case 8:	//led Spectra
@@ -204,16 +204,16 @@ Function Draw (trace, id)
 			ModifyGraph /W=SSPanel#SSGraph lSize($realname)=1.5
 			strswitch (realname)
 			case "waveled530":
-				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(30000, 30000, 30000)//Grey
+				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)//Green
 				break
 			case "waveled740":
 				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//Red
 				break
 			case "waveled940":
-				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)//Blue:(3146,5243,45875)
+				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(30000, 30000, 30000)//Example_Blue:(3146,5243,45875)
 				break
-			case "waveledX":
-				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)
+			case "waveled1140":
+				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(30000, 30000, 30000)//
 				break
 			case "waveledX":
 				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)
@@ -258,6 +258,8 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			strswitch (sva.ctrlname)
 				//sva.dval -> variable value
 				case "setvarLedValue0":	
+					//gled is the graph wave we have draw in the display.
+					//wled is the led gaussian spectra we have loaded from external data 
 					wave gled = root:SolarSimulator:GraphWaves:waveled530
 					wave  wled = root:SolarSimulator:Spectra:SLeds:led530
 					LG (wled, gled, 1, 0)
@@ -273,19 +275,19 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 					LG (wled, gled, 1, 2)
 				break
 				case "setvarLedValue3":
-					wave gled = root:SolarSimulator:GraphWaves:waveledX
-					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 1, 2)
+					wave gled = root:SolarSimulator:GraphWaves:waveled1140
+					wave  wled = root:SolarSimulator:Spectra:SLeds:led1540
+					LG (wled, gled, 1, 3)
 				break
 				case "setvarLedValue4":
 					wave gled = root:SolarSimulator:GraphWaves:waveledX
 					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 1, 2)
+					LG (wled, gled, 1, 4)
 				break
 				case "setvarLedValue5":
 					wave gled = root:SolarSimulator:GraphWaves:waveledX
 					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 1, 2)
+					LG (wled, gled, 1, 5)
 				break
 				case "setvarLedIset0":	
 					wave gled = root:SolarSimulator:GraphWaves:waveled530
@@ -303,19 +305,19 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 					LG (wled, gled, 0, 2)
 				break
 				case "setvarLedIset3":
-					wave gled = root:SolarSimulator:GraphWaves:waveledX
-					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 0, 2)
+					wave gled = root:SolarSimulator:GraphWaves:waveled1140
+					wave  wled = root:SolarSimulator:Spectra:SLeds:led1540
+					LG (wled, gled, 0, 3)
 				break
 				case "setvarLedIset4":
 					wave gled = root:SolarSimulator:GraphWaves:waveledX
 					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 0, 2)
+					LG (wled, gled, 0, 4)
 				break
 				case "setvarLedIset5":
 					wave gled = root:SolarSimulator:GraphWaves:waveledX
 					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 0, 2)
+					LG (wled, gled, 0, 5)
 				break
 			endswitch
 			//If com is not selected, leds will not apply
@@ -689,6 +691,8 @@ Function Init_SolarVar ()
 	make /O 	root:SolarSimulator:GraphWaves:waveled530 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled740 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled940 = Nan
+	make /O 	root:SolarSimulator:GraphWaves:waveled1140 = Nan
+	
 	//Load new waveleds here
 //	make /O 	root:SolarSimulator:GraphWaves:waveledX = Nan
 //	make /O 	root:SolarSimulator:GraphWaves:waveledX = Nan
@@ -1382,7 +1386,8 @@ End
 //Generates the different led waves gradient from the input values ( 0% --- 100% )
 //And you can choose to set the current directly from its real value or from the 0-100%
 Function LG ( wspecled, gled, type, id)
-	wave wspecled, gled;
+	wave wspecled	//led spectra wave
+	wave gled			//led spectra drawn wave
 	variable type	//differs btwn 0/1 ,using percentage or the current value of the led
 	variable id 		//led position in the array
 	wave Iset = root:SolarSimulator:Storage:Iset
@@ -1392,13 +1397,19 @@ Function LG ( wspecled, gled, type, id)
 		SetScale /I x, (leftx(wspecled)*1000), (rightx(wspecled)*1000), wspecled
 	endif
 	Duplicate/O wspecled, gled
-	if (type)			//You modify the percentage  (ledlevel)
-		Iset[id]=Imax[2][id]*LedLevel[id]
+	if (type)			//You modify the percentage(ledlevel) or the current (Iset)
+		Iset[id]=Imax[id][2]*LedLevel[id]
 	else
-		ledLevel[id]=Iset[id]/Imax[2][id]
+		ledLevel[id]=Iset[id]/Imax[id][2]
 	endif
 	gled = wspecled * LedLevel[id]/waveMax(wspecled)
 	Draw (gled, 8)
+	//We observe if led is active or not. Not in use.
+//	if (ledlevel[id])
+//		return 1
+//	else 
+//		return 0
+//	endif
 end		
 	
 	
@@ -1896,7 +1907,6 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		jmp=getVarWaveNote(ww,"Jm(mA/cm2)")
 		
 		
-		//mario did this. Lets reach the next level
 		nots=RemoveByKey("\rAmperes", nots,"=",";")
 		nots=RemoveByKey("\rArea(cm2)", nots,"=",";")
 	endif
@@ -1907,20 +1917,31 @@ End
 
 Function /S getIVsetupNotes_SSCurvaIV()
 	String snote
-	NVAR /Z step=root:SolarSimulator:Storage:step
-	NVAR /Z nplc=root:SolarSimulator:Storage:nplc
-	NVAR /Z ilimit=root:SolarSimulator:Storage:ilimit
-	NVAR /Z probe=root:SolarSimulator:Storage:probe
-	NVAR /Z delay=root:SolarSimulator:Storage:delay
-	NVAR /Z forward=root:SolarSimulator:Storage:forward
-	SVAR /Z com=root:SolarSimulator:Storage:com
-	NVAR /Z vmin=root:SolarSimulator:Storage:vmin
-	NVAR /Z vmax=root:SolarSimulator:Storage:vmax
-	NVAR /Z darea=root:SolarSimulator:Storage:darea
-	NVAR /Z iarea=root:SolarSimulator:Storage:illumarea
+	NVAR /Z step=	root:SolarSimulator:Storage:step
+	NVAR /Z nplc=	root:SolarSimulator:Storage:nplc
+	NVAR /Z ilimit=	root:SolarSimulator:Storage:ilimit
+	NVAR /Z probe=	root:SolarSimulator:Storage:probe
+	NVAR /Z delay=	root:SolarSimulator:Storage:delay
+	NVAR /Z forward=	root:SolarSimulator:Storage:forward
+	SVAR /Z com=		root:SolarSimulator:Storage:com
+	NVAR /Z vmin=	root:SolarSimulator:Storage:vmin
+	NVAR /Z vmax=	root:SolarSimulator:Storage:vmax
+	NVAR /Z darea=	root:SolarSimulator:Storage:darea
+	NVAR /Z iarea=	root:SolarSimulator:Storage:illumarea
+	
+	
+	NVAR /Z dareaSS=	root:SolarSimulator:Storage:dareaSS 
+	WAVE /Z wled =	root:SolarSimulator:Storage:wled
+	WAVE /Z iled = 	root:SolarSimulator:Storage:iset
+	WAVE /Z jscref =	root:SolarSimulator:Storage:jscRef
+	WAVE /Z jscobj =	root:SolarSimulator:Storage:JscObj
+	WAVE /Z jscMeas=	root:SolarSimulator:Storage:JscMeas
+	WAVE /Z Nsol =	root:SolarSimulator:Storage:Nsol
+	WAVE /Z M =		root:SolarSimulator:Storage:JscM
 
 	SVAR /Z channel=root:SolarSimulator:Storage:channel
 	string forwardStr="",probeStr=""
+	variable i
 	switch (forward)
 		case 1:
 			forwardStr="Forward"
@@ -1954,6 +1975,21 @@ Function /S getIVsetupNotes_SSCurvaIV()
 	snote+="Delay="+num2str(step)+";\r"
 	snote+="Total Area (cm2)="+num2str(darea)+";\r"
 	snote+="Illuminated Area (cm2)="+num2str(iarea)+";\r"
+	
+//	snote+="---- Spectral Adjustment Characterization ----;\r\r"
+//	snote+="Jsc Reference Isotype (mA/cm2)="+num2str(jscRef[?])+";\r"
+//	snote+="Jsc Objective  (mA/cm2)="+num2str(jscObj)+";\r"
+//	snote+="Mismatch Factor (%)="+num2str(M*100)+";\r"
+//	snote+="Jsc Measured (mA/cm2)="+num2str(jscMeas)+";\r"
+//	snote+="Dut Area (cm2)="+num2str(dareaSS)+";\r"
+//	snote+="1X (Suns)="+num2str(Nsol)+";\r"
+//	snote+="LED Settings\r\r"
+//	snote+="Mightex_COM_Port="+com+";\r"
+//	for (i=0; i<DimSize(wLed,0); i++)
+//		snote+=num2str(wled[i][0])+"nm LED current = "+ num2str(iLed[i]) +" mA;\r"
+//	endfor
+	
+	
 	
 	return snote
 End
@@ -2106,45 +2142,6 @@ Function CountDown_Jsc(s)
 		endif
 		return 0
 End
-
-//This function reads the JscRef from the notes of the own wave
-//It gets more confortable to user experience
-//Nevertheless we are going to calculate Jsc from the EQE way.
-//Function read_JscRef(wavepath,id )
-//	string wavepath
-//	variable id
-//	string notes = note($wavepath)
-//	variable i
-//	if (stringmatch (notes, "*Jsc (AMG173DIRECT_1000Wm2)=*"))
-//		variable pos = strsearch (notes, "Jsc (AMG173DIRECT_1000Wm2)=", 0)
-//		if (pos)
-//				variable post_coma, num
-//				//Cojo de Jscreferencia de este espectro, por ejemplo
-//				pos +=strlen ("Jsc (AMG173DIRECT_1000Wm2)=")
-//				wave Jscref = root:SolarSimulator:Storage:Jscref
-//				for (i = pos; i<pos+8; i++)						
-//					post_coma*=10		
-//					if (!cmpstr(notes[i],"."))
-//						post_coma=1
-//					else
-//						num*=10	
-//					endif	
-//					if (str2num(notes[i])>=0 && str2num(notes[i])<=10)//Different from a number do not enter the condition
-//						//traducimos el string a numero,teniendo en cuenta las unidades contadas antes y después de la coma
-//						//NOTA: la coma no está contemplada como string, sino como parte del numero
-//						num += str2num(notes[i])
-//					endif		
-//					//the number has ended					
-//					if (!cmpstr(notes[i]," "))
-//						break
-//					endif
-//									
-//				endfor
-//				num/=post_coma		// mA/cm2				
-//				Jscref[id] = num
-//		endif
-//	endif
-//end
 
 Function Expand_SSGraph (num)
 	variable num
