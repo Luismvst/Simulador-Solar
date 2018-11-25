@@ -2,35 +2,42 @@
 //#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-static constant numLeds = 4	//This number is the total quantity of leds you are going to control
-static constant laser_channel = 7	//The channel of the laser in the mightexLedCOntrller.
+//The Mightex Channels are set here.
+static constant numLeds = 4			//This number is the total quantity of leds you are going to control (without the Laser)
+static constant laser_channel = 7	//The channel of the laser in the mightexLedContrller.
+static constant laser_iset = 50		//Current applied for the laser in mA. It has max 70mA, but not needed.
 Function User_LedVarValues ()
-//The Mightex Channel is set here.
+
 //If you want to increase the number of leds over 6, look at function setVar_Leds()
 //To modify Laser, go to buttonproc_SimSol->btnLaser 
 	wave Led = root:SolarSimulator:Storage:wLed
 	variable num = numLeds
-	//We assegurate the switch condition 
+	
+	//We assegurate the switch condition  doesnt fail
 	if (num > 6)
 		num=6
 	endif
-	switch(num)		
+	
+	switch(num)	
+	//If more leds than 6 are required, just add more cases without breaks. It initializes all of them in wLed.
+	//Function SetvarLeds() will need a re-adjustment.
+//	case 7:
 	case 6:
-		led[5][0] = 4500			//Led WaveLenght	
+		led[5][0] = 1100			//Led WaveLenght	
 		led[5][1] = 6			//Mightex Channel
-		led[5][2] = 900			//Imax (mA)
+		led[5][2] = 500			//Imax (mA)
 	case 5:
 		led[4][0] = 1240
 		led[4][1] = 5
-		led[4][2] = 900
+		led[4][2] = 500
 	case 4:
-		led[3][0] = 1140	
+		led[3][0] = 1050
 		led[3][1] = 4
-		led[3][2] = 900	
+		led[3][2] = 600
 	case 3:
 		led[2][0] = 940
 		led[2][1] = 3
-		led[2][2] = 900	
+		led[2][2] = 700	
 	case 2:
 		led[1][0] = 740
 		led[1][1] = 2	
@@ -38,7 +45,7 @@ Function User_LedVarValues ()
 	case 1:
 		led[0][0] = 530		//Led WaveLenght	
 		led[0][1] = 1		//Mightex Channel
-		led[0][2] = 900		//Imax (mA)
+		led[0][2] = 700		//Imax (mA)
 	endswitch
 End
 
@@ -400,7 +407,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					if (check)
 //						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
 //						setNormalParameters (laser_channel, 1000, 0)		//Defalt parameters (Imax, Iset)
-//						setNormalCurrent (laser_channel, 800 )			//Iset 
+//						setNormalCurrent (laser_channel, laser_iset )			//Iset 
 						Button btnlaser, fColor=(47545,5397,65535),valueColor=(65535,65535,65535)
 						
 					else
