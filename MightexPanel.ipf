@@ -23,6 +23,7 @@
 	variable/G Iset
 	string/G com
 	variable/G channel
+	variable /G caution = 0
 	nvar Imax 
 	nvar channel
 	
@@ -76,6 +77,16 @@ Function SliderProc_Led(sa) : SliderControl
 				Variable curval = sa.curval
 				nvar Iset = root:SolarSimulator:MightexPanel:Iset
 				nvar Imax = root:SolarSimulator:MightexPanel:Imax
+				nvar caution = root:SolarSimulator:MightexPanel:caution
+				//Security
+				if (Imax>=600 && !caution)
+					string mss="Caution, Imax can be dangerous for the useful life of the leds\r\r"
+					mss+="Please, use this Imax's values at your own risk"					
+					DoAlert /T="Alert!! Leds can be in danger" 0, mss
+					caution = 1	
+				elseif (Imax <600)
+					caution = 0			
+				endif
 				//This was not necesary
 				if(Imax<Iset)
 						//To ensure: Iset <= Imax

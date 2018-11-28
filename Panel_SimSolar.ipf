@@ -43,9 +43,9 @@ Function User_LedVarValues ()
 		led[1][1] = 2	
 		led[1][2] = 700	
 	case 1:
-		led[0][0] = 530		//Led WaveLenght	
-		led[0][1] = 1		//Mightex Channel
-		led[0][2] = 700		//Imax (mA)
+		led[0][0] = 530			//Led WaveLenght	
+		led[0][1] = 1			//Mightex Channel
+		led[0][2] = 700			//Imax (mA)
 	endswitch
 End
 
@@ -409,10 +409,13 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 //						setNormalParameters (laser_channel, 1000, 0)		//Defalt parameters (Imax, Iset)
 //						setNormalCurrent (laser_channel, laser_iset )			//Iset 
 						Button btnlaser, fColor=(47545,5397,65535),valueColor=(65535,65535,65535)
-						
+						String laserstr= "--------LASER-------"
+//								laserstr= "--LASER--------<<<::" //I try to give a funny laser animation.
+						TitleBox lasertext,pos={621.00,280.00},size={118.00,23.00},title=laserstr,labelBack=(65535,20000,30000),fColor=(0,0,0)
 					else
 //						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
 						Button btnlaser, fColor=(65280,0,0),valueColor=(0,0,0)
+						TitleBox lasertext,pos={621.00,280.00},size={118.00,23.00},title="",labelBack=(65535,20000,30000),fColor=(65535,0,0)						
 					endif						
 					break
 				default: 
