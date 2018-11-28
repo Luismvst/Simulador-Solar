@@ -6,6 +6,7 @@
 static constant numLeds = 4			//This number is the total quantity of leds you are going to control (without the Laser)
 static constant laser_channel = 7	//The channel of the laser in the mightexLedContrller.
 static constant laser_iset = 50		//Current applied for the laser in mA. It has max 70mA, but not needed.
+static constant laser_imax = 70
 Function User_LedVarValues ()
 
 //If you want to increase the number of leds over 6, look at function setVar_Leds()
@@ -94,7 +95,7 @@ Function/S Load (fname, num)
 	
 	wave wavesubdut0, wavesubdut1, wavesubdut2, wavesubdut3, wavesubdut4, wavesubdut5;
 	wave wavesubref0, wavesubref1, wavesubref2, wavesubref3, wavesubref4, wavesubref5;
-	wave waveLamp, wavespectra;
+	wave waveLamp, waveSpecsun;
 	
 	variable flag= 0
 	string wavenames
@@ -122,7 +123,7 @@ Function/S Load (fname, num)
 	elseif ( !mod (num, 2) && num<12)//type: dut
 		destwavename = "wavesubref"+num2str(id)		
 	elseif (num == 12 )
-		destwavename = "waveSpectra"
+		destwavename = "waveSpecsun"
 	elseif (num == 13 )
 		destwavename = "waveLamp"
 	endif
@@ -197,7 +198,7 @@ Function Draw (trace, id)
 			Appendtograph /W=SSPanel#SSGraph trace
 			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535,0,0)
 			break
-		case 6:	//it is Spectra SLamp or Sref
+		case 6:	//it is  SLamp or Sref Spectra
 		case 7:
 			AppendtoGraph/R /W=SSPanel#SSGraph trace
 			Label/W=SSPanel#SSGraph right "Spectrum"
@@ -406,7 +407,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					check = !check
 					if (check)
 //						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
-//						setNormalParameters (laser_channel, 1000, 0)		//Defalt parameters (Imax, Iset)
+//						setNormalParameters (laser_channel, laser_imax, 0)		//Defalt parameters (Imax, Iset)
 //						setNormalCurrent (laser_channel, laser_iset )			//Iset 
 						Button btnlaser, fColor=(47545,5397,65535),valueColor=(65535,65535,65535)
 						String laserstr= "--------LASER-------"
@@ -697,7 +698,7 @@ Function Init_SolarVar ()
 	make /O 	root:SolarSimulator:GraphWaves:wavesubref4 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:wavesubref5 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveLamp = Nan
-	make /O 	root:SolarSimulator:GraphWaves:waveSpectra = Nan
+	make /O 	root:SolarSimulator:GraphWaves:waveSpecsun = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled530 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled740 = Nan
 	make /O 	root:SolarSimulator:GraphWaves:waveled940 = Nan
@@ -1251,12 +1252,12 @@ Function Check_PlotEnable (id[, checked])
 	elseif (id >=6)
 		if (id == 6)
 			string Spectra
-			Spectra = "waveSpectra"
-			wave waveSpectra = $Spectra
+			Spectra = "waveSpecsun"
+			wave waveSpecsun = $Spectra
 			if (checked)
-				Draw (waveSpectra, 6)
+				Draw (waveSpecsun, 6)
 			else
-				RemovefromGraph /Z /W=SSPanel#SSGraph waveSpectra				
+				RemovefromGraph /Z /W=SSPanel#SSGraph waveSpecsun				
 				//Check if right is still in use, becouse mirror can not be executed if there are 3 axis
 				if (!Stringmatch(AxisList("SSPanel#SSGraph"),"*right*"))							
 					ModifyGraph/Z /W=SSPanel#SSGraph  mirror=1	
@@ -1637,7 +1638,7 @@ Function Calc_Jsc (id)
 	SetDataFolder root:SolarSimulator:GraphWaves
 	wave wsref = $wavesubrefX
 	wave wsdut = $wavesubdutX
-	wave waveSpectra
+	wave waveSpecsun
 	wave waveLamp
 		
 	
@@ -1645,9 +1646,9 @@ Function Calc_Jsc (id)
 	//Identify if the wave contains Nan on its first position.
 	//First we calculate JscRef with the EQEref
 	if ( numtype (wsref[0]) != 2 )
-		JscRef[id] = qe2jscSS ( wsref, waveSpectra )
+		JscRef[id] = qe2jscSS ( wsref, waveSpecsun )
 	endif
-	if ( numtype (wsref[0]) == 2 || numtype (wsdut[0]) == 2 || numtype(waveSpectra[0]) == 2 || numtype (waveLamp[0]) == 2) 
+	if ( numtype (wsref[0]) == 2 || numtype (wsdut[0]) == 2 || numtype(waveSpecsun[0]) == 2 || numtype (waveLamp[0]) == 2) 
 		JscM[id]=0
 		JscObj[id]=0		
 		ValDisplay $valdispIx, value= #getJsc
@@ -1658,9 +1659,9 @@ Function Calc_Jsc (id)
 	make /O /N=4	jsc
 	wave jsc
 	jsc[0] = qe2jscSS ( wsdut, waveLamp )
-	jsc[1] = JscRef[id]//qe2jscSS ( wsref, waveSpectra )
+	jsc[1] = JscRef[id]//qe2jscSS ( wsref, waveSpecsun )
 	jsc[2] = qe2jscSS ( wsref, waveLamp )
-	jsc[3] = qe2jscSS ( wsdut, waveSpectra )
+	jsc[3] = qe2jscSS ( wsdut, waveSpecsun )
 	
 	JscM[id] = jsc[0]*jsc[1]/(jsc[2]*jsc[3])	
 	JscObj[id] =  jsc[1]*JscM[id]
@@ -1984,20 +1985,27 @@ Function /S getIVsetupNotes_SSCurvaIV()
 	snote+="Step (V)="+num2str(step)+";\r"
 	snote+="Delay="+num2str(step)+";\r"
 	snote+="Total Area (cm2)="+num2str(darea)+";\r"
-	snote+="Illuminated Area (cm2)="+num2str(iarea)+";\r"
+	snote+="Illuminated Area (cm2)="+num2str(iarea)+";\r\r\r"
 	
 //	snote+="---- Spectral Adjustment Characterization ----;\r\r"
-//	snote+="Jsc Reference Isotype (mA/cm2)="+num2str(jscRef[?])+";\r"
+//	snote+="Jsc Reference Isotype (mA/cm2)="+num2str(jscRef)+";\r"
 //	snote+="Jsc Objective  (mA/cm2)="+num2str(jscObj)+";\r"
 //	snote+="Mismatch Factor (%)="+num2str(M*100)+";\r"
 //	snote+="Jsc Measured (mA/cm2)="+num2str(jscMeas)+";\r"
 //	snote+="Dut Area (cm2)="+num2str(dareaSS)+";\r"
-//	snote+="1X (Suns)="+num2str(Nsol)+";\r"
+//	snote+="1X (Suns)="+num2str(Nsol)+";\r\r"
 //	snote+="LED Settings\r\r"
-//	snote+="Mightex_COM_Port="+com+";\r"
+//	snote+="Mightex_COM_Port="+com+";\r"	
+//	snote+="Channel\tWavelenght(nm)\tMax current(mA)\tLed current(ma)"
 //	for (i=0; i<DimSize(wLed,0); i++)
-//		snote+=num2str(wled[i][0])+"nm LED current = "+ num2str(iLed[i]) +" mA;\r"
+//		snote+=num2str(wled[i][1])+"\t"+num2str(wled[i][0])+"\t"+num2str(wled[i][2])+"\t"+num2str(iLed[i])+"\r"
+////		snote+=num2str(wled[i][0])+"nm LED current = "+ num2str(iLed[i]) +" mA;\r"
+////			led[5][0] = 1100			//Led WaveLenght	
+////		led[5][1] = 6			//Mightex Channel
+////		led[5][2] = 500			//Imax (mA)
 //	endfor
+//	snote+="\r"
+//	snote+=num2str(laser_channel)+"\tLASER\t"+num2str(laser_imax)+"\t"+num2str(laser_iset)+"\r"
 	
 	
 	
