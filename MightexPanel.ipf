@@ -66,6 +66,28 @@
 
 end
  //*************************************************************************************************************//
+Function PopMenuProc_Led(pa) : PopUpMenuControl
+	struct wmpopupAction &pa
+	switch (pa.eventCode)
+		case -1:
+			break
+		case 2:			
+			Variable popNum = pa.popNum
+			String popStr = pa.popStr
+			String paName = pa.ctrlname
+			strswitch (pa.ctrlname)
+				case "popupChannel":
+					nvar channel = root:SolarSimulator:MightexPanel:channel
+					channel = popNum
+				break
+				case "popupCom":
+					svar com = root:SolarSimulator:MightexPanel:com
+					com = popstr
+				break
+			endswitch
+	endswitch
+end
+
 Function SliderProc_Led(sa) : SliderControl
 	STRUCT WMSliderAction &sa
 	
@@ -164,8 +186,6 @@ End
 				break
 				case "buttonSetParameters":
 					//Defect parameters to start 
-					Imax = 100
-					Iset = 0
 					setMode (channel, 1)
 					setNormalParameters (channel, Imax, Iset)
 					Sliders(Imax) //To refresh the sliders

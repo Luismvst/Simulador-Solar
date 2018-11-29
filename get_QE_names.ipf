@@ -114,7 +114,7 @@ function/S QErefoptions(reflab)
 	
 	if (waveexists(refQEnames))
 		string refQE=refQEnames[%$reflab]
-		if (cmpstr(refQE,"_none_")==0)
+		if (cmpstr(refQE,"_none_")<=0.1)
 			//not in the list
 			return "_none_"
 		else

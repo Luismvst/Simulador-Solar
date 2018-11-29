@@ -2,11 +2,13 @@
 //#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 
-//The Mightex Channels are set here.
-static constant numLeds = 4			//This number is the total quantity of leds you are going to control (without the Laser)
-static constant laser_channel = 7	//The channel of the laser in the mightexLedContrller.
-static constant laser_iset = 50		//Current applied for the laser in mA. It has max 70mA, but not needed.
-static constant laser_imax = 70
+//-----------------------------------------------------------------------------------------------------------------------------
+	//The Mightex Channels are set up here.																												|
+static constant numLeds = 4			//This number is the total quantity of leds you are going to control (without the Laser)	|
+static constant laser_channel = 7	//The channel of the laser in the mightexLedContrller.												|
+static constant laser_iset = 50		//Current applied for the laser in mA. It has max 70mA, but not needed.							|
+static constant laser_imax = 50		//max current of laser. Theoricaly, it supports 70mA. Do not try. 								|
+//-----------------------------------------------------------------------------------------------------------------------------																												|
 Function User_LedVarValues ()
 
 //If you want to increase the number of leds over 6, look at function setVar_Leds()
@@ -263,6 +265,10 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
+			nvar ledcheck = root:SolarSimulator:Storage:Ledcheck
+			if (ledcheck==0)
+				break
+			endif
 			strswitch (sva.ctrlname)
 				//sva.dval -> variable value
 				case "setvarLedValue0":	
@@ -331,7 +337,8 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			//If com is not selected, leds will not apply
 			if (stringmatch(sva.ctrlname, "setvarLed*"))
 				svar com = root:SolarSimulator:Storage:com
-				if (strlen(com)>=2)
+				nvar ledcheck = root:SolarSImulator:Storage:ledcheck
+				if (strlen(com)>=2 && ledcheck)
 					Led_Apply()
 				endif
 			endif
@@ -391,13 +398,22 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 					nvar voc = root:SolarSimulator:Storage:voc
 					voc = Meas_Voc(deviceID)
 					break
-				case "buttonLedOff":
+				case "buttonLed":
 					wave Iset = root:SolarSimulator:Storage:Iset
 					wave LedLevel = root:SolarSimulator:Storage:LedLevel
+					nvar ledcheck = root:SolarSimulator:Storage:ledcheck
 					LedLevel = 0
 					Iset = 0
 					DoUpdate /W=SSpanel
-					Check_PlotEnable (8)
+					if (ledcheck)
+					//ledcheck saves the state of leds (on=1, off=0)
+						ledcheck = TurnOff_Leds()
+						Button buttonLed,title="TURN ON LEDS"//,fColor=(16385,65535,41303)						
+						Check_PlotEnable (8)
+					else
+						ledcheck = TurnOn_Leds()
+						Button buttonLed,title="TURN OFF LEDS"//,fColor=(65535,16385,41303)
+					endif
 					break
 				case "buttonClean":
 					Clean(0)
@@ -443,7 +459,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":		//Button Disable being killed
 				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
 				//When killed, it wont reinitialize, but it will do the rest actions.
-//					Disable_All()		// çççç 	
+					Disable_All()		// çççç 	
 				//Just in case we close the panel meanwhile we are taking measurements
 				StopCountdown()				
 				break
@@ -467,8 +483,8 @@ Function CheckProc_SimSolar(cba) : CheckBoxControl
 					ModifyGraph /W=$gname log(left)=checked
 					if (!checked)
 //						ModifyGraph /W=$gname tick = 2
-						SetAxis /W=$gname left -0.5, 0.5
-						SetAxis /W=$gname bottom -1, 5							
+						SetAxis /W=$gname left -0.0010, 0.030
+						SetAxis /W=$gname bottom -1, 3.5							
 //						ModifyGraph /W=$gname zero=2
 //						ModifyGraph /W=$gname mirror=1
 //						ModifyGraph /W=$gname standoff=0			
@@ -588,7 +604,7 @@ end
 
 Function Init_SP ([val])
 	variable val
-	if (ItemsinList (WinList("SSPanel", ";", "")) > 0)
+	if (ItemsinList (WinList("SSPanel", ";", "")) > 0&&val)
 		SetDrawLayer /W=SSPanel  Progfront
 		DoWindow /F SSPanel
 		return 0
@@ -596,16 +612,18 @@ Function Init_SP ([val])
 	
 	init_solarVar ()	
 	Load_Spectrum()	
-	if (val==0)
-		//MightexLeds doesnt need to be initialized. They are turned on or off in the Solar panel
-		Init_Keithley_2600()
-		svar /Z com = root:SolarSimulator:Storage:com	
-		// We init first the COM1 as main init value		
-		if (init_OpenSerialLed("COM1","LedController"))
-			com="COM1"
-		else
-			PopupMenu popupLedCom, popvalue=" ", mode=1
-		endif
+	//MightexLeds doesnt need to be initialized. They are turned on or off in the Solar panel
+	//We need to initialize the VDTCOMPORT
+	Init_Keithley_2600()
+	svar /Z com = root:SolarSimulator:Storage:com	
+	// We init first the COM1 as main init value		
+	if (init_OpenSerialLed("COM1","LedController"))
+		com="COM1"
+		nvar ledcheck = root:SolarSimulator:Storage:ledcheck
+		ledcheck = TurnOn_Leds()
+	else
+		print "Mightex did not initialized"
+		PopupMenu popupLedCom, popvalue=" ", mode=1
 	endif
 	Solar_Panel ()
 End 
@@ -720,10 +738,11 @@ Function Init_SolarVar ()
 	wave btnValues = btnValues
 	btnValues = 0
 	
-	variable /G SpectracheckedSun, SpectracheckedLamp, lasercheck
+	variable /G SpectracheckedSun, SpectracheckedLamp, lasercheck, ledcheck
 	SpectracheckedSun = 1
 	SpectracheckedLamp = 1
 	laserCheck = 0
+	ledcheck = 0
 	//Increase power of leds
 	make /N=(numleds) /O LedLevel
 	wave LedLevel = LedLevel 
@@ -871,7 +890,7 @@ Function Solar_Panel()
 //	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
 	//Buttons
-	Button buttonLedOff,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
+	Button buttonLed,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
 	Button buttonClean,pos={351.00,662.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={510.00,87.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={510.00,110.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
@@ -1116,8 +1135,8 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
 	Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
 	Label /W=$gname bottom "Voltage (V)"	
-	SetAxis /W=$gname left -0.5, 0.5
-	SetAxis /W=$gname bottom -1, 5	
+	SetAxis /W=$gname left -0.0010, 0.030
+	SetAxis /W=$gname bottom -1, 3.5		
 	
 	SetDrawLayer UserFront
 	SetActiveSubwindow ##	
@@ -1373,8 +1392,8 @@ Function Clean (graph)
 		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
 		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
 		Label /W=$gname bottom "Voltage (V)"	
-		SetAxis /W=$gname left -0.5, 0.5
-		SetAxis /W=$gname bottom -1, 5	
+		SetAxis /W=$gname left -0.0010, 0.030
+		SetAxis /W=$gname bottom -1, 3.5		
 	endif
 	
 	Setdatafolder sdf
@@ -1520,17 +1539,19 @@ Function TurnOn_Leds()
 	wave wled = root:SolarSimulator:Storage:wled
 	variable i
 	for (i=0; i<DimSize (wLed, 0);i++)		
-		setMode (wled[0][i], 1)	//Normal mode
-		setNormalParameters (wLed[1][i], wLed[2][i], 0)	//Initial Parameters of Leds
+		setMode (wled[i][1], 1)	//Normal mode
+		setNormalParameters (wLed[i][1], wLed[i][2], 0)	//Initial Parameters of Leds
 	endfor
+	return 1
 End
 
 Function TurnOff_Leds()
 	wave wled = root:SolarSimulator:Storage:wled
 	variable i
 	for (i=0; i<DimSize (wLed, 0);i++)		
-		setMode (wled[0][i], 0)	//Disable mode
+		setMode (wled[i][1], 0)	//Disable mode
 	endfor
+	return 0
 End
 
 Function Led_Apply ()
@@ -1538,7 +1559,7 @@ Function Led_Apply ()
 	wave wled = root:SolarSimulator:Storage:wled
 	variable i
 	for (i=0; i<DimSize (wLed, 0);i++)		
-		setNormalCurrent (wled[0][i], Iset[0])
+		setNormalCurrent (wled[i][1], Iset[i])
 	endfor
 End
 
@@ -1546,7 +1567,8 @@ End
 
 //When the panel is closed, this function turn off the leds and the keithley
 Function Disable_All ()
-	TurnOff_Leds ()
+	nvar ledcheck = root:SolarSimulator:Storage:ledcheck
+	ledcheck = TurnOff_Leds ()
 	Close_Keithley_2600()
 //	print "Turned Off Leds"
 //	print "Closed Keithley"
@@ -1574,7 +1596,7 @@ Function qe2JscSS (qe, specw)
 	sr=(1.602e-19*wQE_ext[p]*x*1e-9)/(6.62606957e-34*2.99792458e8) // A/W/m2
 
 	//Display sr 
-	sr*=specw(x)*1000/10000
+	sr*=specw(x)*1000/10000	//mA/cm2
 	
 	jsc=area(sr)
 //	jsc = area ( src, rangex1, rangex2) //between a certain point-range
@@ -1752,7 +1774,7 @@ Function Meas_JscSS (deviceID)
 		SetVariable setvarDAreaSS, valueBackColor= (57933,66846,1573)		
 	else 
 		SetVariable setvarDAreaSS, valueBackColor=0		
-		jsc*=(darea)
+		jsc/=(darea)
 	endif
 	return jsc
 End
@@ -2121,14 +2143,6 @@ Function CountDown_Jsc(s)
 //	svar message = root:SolarSimulator:Storage:message
 	string message = "------Measuring-----"
 	String abortStr= "Hold escape to abort"
-//			variable i
-//			for (i = 0; i<strlen(message); i++)
-//				message[i]=message[i+1]
-//				if (i==strlen(message)-1)
-//					print strlen(message)
-//					message[0] = message[i]
-//				endif
-//			endfor
 	nvar count = root:SolarSimulator:Storage:count
 	count +=1	
 	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
@@ -2138,10 +2152,8 @@ Function CountDown_Jsc(s)
 	Variable lastMessageUpdate = startTicks
 
 	
-			
-				
-//			JscMeas[id] = Meas_JscSS (deviceID)		// çççç
-			JscMeas[id] = count //Just to get some auxiliary values
+			JscMeas[id] = Meas_JscSS (deviceID)		// çççç
+//			JscMeas[id] = count //Just to get some auxiliary values
 			NSol[id] = JscMeas[id]/JscObj[id]
 			
 			ValDisplay $valdispIX,value = #getJscMeas
@@ -2233,8 +2245,8 @@ Function Expand_ivGraph(num)
 		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
 		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
 		Label /W=$gname bottom "Voltage (V)"	
-		SetAxis /W=$gname left -0.5, 0.5
-		SetAxis /W=$gname bottom -1, 5	
+		SetAxis /W=$gname left -0.0010, 0.030
+		SetAxis /W=$gname bottom -1, 3.5		
 		break
 	case 1:
 		KillWindow SSPanel#SSCurvaIV
@@ -2250,8 +2262,8 @@ Function Expand_ivGraph(num)
 		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
 		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
 		Label /W=$gname bottom "Voltage (V)"	
-		SetAxis /W=$gname left -0.5, 0.5
-		SetAxis /W=$gname bottom -1, 5	
+		SetAxis /W=$gname left -0.0010, 0.030
+		SetAxis /W=$gname bottom -1, 3.5	
 		break		
 	endswitch
 	if(strlen(tracelist))
