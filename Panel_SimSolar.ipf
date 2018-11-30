@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------------------------------------------------------
 	//The Mightex Channels are set up here.																												|
-static constant numLeds = 3			//This number is the total quantity of leds you are going to control (without the Laser)	|
+static constant numLeds = 4			//This number is the total quantity of leds you are going to control (without the Laser)	|
 static constant laser_channel = 7	//The channel of the laser in the mightexLedContrller.												|
 static constant laser_iset = 50		//Current applied for the laser in mA. It has max 70mA, but not needed.							|
 static constant laser_imax = 50		//max current of laser. Theoricaly, it supports 70mA. Do not try. 								|
@@ -449,7 +449,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":		//Button Disable being killed
 				//When the button is pressed, it will clean the paths, waves and panel will reinitialize itself.
 				//When killed, it wont reinitialize, but it will do the rest actions.
-					Disable_All()		// çççç 	
+					Disable_All()		// çç 	
 				//Just in case we close the panel meanwhile we are taking measurements
 				StopCountdown()				
 				break
@@ -1036,8 +1036,8 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname standoff=0
 	ModifyGraph /W=$gname alblRGB(left)=(52428,1,1),alblRGB(bottom)=(1,39321,19939)
 	ModifyGraph /W=$gname wbRGB=(63479,65535,65535)
-	Label /W=$gname left "%"
-	Label /W=$gname bottom "nm"
+	Label /W=$gname left "Quantum Efficiency (%)"
+	Label /W=$gname bottom "Wavelenght (nm)"
 	//Label right "Spectrum"
 	SetAxis /W=$gname left 0,1
 	SetAxis /W=$gname bottom 370,1800
@@ -1126,7 +1126,7 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
 //	ModifyPanel /W=$gname cbRGB=(56576,56576,56576)//, frameStyle=1, frameInset=3
 	ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
-	Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
+	Label /W=$gname left "Current (mA\\M)"
 	Label /W=$gname bottom "Voltage (V)"	
 	SetAxis /W=$gname left -0.018, 0.018
 	SetAxis /W=$gname bottom -1, 4.5	
@@ -1163,7 +1163,7 @@ Function setVar_leds(wled)
 		aux = wLed[i][0]
 		title = "Led "+ num2str(aux)
 		posy += i*23
-		SetVariable $name, pos={posx, posy}, size={100, 18}, proc=SetVarProc_SimSol, limits={0, 1, 0.1}
+		SetVariable $name, pos={posx, posy}, size={100, 18}, proc=SetVarProc_SimSol, limits={0, 1, 0.001}
 		SetVariable $name, title = title, value = root:SolarSimulator:Storage:LedLevel[i], live=1
 		posx +=102
 		name = "setvarLedIset"+num2str(i)
@@ -1371,8 +1371,8 @@ Function Clean (graph)
 		ModifyGraph /W=SSPanel#SSGraph  mirror=1
 		ModifyGraph /W=SSPanel#SSGraph  minor=1
 		ModifyGraph /W=SSPanel#SSGraph  standoff=0
-//		Label left "%"
-//		Label bottom "nm"
+//		Label /W=$gname left "Quantum Efficiency (%)"
+//		Label bottom "Wavelenght (nm)"
 //		Label right "Spectrum"
 		SetAxis /W=SSPanel#SSGraph left 0,1
 		SetAxis /W=SSPanel#SSGraph bottom 370,1800
@@ -1396,7 +1396,7 @@ Function Clean (graph)
 		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
 //		ModifyPanel /W=$gname cbRGB=(56576,56576,56576)//, frameStyle=1, frameInset=3
 		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
-		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
+		Label /W=$gname left "Current (mA\\M)"
 		Label /W=$gname bottom "Voltage (V)"	
 		SetAxis /W=$gname left -0.018, 0.018
 		SetAxis /W=$gname bottom -1, 4.5		
@@ -1699,7 +1699,7 @@ Function get_NSol (i)
 end
 //----------------------------------Keithley K2600------------------------------------------------------------------------------------------------------//	
 Function Init_Keithley_2600()
-	InitBoard_GPIB(0) 		//	çç
+	InitBoard_GPIB(0) 		
 	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
 	//pending to catch errors
 //	print "Keithley Initialized"
@@ -1734,7 +1734,7 @@ Function Meas_Jsc (deviceID)
 		SetVariable setvarDAreaiV, valueBackColor= (57933,66846,1573)		
 	else 
 		SetVariable setvarDAreaiV, valueBackColor=0		
-		jsc*=(darea)
+		jsc/=(darea)
 	endif
 	return jsc
 	SetDataFolder sdf
@@ -1764,7 +1764,7 @@ Function Meas_Voc(deviceID)
 	svar channel
 	nvar darea
 	variable voc
-	configK2600_GPIB_SSCurvaIV(deviceID,2,channel,probe,ilimit,nplc,delay)	//çç
+	configK2600_GPIB_SSCurvaIV(deviceID,2,channel,probe,ilimit,nplc,delay)	
 	voc=measV_K2600(deviceID,channel)
 	return voc
 	SetDataFolder sdf
@@ -1831,6 +1831,14 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	NVAR /Z light=root:SolarSimulator:Storage:light_dark
 	NVAR /Z iarea=root:SolarSimulator:Storage:iarea
 	NVAR /Z darea=root:SolarSimulator:Storage:darea
+	if (nameExists(wname))
+		string mss = "Name used already exists. Do you want to overwrite it?"
+		DoAlert /T="Name Duplicated" 1, mss
+		if (V_Flag==2)
+			ABOrtonvalue V_Flag, 2
+		endif
+	endif			 
+		
 	string setupNotes=getIVsetupNotes_SSCurvaIV()
 	string dfrStr=createDFRwave(wname,"IV")
 	DFREF dfrw=$dfrStr
@@ -2231,7 +2239,7 @@ Function Expand_ivGraph(num)
 		ModifyGraph /W=$gname standoff=0	
 		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
 		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
-		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
+		Label /W=$gname left "Current (mA\\M)"
 		Label /W=$gname bottom "Voltage (V)"	
 		SetAxis /W=$gname left -0.018, 0.018
 		SetAxis /W=$gname bottom -1, 4.5		
@@ -2248,7 +2256,7 @@ Function Expand_ivGraph(num)
 		ModifyGraph /W=$gname standoff=0	
 		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
 		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
-		Label /W=$gname left "Current Density (mA/cm\\S2\\M)"
+		Label /W=$gname left "Current (mA\\M)"
 		Label /W=$gname bottom "Voltage (V)"	
 		SetAxis /W=$gname left -0.018, 0.018
 		SetAxis /W=$gname bottom -1, 4.5	
@@ -2322,5 +2330,15 @@ Function Button_Leds()
 			Button btnLaser, disable = 0, fColor=(65535,0,0)	
 		endfor
 		Check_PlotEnable (8, checked=1)
+	endif
+end
+
+Function NameExists ( dname )
+	string dname
+	string sampleStr=StringFromList(0,dname,"_")
+	if (DataFolderExists("root:"+sampleStr))
+		return 1
+	else 
+		return 0
 	endif
 end
