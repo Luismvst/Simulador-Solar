@@ -238,10 +238,10 @@ Function Draw (trace, id)
 			ModifyGraph /W=SSPanel#SSGraph  zero=2
 			ModifyGraph /W=SSPanel#SSGraph  minor=1
 			ModifyGraph /W=SSPanel#SSGraph  standoff=0	
-			if (id2)
+			if (id2)//If it is EQEdut or ref
 				ModifyGraph /W=SSPanel#SSGraph lSize($realname)=1.5
 			endif
-			if (id2 == 1)
+			if (id2 == 1)//EQEref only ( slashed )
 				ModifyGraph /W=SSPanel#SSGraph lstyle($realname)=7
 			endif
 			
@@ -333,6 +333,19 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
 					LG (wled, gled, 0, 5)
 				break
+				case "setvarledstep":
+					wave wled = root:SolarSimulator:Storage:Wled
+					nvar ledstep = root:Solarsimulator:Storage:ledstep
+					variable size = DimSize(wLed,0)
+					variable i
+					string name
+					if (size>6)
+						size=6
+					endif
+					for (i=0; i<size;i+=1)
+						name = "setvarLedValue"+num2str(i)
+						SetVariable $name, limits={0, 1, ledstep}
+					endfor
 			endswitch
 			//If com is not selected, leds will not apply
 			if (stringmatch(sva.ctrlname, "setvarLed*"))
@@ -389,8 +402,11 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "btnMeasIV":	
 					if (laserStatus)
 						doButtonClick("btnLaser")
-					endif				
-					meas_IV(deviceID)
+					endif			
+					Meas_IV(deviceID)
+					break
+				case "btnAbort":
+					StopMeasureIV()
 					break
 				case "btnMeasJsc":
 					nvar jsc  = root:SolarSimulator:Storage:jsc
@@ -406,17 +422,20 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "buttonClean":
 					Clean(0)
 					break
+				case "btnResetLeds":
+					resetLeds()
+					break
 				case "btnLaser":	
 					laserStatus = !laserStatus
-					if (laserStatus)// çç
-//						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
-//						setNormalParameters (laser_channel, laser_imax, 0)		//Defalt parameters (Imax, Iset)
-//						setNormalCurrent (laser_channel, laser_iset )			//Iset 
+					if (laserStatus)
+						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
+						setNormalParameters (laser_channel, laser_imax, 0)		//Defalt parameters (Imax, Iset)
+						setNormalCurrent (laser_channel, laser_iset )			//Iset 
 						Button btnlaser, fColor=(47545,5397,65535),valueColor=(65535,65535,65535)
 						String laserstr= "--------LASER-------"
 						TitleBox lasertext,pos={621.00,280.00},size={118.00,23.00},title=laserstr,labelBack=(65535,20000,30000),fColor=(0,0,0)
 					else
-//						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
+						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
 						Button btnlaser, fColor=(65280,0,0),valueColor=(0,0,0)
 						TitleBox lasertext,pos={621.00,280.00},size={118.00,23.00},title="",labelBack=(65535,20000,30000),fColor=(65535,0,0)						
 					endif						
@@ -451,7 +470,8 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				//When killed, it wont reinitialize, but it will do the rest actions.
 					Disable_All()		// çç 	
 				//Just in case we close the panel meanwhile we are taking measurements
-				StopCountdown()				
+				StopCountdown()	
+				StopMeasureIV()			
 				break
 			endswitch
 			break
@@ -661,7 +681,7 @@ Function Load_Spectrum ()
 	//SOLAR SIMULATOR DATA
 	SetDataFolder root:SolarSimulator:Spectra:SLamp
 	NewPath/O/Q 	spath, general_path + ":SLamp"
-	LoadWave/C/O/Q /P=spath	"XT10open2012.ibw"
+	LoadWave/C/O/Q /P=spath	"XT10open2012_w.ibw"
 	
 	killPath /A 
 	SetDataFolder sp
@@ -731,11 +751,12 @@ Function Init_SolarVar ()
 	wave btnValues = btnValues
 	btnValues = 0
 	
-	variable /G SpectracheckedSun, SpectracheckedLamp, lasercheck, ledcheck
+	variable /G SpectracheckedSun, SpectracheckedLamp, lasercheck, ledcheck, ledstep
 	SpectracheckedSun = 1
 	SpectracheckedLamp = 1
 	laserCheck = 0
 	ledcheck = 0
+	ledstep = 0.1
 	//Increase power of leds
 	make /N=(numleds) /O LedLevel
 	wave LedLevel = LedLevel 
@@ -795,6 +816,7 @@ Function Init_SolarVar ()
 	light_dark = 1	//1 - Light / 2 - Dark
 	forward = 1	 //Reverse => forward=2 
 	ff=0		//Fill factor 
+	eff=0		//Efficincy
 	jsc=0; jmp= 0; vmp=0; voc=0;		
 		
 	SetDataFolder path
@@ -884,6 +906,7 @@ Function Solar_Panel()
 	
 	//Buttons
 	Button buttonLed,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
+	Button btnresetleds,pos={13.00,682.00},size={107.00,18.00},proc=ButtonProc_SimSolar,title="Reset Leds",fColor=(65535,0,0)
 	Button buttonClean,pos={351.00,662.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={510.00,87.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={510.00,110.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
@@ -1051,7 +1074,7 @@ Function Solar_Panel()
 	//Curve I-V
 	Button btnMeasIV,pos={900.00,180.00},size={100,25},proc=ButtonProc_SimSolar,title="\\f01Measure IV"
 	Button btnAbort,pos={900.00,210.00},size={100,25},title="ABORT",labelBack=(65280,0,0),fColor=(52428,1,41942)
-	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0),disable=2
+	Button btnAbort,fSize=14,fStyle=1,fColor=(65280,0,0),disable=2, proc=ButtonProc_SimSolar
 	Button btnMeasJsc,pos={960.00,110.00},size={40.00,20.00},proc=ButtonProc_SimSolar,title="Jsc"
 	Button btnMeasJsc,fColor=(65535,65532,16385)
 	Button btnMeasVoc,pos={960.00,135.00},size={40.00,20.00},proc=ButtonProc_SimSolar,title="Voc"
@@ -1071,7 +1094,7 @@ Function Solar_Panel()
 	SetVariable setvarvmin,limits={-10,10,0.1},value= root:SolarSimulator:Storage:vmin,live= 1
 	SetVariable setvarvmax,pos={755.00,217},size={113.0,18.00},proc=SetVarProc_SimSol,title="Max (V)"
 	SetVariable setvarvmax,limits={-10,10,0.1},value= root:SolarSimulator:Storage:vmax,live= 1
-	SetVariable setvardelay,pos={755.00,239},size={113.00,18.00},proc=SetVarProc_SimSol,title="Delay (V)"
+	SetVariable setvardelay,pos={755.00,239},size={113.00,18.00},proc=SetVarProc_SimSol,title="Delay (ms)"
 	SetVariable setvardelay,limits={0,5,0.1},value= root:SolarSimulator:Storage:delay,live= 1
 	SetVariable setvarilimit,pos={755.00,262},size={113.00,18.00},proc=SetVarProc_SimSol,title="Limit (A)"
 	SetVariable setvarilimit,limits={0,1,0.1},value= root:SolarSimulator:Storage:ilimit,live= 1
@@ -1144,6 +1167,7 @@ end
 Function setVar_leds(wled)
 	wave wLed
 	string name, title
+	nvar /Z ledstep = root:SolarSimulator:Storage:ledstep
 	variable aux
 	variable posx, posy
 	variable i
@@ -1163,7 +1187,7 @@ Function setVar_leds(wled)
 		aux = wLed[i][0]
 		title = "Led "+ num2str(aux)
 		posy += i*23
-		SetVariable $name, pos={posx, posy}, size={100, 18}, proc=SetVarProc_SimSol, limits={0, 1, 0.001}
+		SetVariable $name, pos={posx, posy}, size={100, 18}, proc=SetVarProc_SimSol, limits={0, 1, ledstep}
 		SetVariable $name, title = title, value = root:SolarSimulator:Storage:LedLevel[i], live=1
 		posx +=102
 		name = "setvarLedIset"+num2str(i)
@@ -1184,7 +1208,8 @@ Function setVar_leds(wled)
 	endif
 		Button btnLaser,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0),title="LASER"
 		Button btnLaser, proc=ButtonProc_SimSolar
-
+		SetVariable setvarledstep,pos={12.00,661.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="LedStep"
+		SetVariable setvarledstep,limits={0,0.1,0.0001},value= root:SolarSimulator:Storage:ledstep
 end
 //DropDown "Yes-No" Selection
 Function/S translate (popValues)
@@ -1357,6 +1382,37 @@ Function Button_JscEnable (id)
 	endfor
 end
 
+Function Button_IVEnable (id)
+	//id is enable = 1 or disable = 0
+	variable id
+	wave popValues = root:SolarSimulator:Storage:popValues
+	variable i
+	string btnMeasjsc, btnMeasvoc, btnabort
+	string btncheck
+	if (id==1)
+		Button btnMeasJsc, disable = 0
+		Button btnMeasVoc, disable = 0
+		Button btnAbort, disable = 2
+		for (i=0; i<6; i++)
+			if (popValues[i])
+				btncheck = "btncheck" + num2str(i)
+				Button $btncheck, disable = 0
+			endif
+		endfor
+	elseif (id==0)
+		Button btnMeasJsc, disable = 2
+		Button btnMeasVoc, disable = 2
+		Button btnAbort, disable = 0
+		for (i=0; i<6; i++)
+			if (popValues[i])
+				btncheck = "btncheck" + num2str(i)
+				Button $btncheck, disable = 2
+			endif
+		endfor
+	endif
+	
+	
+end
 //Reconstruction of Display. Clean Display
 Function Clean (graph)
 	variable graph	//1 = SSCurvaIV, 0 = SSGraph
@@ -1713,9 +1769,11 @@ Function Meas_IV (deviceID)
 	string sdf = GetDataFolder (1)
 	SetDataFolder "root:SolarSimulator:Storage"
 	nvar probe, ilimit, nplc, delay, step, vmin, vmax, forward
-	svar channeL
+	svar channeL		
+	Button_IVEnable(0)
 	configK2600_GPIB_SSCurvaIV(deviceID,0,channel,probe,ilimit,nplc,delay)
 	measIV_K2600(deviceID,step,vmin,vmax,channel,forward)
+	Button_IVEnable(1)
 	
 	SetDataFolder sdf
 End
@@ -1875,6 +1933,11 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		sendcmd_GPIB(deviceID,cmd)
 		GPIBRead2 /Q target
 		ww[i]=str2num(target)
+//		GetMouse /W=Panel0  // test for mouse press in pseudo-"ABORT" button area
+//        if( (V_flag==1)&(V_left>125)&(V_left<175)&(V_top>110)&(V_top<130) )
+//            VLoop = 0  // condition to quit the Do-While loop
+//            ModifyControl  button1  disable = 1 // hide the "STOP" button
+//        endif
 	endfor
 	
 	// When using GPIBReadWave2...
@@ -1919,7 +1982,7 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		jsc=getVarWaveNote(ww,"Jsc(mA/cm2)")
 		voc=getVarWaveNote(ww,"Voc(V)")
 		ff=getVarWaveNote(ww,"FF")
-		eff=getVarWaveNote(ww,"Efficiency(%)")
+		eff=getVarWaveNote(ww,"Efficiency(%)")*100
 		vmp=getVarWaveNote(ww,"Vm(V)")
 		jmp=getVarWaveNote(ww,"Jm(mA/cm2)")
 		
@@ -1991,11 +2054,11 @@ Function /S getIVsetupNotes_SSCurvaIV()
 	snote+="Max (V)="+num2str(vmax)+";\r"
 	snote+="Min (V)="+num2str(vmin)+";\r"
 	snote+="Step (V)="+num2str(step)+";\r"
-	snote+="Delay="+num2str(step)+";\r"
+	snote+="Delay (ms)="+num2str(delay)+";\r"
 	snote+="Total Area (cm2)="+num2str(darea)+";\r"
 	snote+="Illuminated Area (cm2)="+num2str(iarea)+";\r\r\r"
 	
-	snote+="---- Spectral Adjustment Characterization ----;\r\r"
+	snote+="---- Spectral Adjustment setup variables ----;\r\r"
 	snote+="Dut Area (cm2)="+num2str(dareaSS)+";\r\r"
 	for (i=0; i<6; i++)
 		if (popvalues[i]==0)
@@ -2010,23 +2073,19 @@ Function /S getIVsetupNotes_SSCurvaIV()
 		snote+="NSuns ="+num2str(Nsol[i])+";\r\r"
 	endfor
 	
-	snote+="LED Settings\r\r"	
+	snote+="\r---- LED Settings ----;\r\r"	
 	for (i=0; i<DimSize(wLed,0); i++)
 		snote+="Led_Wavelenght (nm)="+num2str(wled[i][0])+";\r"
 		snote+="Channel ="+num2str(wled[i][1])+";\r"
 		snote+="Max Current (mA)="+num2str(wled[i][2])+";\r"
-		snote+="Led Current (mA)="+num2str(iLed[i])+";\r"
+		snote+="Led Current (mA)="+num2str(iLed[i])+";\r\r"
 	endfor
 	snote+="LASER_Wavelenght (nm)="+num2str(laser_channel)+";\r"
 	snote+="Channel "+num2str(laser_channel)+";\r"
 	snote+="Max Current (mA)="+num2str(laser_imax)+";\r"
-	snote+="Laser Current (mA)="+num2str(laser_iset)+";\r"
+	snote+="Laser Current (mA)="+num2str(laser_iset)+";\r\r"
 	
-//	snote+="Channel\tWavelenght(nm)\tMax current(mA)\tLed current(ma)"
-//	for (i=0; i<DimSize(wLed,0); i++)
-//		snote+=num2str(wled[i][1])+"\t"+num2str(wled[i][0])+"\t"+num2str(wled[i][2])+"\t"+num2str(iLed[i])+"\r"
-//	endfor
-//	snote+="LASER\t"+num2str(laser_channel)+"\t635\t"+num2str(laser_imax)+"\t"+num2str(laser_iset)+"\r"
+	snote+="\r---- Solar Cell Measurements ----;\r\r"
 	return snote
 End
 
@@ -2122,6 +2181,15 @@ Function StopCountDown ()
 	CtrlNamedBackground Countdown, stop
 End
 
+Function StartMeasureIV ()
+	CtrlNamedBackground Measure_IV, proc=Meas_IV
+	CtrlNamedBackground Measure_IV, start
+end
+
+Function StopMeasureIV ()
+	CtrlNamedBackground Measure_IV, stop
+end
+
 Function CountDown_Jsc(s)
 	STRUCT WMBackgroundStruct &s
 	
@@ -2144,10 +2212,6 @@ Function CountDown_Jsc(s)
 	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
 	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
-	Variable startTicks = ticks
-	Variable lastMessageUpdate = startTicks
-
-	
 			JscMeas[id] = Meas_JscSS (deviceID)		// çççç
 //			JscMeas[id] = count //Just to get some auxiliary values
 			NSol[id] = JscMeas[id]/JscObj[id]
@@ -2155,6 +2219,13 @@ Function CountDown_Jsc(s)
 			ValDisplay $valdispIX,value = #getJscMeas
 			ValDisplay $valdispIX,format = "%.5g"
 			ValDisplay $valdispNSolX,value = #getNSol
+GetMouse /W=Panel0  // test for mouse press in pseudo-"STOP" button area
+//variable 
+//V_left=mouse_left
+//V_top;
+//        endif
+controlinfo /W=SSPanel btnAbort
+//if (V_left
 
 		if (GetKeyState(0) && 32 || btnValues[id] != 1)		//Press Esc, Alt or CTRL
 			btnValues[id] = 0
@@ -2271,13 +2342,11 @@ Function Expand_ivGraph(num)
 				continue
 			endif
 			//Return the full path including the wavename.
-			string path_trace = getwavesdatafolder ($trace, 2)
-			print path_trace
-//			wave wname = $trace
-////			wavename (wname) 
-//			dfref wr = getwavesdatafolderdfr ($(StringFromList(i, traceList))
-//			wave ww = wr:trace
-			AppendToGraph  /W=$gname $path_trace
+			string path_trace = "root:"+StringFromList(0,trace,"_")+":IV:"+trace
+			wave wtrace = $path_trace
+			AppendToGraph  /W=$gname wtrace
+			ModifyGraph /W=$gname lsize=1.5
+			setcolorGraph("")
 		endfor
 	endif
 End
@@ -2294,16 +2363,12 @@ Function DoButtonClick(btnName)
 end
 
 Function Button_Leds()
-//	wave Iset = root:SolarSimulator:Storage:Iset
-//	wave LedLevel = root:SolarSimulator:Storage:LedLevel
-//	LedLevel = 0
-//	Iset = 0
+
 	wave wLed = root:SolarSimulator:Storage:wLed	
 	nvar ledcheck = root:SolarSimulator:Storage:ledcheck	
 	nvar lasercheck = root:SolarSimulator:Storage:lasercheck
 	string name
 	variable i
-	DoUpdate /W=SSpanel
 	if (lasercheck)
 		doButtonClick("btnLaser")
 	endif
@@ -2336,9 +2401,20 @@ end
 Function NameExists ( dname )
 	string dname
 	string sampleStr=StringFromList(0,dname,"_")
-	if (DataFolderExists("root:"+sampleStr))
+	string strwave = "root:"+sampleStr+":IV:"+dname
+	wave wstr = $strwave
+	if (WaveExists(wstr))
 		return 1
 	else 
 		return 0
 	endif
+end
+
+Function resetLeds()
+	wave Iset = root:SolarSimulator:Storage:Iset
+	wave LedLevel = root:SolarSimulator:Storage:LedLevel
+	LedLevel = 0
+	Iset = 0
+	led_apply()
+	DoUpdate /W=SSpanel
 end
