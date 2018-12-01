@@ -23,8 +23,8 @@ Function init_OpenSerialLed (com, Device)
 		Execute/Z cmd
 		cmd = "VDTOperationsPort2 " + com
 		Execute/Z cmd
-//		cmd = "VDTOpenPort2 " + com
-//		Execute/Z cmd
+		cmd = "VDTOpenPort2 " + com
+		Execute/Z cmd
 
 		//Port available but VDT can not openPort..
 		if (V_Flag)	//V_Flag returns the number 0 if no error. The error number if there's error oppressed by /Z
