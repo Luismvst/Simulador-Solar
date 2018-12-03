@@ -203,7 +203,7 @@ Function Draw (trace, id)
 		case 6:	//it is  SLamp or Sref Spectra
 		case 7:
 			AppendtoGraph/R /W=SSPanel#SSGraph trace
-			Label/W=SSPanel#SSGraph right "Spectrum"
+			Label/W=SSPanel#SSGraph right "Irradiance (W/m\S2\M/nm)"
 			ModifyGraph /W=SSPanel#SSGraph minor=1
 			ModifyGraph /W=SSPanel#SSGraph lSize($realname)=0.5
 			ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(22000, 22000, 22000)//Dark-Grey
@@ -1094,7 +1094,7 @@ Function Solar_Panel()
 	ModifyGraph /W=$gname wbRGB=(63479,65535,65535)
 	Label /W=$gname left "Quantum Efficiency (%)"
 	Label /W=$gname bottom "Wavelenght (nm)"
-	//Label right "Spectrum"
+	//Label right "Irradiance (W/m\S2\M/nm)"
 	SetAxis /W=$gname left 0,1
 	SetAxis /W=$gname bottom 370,1500
 	
@@ -1466,7 +1466,7 @@ Function Clean (graph)
 		ModifyGraph /W=SSPanel#SSGraph  standoff=0
 //		Label /W=$gname left "Quantum Efficiency (%)"
 //		Label bottom "Wavelenght (nm)"
-//		Label right "Spectrum"
+//		Label right "Irradiance (W/m\S2\M/nm)"
 		SetAxis /W=SSPanel#SSGraph left 0,1
 		SetAxis /W=SSPanel#SSGraph bottom 370,1500
 		
