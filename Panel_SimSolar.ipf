@@ -26,11 +26,11 @@ Function User_LedVarValues ()
 	//Function SetvarLeds() will need a re-adjustment.
 //	case 7:
 	case 6:
-		led[5][0] = 1100			//Led WaveLenght	
+		led[5][0] = 1050		//Led WaveLenght	
 		led[5][1] = 6			//Mightex Channel
 		led[5][2] = 500			//Imax (mA)
 	case 5:
-		led[4][0] = 1240
+		led[4][0] = 1050
 		led[4][1] = 5
 		led[4][2] = 500
 	case 4:
@@ -212,7 +212,7 @@ Function Draw (trace, id)
 		case 8:	//led Spectra
 			Appendtograph /W=SSPanel#SSGraph trace
 			ModifyGraph /W=SSPanel#SSGraph lSize($realname)=1.5
-			WaveStats trace
+			WaveStats/Q trace
 //			variable num = trace[V_MaxRowLoc]
 			variable num = V_MaxLoc
 			if (num<600)				
@@ -279,69 +279,44 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 			if (ledcheck==0)
 				break
 			endif
+			
 			strswitch (sva.ctrlname)
 				//sva.dval -> variable value
 				case "setvarLedValue0":	
-					//gled is the graph wave we have draw in the display.
-					//wled is the led gaussian spectra we have loaded from external data 
-					wave gled = root:SolarSimulator:GraphWaves:waveled530
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led530
-					LG (wled, gled, 1, 0)
+					LG ( 1, 0)
 				break
 				case "setvarLedValue1":
-					wave gled = root:SolarSimulator:GraphWaves:waveled740
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led740
-					LG (wled, gled, 1, 1)
+					LG ( 1, 1)
 				break
 				case "setvarLedValue2":
-					wave gled = root:SolarSimulator:GraphWaves:waveled940
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led940
-					LG (wled, gled, 1, 2)
+					LG ( 1, 2)
 				break
 				case "setvarLedValue3":
-					wave gled = root:SolarSimulator:GraphWaves:waveled1050
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led1050
-					LG (wled, gled, 1, 3)
+					LG ( 1, 3)
 				break
 				case "setvarLedValue4":
-					wave gled = root:SolarSimulator:GraphWaves:waveledX
-					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 1, 4)
+					LG ( 1, 4)
 				break
 				case "setvarLedValue5":
-					wave gled = root:SolarSimulator:GraphWaves:waveledX
-					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 1, 5)
+					LG ( 1, 5)
 				break
 				case "setvarLedIset0":	
-					wave gled = root:SolarSimulator:GraphWaves:waveled530
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led530
-					LG (wled, gled, 0, 0)
+					LG ( 0, 0)
 				break
 				case "setvarLedIset1":
-					wave gled = root:SolarSimulator:GraphWaves:waveled740
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led740
-					LG (wled, gled, 0, 1)
+					LG ( 0, 1)
 				break
 				case "setvarLedIset2":
-					wave gled = root:SolarSimulator:GraphWaves:waveled940
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led940
-					LG (wled, gled, 0, 2)
+					LG ( 0, 2)
 				break
 				case "setvarLedIset3":
-					wave gled = root:SolarSimulator:GraphWaves:waveled1050
-					wave  wled = root:SolarSimulator:Spectra:SLeds:led1050
-					LG (wled, gled, 0, 3)
+					LG ( 0, 3)
 				break
 				case "setvarLedIset4":
-					wave gled = root:SolarSimulator:GraphWaves:waveledX
-					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 0, 4)
+					LG ( 0, 4)
 				break
 				case "setvarLedIset5":
-					wave gled = root:SolarSimulator:GraphWaves:waveledX
-					wave  wled = root:SolarSimulator:Spectra:SLeds:ledX
-					LG (wled, gled, 0, 5)
+					LG ( 0, 5)
 				break
 				case "setvarledstep":
 					wave wled = root:SolarSimulator:Storage:Wled
@@ -703,10 +678,10 @@ Function Load_Spectrum ()
 	//Load new leds here
 	
 	//It is necessary to change the scales of the new led'spectra added!
-	Duplicate/O root:SolarSimulator:Spectra:SLeds:LED470,  root:SolarSimulator:Spectra:SLeds:led530
-	Duplicate/O root:SolarSimulator:Spectra:SLeds:LED1540, root:SolarSimulator:Spectra:SLeds:led1050	
-	wave led530 =  root:SolarSimulator:Spectra:SLeds:led530	
-	wave led1050 = root:SolarSimulator:Spectra:SLeds:led1050
+	Duplicate/O root:SolarSimulator:Spectra:SLeds:LED470,  root:SolarSimulator:Spectra:SLeds:LED530
+	Duplicate/O root:SolarSimulator:Spectra:SLeds:LED1540, root:SolarSimulator:Spectra:SLeds:LED1050	
+	wave led530 =  root:SolarSimulator:Spectra:SLeds:LED530	
+	wave led1050 = root:SolarSimulator:Spectra:SLeds:LED1050
 	 //Here we correct the difference between both spectrum
 	SetScale/I x, (leftx(led530)+60), (rightx(led530)+60), led530 
 	SetScale/I x, (leftx(led1050)-490), (rightx(led1050)-490), led1050
@@ -804,7 +779,7 @@ Function Init_SolarVar ()
 	for (iii=0; iii<numleds; iii++)
 		ledpath = "root:SolarSimulator:GraphWaves:waveled"
 		ledpath += num2str(wLed[iii][0])
-		make /O $path = 0
+		make /O $ledpath = 0
 	endfor
 	 
 	//ComPort
@@ -1514,22 +1489,32 @@ End
 
 //Generates the different led waves gradient from the input values ( 0% --- 100% )
 //And you can choose to set the current directly from its real value or from the 0-100%
-Function LG ( wspecled, gled, type, id)
-	wave wspecled	//led spectra wave
-	wave gled			//led spectra drawn wave
+Function LG ( type, id)
+//gled is the graph wave we have draw in the display.
+//wled is the led gaussian spectra we have loaded from external data
+//	wave wspecled	//led spectra wave
+//	wave gled			//led spectra drawn wave
 	variable type	//differs btwn 0/1 ,using percentage or the current value of the led
 	variable id 		//led position in the array
 	wave Iset = root:SolarSimulator:Storage:Iset
-	wave Imax = root:SolarSimulator:Storage:wLed
+	wave wLed = root:SolarSimulator:Storage:wLed
 	wave LedLevel = root:SolarSimulator:Storage:LedLevel
+
+	string strgled = "root:SolarSimulator:GraphWaves:waveled"//+wavelenght_str
+	string strwspecled = "root:SolarSimulator:Spectra:SLeds:LED"//+wavelenght_str
+	strgled+=num2str(wLed[id][0])	
+	strwspecled+=num2str(wLed[id][0])	
+	wave gled = $strgled
+	wave wspecled = $strwspecled
+	
 	if (deltax(wspecled)<0.01)	//Changing the scale to nm. 
 		SetScale /I x, (leftx(wspecled)*1000), (rightx(wspecled)*1000), wspecled
 	endif
 	Duplicate/O wspecled, gled
 	if (type)			//You modify the percentage(ledlevel) or the current (Iset)
-		Iset[id]=Imax[id][2]*LedLevel[id]
+		Iset[id]=wLed[id][2]*LedLevel[id]
 	else
-		ledLevel[id]=Iset[id]/Imax[id][2]
+		ledLevel[id]=Iset[id]/wLed[id][2]
 	endif
 	gled = wspecled * LedLevel[id]/waveMax(wspecled)
 	Draw (gled, 8)
@@ -1917,6 +1902,7 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	string channel
 	variable forw // forward or reverse?
 	variable i,vstep,vini,vfin,inc
+	variable click, left, top, aborted	//mouse_abortion_part
 	string path="root:SolarSimulator:Storage"
 	DFREF dfr=$path
 	string cmd,target
@@ -1926,9 +1912,13 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	NVAR /Z light=root:SolarSimulator:Storage:light_dark
 	NVAR /Z iarea=root:SolarSimulator:Storage:iarea
 	NVAR /Z darea=root:SolarSimulator:Storage:darea
-	if (nameExists(wname))
-		string mss = "Name used already exists. Do you want to overwrite it?"
-		DoAlert /T="Name Duplicated" 1, mss
+	if (strlen(wname)==0)
+		string mss1 = "Please, enter a valid name"
+		DoAlert /T="Invalid name" 0, mss1
+		ABOrtonvalue V_Flag, 1
+	elseif (nameExists(wname))
+		string mss2 = "Name used already exists. Do you want to overwrite it?"
+		DoAlert /T="Name Duplicated" 1, mss2
 		if (V_Flag==2)
 			ABOrtonvalue V_Flag, 2
 		endif
@@ -1957,8 +1947,10 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	//cmd="SweepVLinMeasureI(smu"+channel+", "+num2str(nmin)+", "+num2str(nmax)+", "+num2str(delay)+", "+num2str(npoints)+")"
 	//sendcmd_GPIB(deviceID,cmd)
 	//setscale /P x,vini,vstep,"V", ww
-	
+	variable start, endd
 	for(i=0;i<(npoints);i+=1)
+//		start = StartMsTimer
+//		print start 
 		inc=vini+(vstep*i)
 		cmd="smu"+channel+".source.levelv = "+num2str(inc)
 		sendcmd_GPIB(deviceID,cmd)
@@ -1970,11 +1962,17 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		sendcmd_GPIB(deviceID,cmd)
 		GPIBRead2 /Q target
 		ww[i]=str2num(target)
-//		GetMouse /W=Panel0  // test for mouse press in pseudo-"ABORT" button area
-//        if( (V_flag==1)&(V_left>125)&(V_left<175)&(V_top>110)&(V_top<130) )
-//            VLoop = 0  // condition to quit the Do-While loop
-//            ModifyControl  button1  disable = 1 // hide the "STOP" button
-//        endif
+//		endd = StopMSTimer (start)
+//		print endd 
+		GetMouse /W=SSPanel  // test for mouse press in pseudo-"ABORT" button area
+		click=V_Flag //1 if click, 0 if not
+		left = V_left
+		top = V_top
+		ControlInfo /W=SSPanel btnAbort
+       if( (click==1)&(left>V_left)&(left<V_left+V_width)&(top>V_top)&(top<V_top+V_height) )
+			aborted = 1
+			break
+       endif
 	endfor
 	
 	// When using GPIBReadWave2...
@@ -2000,7 +1998,7 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	endif
 	string nots=getFecha4note()+notas+";\r"+setupNotes
 	// What happens if its Light or Dark
-	if(light==1)
+	if(light==1 && aborted ==0)
 		ww*=-1
 		//calculate solar cell parameters - always 1-sun.
 		wave sc=getIVCellParams(ww,1,darea,1,nots)
@@ -2256,13 +2254,6 @@ Function CountDown_Jsc(s)
 			ValDisplay $valdispIX,value = #getJscMeas
 			ValDisplay $valdispIX,format = "%.5g"
 			ValDisplay $valdispNSolX,value = #getNSol
-GetMouse /W=Panel0  // test for mouse press in pseudo-"STOP" button area
-//variable 
-//V_left=mouse_left
-//V_top;
-//        endif
-controlinfo /W=SSPanel btnAbort
-//if (V_left
 
 		if (GetKeyState(0) && 32 || btnValues[id] != 1)		//Press Esc, Alt or CTRL
 			btnValues[id] = 0
