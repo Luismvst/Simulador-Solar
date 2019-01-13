@@ -331,6 +331,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 						name = "setvarLedValue"+num2str(i)
 						SetVariable $name, limits={0, 1, ledstep}
 					endfor
+				break
 			endswitch
 			//If com is not selected, leds will not apply
 			if (stringmatch(sva.ctrlname, "setvarLed*"))
@@ -647,14 +648,14 @@ Function Init_SP ([val])
 	Init_Keithley_2600()
 	svar /Z com = root:SolarSimulator:Storage:com	
 	// We init first the COM1 as main init value		
-//	if (init_OpenSerialLed("COM1","LedController"))
-//		com="COM1"
-//		nvar ledcheck = root:SolarSimulator:Storage:ledcheck
-//		ledcheck = Initialize_Leds()
-//	else
-//		print "Mightex did not initialized"
-//		PopupMenu popupLedCom, popvalue=" ", mode=1
-//	endif
+	if (init_OpenSerialLed("COM1","LedController"))
+		com="COM1"
+		nvar ledcheck = root:SolarSimulator:Storage:ledcheck
+		ledcheck = Initialize_Leds()
+	else
+		print "Mightex did not initialized"
+		PopupMenu popupLedCom, popvalue=" ", mode=1
+	endif
 	Solar_Panel ()
 End 
 
