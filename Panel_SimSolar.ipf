@@ -841,7 +841,6 @@ Function Solar_Panel()
 	wave sa = :Storage:sa
 	//Disable/Enable Dropdowns things on the panel
 	wave popValues = :Storage:popvalues
-	popValues = {1, 1, 1, 0, 0, 0}
 	string popVal = translate (popValues)//Yes;No; Selection
 	string wLampname = "XT10open2012_w"
 	string wspecname = "AMG173DIRECT_w"
@@ -914,20 +913,21 @@ Function Solar_Panel()
 //	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
 	//Buttons
-	Button buttonLed,pos={24.00,263.00},size={104.00,26.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
-	Button btnresetleds,pos={13.00,682.00},size={107.00,18.00},proc=ButtonProc_SimSolar,title="Reset Leds",fColor=(65535,0,0)
-	Button buttonClean,pos={351.00,662.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
+	//buttonLed 24, 263, 104, 26
+	Button buttonLed,pos={17.00,278.00},size={111.00,23.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
+	Button btnresetleds,pos={50.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Reset Leds",fColor=(65535,0,0)
+	Button buttonClean,pos={351.00,661.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={510.00,87.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={510.00,110.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck2,pos={510.00,133.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck3,pos={510.00,157.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck4,pos={510.00,179.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck5,pos={510.00,202.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
-	Button buttonExpandSS,pos={126.00,660.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Expand"
+	Button buttonExpandSS,pos={126.00,661.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Expand"
 	Button buttonExpandSS,fColor=(16385,65535,41303)
 	Button buttonContractSS,pos={202.00,661.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Contract"
 	Button buttonContractSS,fColor=(16385,65535,41303)
-	Button buttonAutoscale0,pos={276.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="AutoScale"
+	Button buttonAutoscale0,pos={278.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="AutoScale"
 	Button buttonAutoscale0,fColor=(16385,65535,41303)
 //	Button buttonSave,pos={631.00,231.00},size={100.00,25.00},proc=ButtonProc_SimSolar,title="\\f01SAVE"
 //	Button buttonExport,pos={632.00,262.00},size={100.00,25.00},disable=2,title="EXPORT"
@@ -1088,7 +1088,7 @@ Function Solar_Panel()
 	Button btnMeasJsc,fColor=(65535,65532,16385)
 	Button btnMeasVoc,pos={960.00,135.00},size={40.00,20.00},proc=ButtonProc_SimSolar,title="Voc"
 	Button btnMeasVoc,fColor=(16385,65535,65535)
-	Button buttonExpandIV,pos={766.00,660.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Expand"
+	Button buttonExpandIV,pos={766.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Expand"
 	Button buttonExpandIV,fColor=(16385,65535,41303)
 	Button buttonContractIV,pos={842.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Contract"
 	Button buttonContractIV,fColor=(16385,65535,41303)
@@ -1221,7 +1221,7 @@ Function setVar_leds(wled)
 	endif
 		Button btnLaser,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0),title="LASER"
 		Button btnLaser, proc=ButtonProc_SimSolar
-		SetVariable setvarledstep,pos={12.00,661.00},size={112.00,18.00},proc=SetVarProc_SimSol,title="LedStep"
+		SetVariable setvarledstep,pos={18.00,257.00},size={109.00,18.00},proc=SetVarProc_SimSol,title="LedStep"
 		SetVariable setvarledstep,limits={0,0.1,0.0001},value= root:SolarSimulator:Storage:ledstep
 end
 //DropDown "Yes-No" Selection
@@ -2116,7 +2116,7 @@ Function /S getIVsetupNotes_SSCurvaIV()
 		snote+="Max Current (mA)="+num2str(wled[i][2])+";\r"
 		snote+="Led Current (mA)="+num2str(iLed[i])+";\r\r"
 	endfor
-	snote+="LASER_Wavelenght (nm)="+num2str(laser_channel)+";\r"
+	snote+="LASER_Wavelenght (nm)=635.4;\r"
 	snote+="Channel "+num2str(laser_channel)+";\r"
 	snote+="Max Current (mA)="+num2str(laser_imax)+";\r"
 	snote+="Laser Current (mA)="+num2str(laser_iset)+";\r\r"
@@ -2248,7 +2248,7 @@ Function CountDown_Jsc(s)
 	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
 	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
-			JscMeas[id] = Meas_JscSS (deviceID)		
+			JscMeas[id] = abs (Meas_JscSS (deviceID))
 //			JscMeas[id] = count //Just to get some auxiliary values
 			NSol[id] = JscMeas[id]/JscObj[id]
 			
