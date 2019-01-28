@@ -1,7 +1,6 @@
 ﻿#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#include "serialcom"
-#include "serialcomB"
+
 
 //In a future it will be merged with Mario´s InitOpenSerial() 
 Function init_OpenSerialLed (com, Device)
@@ -10,7 +9,7 @@ Function init_OpenSerialLed (com, Device)
 	string cmd, DeviceCommands
 	//string reply
 	variable flag
-	string sports=getSerialPorts()
+	string sports=getSerialPortsLeds()
 //		print "Available Ports:"
 //		print sports
 	if (StringMatch(Device, "LedController"))
@@ -48,6 +47,13 @@ Function init_OpenSerialLed (com, Device)
 	endif
 	return flag 
 end
+
+function /S getSerialPortsLeds()
+	string portList
+	VDTGetPortList2
+	portList=S_VDT
+	return portList
+End
 //Initialize data needed
 //Baudrate: 9600 bps, 		Other data: N, 8, 1 ( no hardware flow control )                                                                               
 //Do NOT use NULL Modem Cable
@@ -250,21 +256,6 @@ Function getStrpParameters (channel)
 	VDTRead2 /O=1 /T=endl reply
 	print reply	
 end
-	
-
-//**************************************************************************************************//
-//	PENDIENTE DE REALIZAR PARA CUANDO CONSIGA OTRAS FUNCIONES MENOS MODULARES PARA EL PANEL
-//	nvar Imax_panel = root:SolarSimulator:LedController:Imax
-//	nvar Repeat_panel = root:SolarSimulator:LedController:Repeat
-//	if (paramisdefault(IMax_manual))
-//		Imax = Imax_panel
-//	endif
-//	if (paramisdefault(Repeat))
-//		Repeat = Repeat_panel
-//	endif
-	//Note: If you want to use the data of the panel, do not use IMax and Repeat as
-	//arguments of the function and they will be taken automatically from the panel 
-//**************************************************************************************************//
 	
 //OTHER COMMANDS
 //Get Channel Load Voltage

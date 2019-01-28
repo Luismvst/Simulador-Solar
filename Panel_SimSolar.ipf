@@ -51,7 +51,9 @@ Function User_LedVarValues ()
 		led[0][2] = 700			//Imax (mA)
 	endswitch
 End
+//------------------------------------------END OF USER FUNCTIONS EDITABLE---------------------------------------------------------------------------------------------------------------
 
+//------------------------------------------START SS_PANEL_INTERFACE---------------------------------------------------------------------------------------------------------------
 
 //IMPROTANT: 
 //To make this program work, we have to introduce the folder called "SolarSimulatorData" into the "Igor Pro User Files" Folder.
@@ -79,6 +81,8 @@ Function killPanel ()
 	KillWindow/Z SSpanel
 end
 
+//This procedure displays a rudimental panel to controll mightex panel for the 12 channel without 
+//the SSPanel interface. For debugging or free use of the Mightex Controller
 function doMenuMightexControl() // IV
 	Execute/P/Q/Z "INSERTINCLUDE \"MightexPanel\""
 	Execute/P/Q/Z "COMPILEPROCEDURES "
@@ -222,26 +226,6 @@ Function Draw (trace, id)
 			elseif (num<1500)
 				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(54263,41418,0)//(30000, 30000, 30000)
 			endif
-//			strswitch (realname)
-//			case "waveled530":
-//				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)//Green
-//				break
-//			case "waveled740":
-//				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(65535, 0, 0)//Red
-//				break
-//			case "waveled940":
-//				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(30000, 30000, 30000)//Example_Blue:(3146,5243,45875)
-//				break
-//			case "waveled1050":
-//				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(30000, 30000, 30000)//
-//				break
-//			case "waveledX":
-//				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)
-//				break
-//			case "waveledX":
-//				ModifyGraph /W=SSPanel#SSGraph rgb($realname)=(6554,56098,2359)
-//				break
-//			endswitch
 			break
 		endswitch
 			ModifyGraph /W=SSPanel#SSGraph  tick=2
@@ -647,6 +631,7 @@ Function Init_SP ([val])
 	//We need to initialize the VDTCOMPORT
 	Init_Keithley_2600()
 	svar /Z com = root:SolarSimulator:Storage:com	
+	Solar_Panel ()
 	// We init first the COM1 as main init value		
 	if (init_OpenSerialLed("COM1","LedController"))
 		com="COM1"
@@ -655,8 +640,7 @@ Function Init_SP ([val])
 	else
 		print "Mightex did not initialized"
 		PopupMenu popupLedCom, popvalue=" ", mode=1
-	endif
-	Solar_Panel ()
+	endif	
 End 
 
 //In case we only export the procedure, not the experiment (in the fture it will make sense) 
@@ -802,10 +786,14 @@ Function Init_SolarVar ()
 	make /N=6 /O root:SolarSimulator:Storage:Jscref	= 0
 	make /N=6 /O root:SolarSimulator:Storage:NSol		= 0
 
+	
 	variable/G darea, dareaSS
 	variable/G iarea
-	darea = 1	//If user dont know the cell area, it is 1 cm2 by default
-	dareaSS = 1
+	//area curve I-V
+	darea = 0.11	//If user dont know the cell area, it is 0.1 cm2 by default
+	//area spectral adjustment
+	dareaSS = 0.1
+	//illumination area; not used yet
 	iarea = 1
 	
 	//Keithley K2600
@@ -819,8 +807,8 @@ Function Init_SolarVar ()
 	nplc = 1
 	ilimit = 0.1
 	delay = 1 
-	vmax = 1
-	vmin = 0
+	vmax = 3
+	vmin = -0.1
 	step = 0.01
 	light_dark = 1	//1 - Light / 2 - Dark
 	forward = 1	 //Reverse => forward=2 
@@ -915,7 +903,7 @@ Function Solar_Panel()
 	//Buttons
 	//buttonLed 24, 263, 104, 26
 	Button buttonLed,pos={17.00,278.00},size={111.00,23.00},proc=ButtonProc_SimSolar,title="TURN OFF LEDS",fColor=(16385,65535,41303)
-	Button btnresetleds,pos={50.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="Reset Leds",fColor=(65535,0,0)
+	Button btnresetleds,pos={50.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="LEDs to 0",fColor=(65535,0,0)
 	Button buttonClean,pos={351.00,661.00},size={65,32.00},proc=ButtonProc_SimSolar,title="Clean",fColor=(65535,65532,16385)	
 	Button btncheck0,pos={510.00,87.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
 	Button btncheck1,pos={510.00,110.00},size={15.00,15.00},proc=ButtonProc_SimSolar,title="",fColor=(16385,65535,41303)
@@ -1272,6 +1260,130 @@ Function Pop_Action (popNum, popValues)
 	endif	
 end
 
+Function Expand_SSGraph (num)
+	variable num
+	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
+	
+	switch(num)
+	case 0:
+		KillWindow SSPanel#SSGraph
+		Display/W=(0,320,1176,650)/HOST=#  root:solarSimulator:Storage:sa vs root:solarSimulator:Storage:sa
+		RenameWindow #,SSGraph			
+		ModifyGraph /W=SSPanel#SSGraph  tick=2
+		ModifyGraph /W=SSPanel#SSGraph  zero=2
+		ModifyGraph /W=SSPanel#SSGraph  mirror=1
+		ModifyGraph /W=SSPanel#SSGraph  minor=1
+		ModifyGraph /W=SSPanel#SSGraph  standoff=0
+		SetAxis /W=SSPanel#SSGraph left 0,1
+		SetAxis /W=SSPanel#SSGraph bottom 370,1500
+		break
+	case 1:
+		KillWindow SSPanel#SSGraph
+		Display/W=(0,320,584,650)/HOST=#  root:solarSimulator:Storage:sa vs root:solarSimulator:Storage:sa
+		RenameWindow #,SSGraph			
+		ModifyGraph /W=SSPanel#SSGraph  tick=2
+		ModifyGraph /W=SSPanel#SSGraph  zero=2
+		ModifyGraph /W=SSPanel#SSGraph  mirror=1
+		ModifyGraph /W=SSPanel#SSGraph  minor=1
+		ModifyGraph /W=SSPanel#SSGraph  standoff=0
+		SetAxis /W=SSPanel#SSGraph left 0,1
+		SetAxis /W=SSPanel#SSGraph bottom 370,1500
+		break
+	endswitch
+	if(strlen(tracelist))
+		variable i, id			
+		string trace
+		string sdf = GetDataFolder (1)
+		SetDataFolder root:SolarSimulator:graphwaves:
+		for (i=0; strlen(trace)!=0; i+=1)
+			trace = (StringFromList(i, traceList))
+			if (!cmpstr(trace, "sa") || strlen(trace)==0)
+				continue
+			endif
+			id = str2num(trace[strlen(trace)-1])
+			if (numtype(id)==2)
+				Draw ($(StringFromList(i, traceList)),  7)	
+			elseif (stringmatch (trace,"*led*"))
+				Draw ($(StringFromList(i, traceList)),  8)	
+			elseif (id>=0&&id <=6)
+				Draw ($(StringFromList(i, traceList)), id)	
+			endif						
+		endfor
+		SetDataFOlder sdf
+	endif
+End
+
+Function Expand_ivGraph(num)
+	variable num
+	String traceList = TraceNameList("SSPanel#SSCurvaIV", ";", 1)
+	string gname
+	switch (num)
+	case 0:
+		KillWindow SSPanel#SSCurvaIV
+		gname = "SSPanel#SSCurvaIV"
+		Display/W=(0,0,742,650)/HOST=SSPanel  root:SolarSimulator:Storage:sa vs root:SolarSimulator:Storage:sa	
+		RenameWindow #,SSCurvaIV
+		ModifyGraph /W=$gname tick=2
+		ModifyGraph /W=$gname zero=2
+		ModifyGraph /W=$gname mirror=1
+		ModifyGraph /W=$gname minor=1
+		ModifyGraph /W=$gname standoff=0	
+		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
+		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
+		Label /W=$gname left "Current (mA\\M)"
+		Label /W=$gname bottom "Voltage (V)"	
+		SetAxis /W=$gname left -0.018, 0.018
+		SetAxis /W=$gname bottom -1, 4.5		
+		break
+	case 1:
+		KillWindow SSPanel#SSCurvaIV
+		gname = "SSPanel#SSCurvaIV"
+		Display/W=(592,320,1176,650)/HOST=SSPanel  root:SolarSimulator:Storage:sa vs root:SolarSimulator:Storage:sa	
+		RenameWindow #,SSCurvaIV
+		ModifyGraph /W=$gname tick=2
+		ModifyGraph /W=$gname zero=2
+		ModifyGraph /W=$gname mirror=1
+		ModifyGraph /W=$gname minor=1
+		ModifyGraph /W=$gname standoff=0	
+		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
+		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
+		Label /W=$gname left "Current (mA\\M)"
+		Label /W=$gname bottom "Voltage (V)"	
+		SetAxis /W=$gname left -0.018, 0.018
+		SetAxis /W=$gname bottom -1, 4.5	
+		break		
+	endswitch
+	if(strlen(tracelist))
+		variable i		
+		string trace
+		for (i=0; strlen(trace)!=0; i+=1)
+			trace = (StringFromList(i, traceList))
+			if (!cmpstr(trace, "sa") || strlen(trace)==0)
+				continue
+			endif
+			//Return the full path including the wavename.
+			string path_trace = "root:"+StringFromList(0,trace,"_")+":IV:"+trace
+			wave wtrace = $path_trace
+			AppendToGraph  /W=$gname wtrace
+			ModifyGraph /W=$gname lsize=1.5
+			setcolorGraph("")
+		endfor
+	endif
+End
+
+Function NameExists ( dname )
+	string dname
+	string sampleStr=StringFromList(0,dname,"_")
+	string strwave = "root:"+sampleStr+":IV:"+dname
+	wave wstr = $strwave
+	if (WaveExists(wstr))
+		return 1
+	else 
+		return 0
+	endif
+end
+
+
 //***********Check-Rules********************************************************************************************//
 //Check 0-5 Subcells 
 //Check 6 Both Spectrum's Plot 
@@ -1474,20 +1586,6 @@ Function Clean (graph)
 	Setdatafolder sdf
 end
 
-//is this wave scaled as i want?
-Function isScaled (wav)
-	wave wav
-	variable start = leftx (wav)
-	variable delta = deltax (wav)
-	variable ending = rightx (wav)
-	//Aprox will be able to scale waves that are loaded without an appropriate scale 
-	if (  (delta > 2 && delta < 7) && (start>=0 && start<400) && ending-start<2000 )
-		return 1
-	else 
-		return 0
-	endif
-End
-
 //Generates the different led waves gradient from the input values ( 0% --- 100% )
 //And you can choose to set the current directly from its real value or from the 0-100%
 Function LG ( type, id)
@@ -1550,6 +1648,7 @@ Function Copy (origin_path, dest_wavename)
 	endif
 End
 
+//Graphic identification in the panel
 Function id2num( id, type)
 	//type is 0 for ref and 1 for dut
 	//id is the subcell position (0-5)
@@ -1617,7 +1716,17 @@ Function num2id (num)
 	endswitch
 End
 
-//----------------------------------LEDS-------------------------------------------------------	
+//When the panel is closed, this function turn off the leds and the keithley
+Function Disable_All ()
+	nvar ledcheck = root:SolarSimulator:Storage:ledcheck
+	ledcheck = TurnOff_Leds ()
+	Close_Keithley_2600()
+//	print "Turned Off Leds"
+//	print "Closed Keithley"
+End
+
+//------------------------------------------END OF SS_PANEL_INTERFACE---------------------------------------------------------------------------------------------------------------
+//------------------------------------------START OF LEDS-----------------------------------------------------------------------------------------------------------//	
 //TurnOn and Off the Mightex COntroller
 Function TurnOn_Leds()
 	wave wled = root:SolarSimulator:Storage:wled
@@ -1642,7 +1751,9 @@ Function Initialize_Leds()
 	variable i
 	for (i=0; i<DimSize (wLed, 0);i++)		
 		setMode (wled[i][1], 1)	//Normal mode
+		//*setting normal mode mightex induces 10mA current to LED. It is not solved with normal parameters
 		setNormalParameters (wLed[i][1], wLed[i][2], 0)	//Initial Parameters of Leds
+		setNormalCurrent (wled[i][1], 0) //This prevents the LED to initially illuminate becouse of the first 10mA
 	endfor
 	return 1
 end
@@ -1656,17 +1767,63 @@ Function Led_Apply ()
 	endfor
 End
 
-//-----------------------------------------------------------------------------------------
+Function resetLeds()
+	wave Iset = root:SolarSimulator:Storage:Iset
+	wave LedLevel = root:SolarSimulator:Storage:LedLevel
+	LedLevel = 0
+	Iset = 0
+	led_apply()
+	DoUpdate /W=SSpanel
+end
 
-//When the panel is closed, this function turn off the leds and the keithley
-Function Disable_All ()
-	nvar ledcheck = root:SolarSimulator:Storage:ledcheck
-	ledcheck = TurnOff_Leds ()
-	Close_Keithley_2600()
-//	print "Turned Off Leds"
-//	print "Closed Keithley"
-End
+Function DoButtonClick(btnName)
 
+	string btnName
+   STRUCT WMButtonAction ba    
+   ba.eventCode = 2
+   ba.userData = ""
+   ba.ctrlName = btnName
+   ButtonProc_SimSolar(ba)
+   return 0
+end
+
+Function Button_Leds()
+
+	wave wLed = root:SolarSimulator:Storage:wLed	
+	nvar ledcheck = root:SolarSimulator:Storage:ledcheck	
+	nvar lasercheck = root:SolarSimulator:Storage:lasercheck
+	string name
+	variable i
+	if (lasercheck)
+		doButtonClick("btnLaser")
+	endif
+	if (ledcheck)
+		//ledcheck saves the state of leds (on=1, off=0)
+		ledcheck = TurnOff_Leds()		
+		Button buttonLed,title="TURN ON LEDS",fColor=(22000,22000,22000)
+		for (i	=0; i<DimSize(wled, 0); i++)
+			name = "setvarLedValue"+num2str(i)
+			SetVariable $name, disable = 2
+			name = "setvarLedIset"+num2str(i)
+			SetVariable $name,disable = 2		
+		endfor
+		Check_PlotEnable (8, checked=0)
+	else
+		ledcheck = TurnOn_Leds()
+		Button buttonLed,title="TURN OFF LEDS",fColor=(16385,65535,41303)
+		for (i	=0; i<DimSize(wled, 0); i++)
+			name = "setvarLedValue"+num2str(i)
+			SetVariable $name, disable = 0
+			name = "setvarLedIset"+num2str(i)
+			SetVariable $name,disable = 0				
+			Button btnLaser, disable = 0, fColor=(65535,0,0)	
+		endfor
+		Check_PlotEnable (8, checked=1)
+	endif
+end
+
+//-------------------------------------------------------END OF LEDS----------------------------------------------------------------------------------------//
+//-------------------------------------------------------START OF CALCULATIONS----------------------------------------------------------------------------------------//
 ////My own Function to calculate Jsc from qe and s.Spectra
 /// We assume that qe and specw scales are in nm
 /// Scale range and deltax can be different
@@ -1776,7 +1933,8 @@ Function get_NSol (i)
 	wave NSol = root:SolarSimulator:Storage:NSol
 	return NSol[i]
 end
-//----------------------------------Keithley K2600------------------------------------------------------------------------------------------------------//	
+//-------------------------------------------------------END OF CALCULATIONS----------------------------------------------------------------------------------------//
+//-------------------------------------------------------START OF Keithley K2600------------------------------------------------------------------------------------------------------//	
 Function Init_Keithley_2600()
 	InitBoard_GPIB(0) 		
 	InitDevice_GPIB(0,26)	//26 is for Keithley_2600
@@ -2092,7 +2250,8 @@ Function /S getIVsetupNotes_SSCurvaIV()
 	snote+="Step (V)="+num2str(step)+";\r"
 	snote+="Delay (ms)="+num2str(delay)+";\r"
 	snote+="Total Area (cm2)="+num2str(darea)+";\r"
-	snote+="Illuminated Area (cm2)="+num2str(iarea)+";\r\r\r"
+//	snote+="Illuminated Area (cm2)="+num2str(iarea)+";\r"
+	snote+="\r\r"
 	
 	snote+="---- Spectral Adjustment setup variables ----;\r\r"
 	snote+="Dut Area (cm2)="+num2str(dareaSS)+";\r\r"
@@ -2204,8 +2363,8 @@ endswitch
 	//print cmdList
 end
 
-//**********************Keithley K2600***********************************************************************************************************//	
-
+//--------------------------------------------END OF Keithley K2600--------------------------------------------------------------------------------------------------------------------------------------------------------//	
+//--------------------------------------------START BACKGROUND TASKS--------------------------------------------------------------------------------------------------------------------------------------------------------//	
 Function StartCountdown ()
 	variable numticks = 30	// It measures each 0.5 seconds 		//60->1second.
 	CtrlNamedBackground Countdown, period = numticks, proc=Countdown_Jsc
@@ -2248,9 +2407,9 @@ Function CountDown_Jsc(s)
 	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
 	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
-			JscMeas[id] = abs (Meas_JscSS (deviceID))
+			JscMeas[id] = Meas_JscSS (deviceID)
 //			JscMeas[id] = count //Just to get some auxiliary values
-			NSol[id] = JscMeas[id]/JscObj[id]
+			NSol[id] = abs (JscMeas[id]/JscObj[id])
 			
 			ValDisplay $valdispIX,value = #getJscMeas
 			ValDisplay $valdispIX,format = "%.5g"
@@ -2268,181 +2427,4 @@ Function CountDown_Jsc(s)
 		endif
 		return 0
 End
-
-Function Expand_SSGraph (num)
-	variable num
-	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
-	
-	switch(num)
-	case 0:
-		KillWindow SSPanel#SSGraph
-		Display/W=(0,320,1176,650)/HOST=#  root:solarSimulator:Storage:sa vs root:solarSimulator:Storage:sa
-		RenameWindow #,SSGraph			
-		ModifyGraph /W=SSPanel#SSGraph  tick=2
-		ModifyGraph /W=SSPanel#SSGraph  zero=2
-		ModifyGraph /W=SSPanel#SSGraph  mirror=1
-		ModifyGraph /W=SSPanel#SSGraph  minor=1
-		ModifyGraph /W=SSPanel#SSGraph  standoff=0
-		SetAxis /W=SSPanel#SSGraph left 0,1
-		SetAxis /W=SSPanel#SSGraph bottom 370,1500
-		break
-	case 1:
-		KillWindow SSPanel#SSGraph
-		Display/W=(0,320,584,650)/HOST=#  root:solarSimulator:Storage:sa vs root:solarSimulator:Storage:sa
-		RenameWindow #,SSGraph			
-		ModifyGraph /W=SSPanel#SSGraph  tick=2
-		ModifyGraph /W=SSPanel#SSGraph  zero=2
-		ModifyGraph /W=SSPanel#SSGraph  mirror=1
-		ModifyGraph /W=SSPanel#SSGraph  minor=1
-		ModifyGraph /W=SSPanel#SSGraph  standoff=0
-		SetAxis /W=SSPanel#SSGraph left 0,1
-		SetAxis /W=SSPanel#SSGraph bottom 370,1500
-		break
-	endswitch
-	if(strlen(tracelist))
-		variable i, id			
-		string trace
-		string sdf = GetDataFolder (1)
-		SetDataFolder root:SolarSimulator:graphwaves:
-		for (i=0; strlen(trace)!=0; i+=1)
-			trace = (StringFromList(i, traceList))
-			if (!cmpstr(trace, "sa") || strlen(trace)==0)
-				continue
-			endif
-			id = str2num(trace[strlen(trace)-1])
-			if (numtype(id)==2)
-				Draw ($(StringFromList(i, traceList)),  7)	
-			elseif (stringmatch (trace,"*led*"))
-				Draw ($(StringFromList(i, traceList)),  8)	
-			elseif (id>=0&&id <=6)
-				Draw ($(StringFromList(i, traceList)), id)	
-			endif						
-		endfor
-		SetDataFOlder sdf
-	endif
-End
-
-Function Expand_ivGraph(num)
-	variable num
-	String traceList = TraceNameList("SSPanel#SSCurvaIV", ";", 1)
-	string gname
-	switch (num)
-	case 0:
-		KillWindow SSPanel#SSCurvaIV
-		gname = "SSPanel#SSCurvaIV"
-		Display/W=(0,0,742,650)/HOST=SSPanel  root:SolarSimulator:Storage:sa vs root:SolarSimulator:Storage:sa	
-		RenameWindow #,SSCurvaIV
-		ModifyGraph /W=$gname tick=2
-		ModifyGraph /W=$gname zero=2
-		ModifyGraph /W=$gname mirror=1
-		ModifyGraph /W=$gname minor=1
-		ModifyGraph /W=$gname standoff=0	
-		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
-		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
-		Label /W=$gname left "Current (mA\\M)"
-		Label /W=$gname bottom "Voltage (V)"	
-		SetAxis /W=$gname left -0.018, 0.018
-		SetAxis /W=$gname bottom -1, 4.5		
-		break
-	case 1:
-		KillWindow SSPanel#SSCurvaIV
-		gname = "SSPanel#SSCurvaIV"
-		Display/W=(592,320,1176,650)/HOST=SSPanel  root:SolarSimulator:Storage:sa vs root:SolarSimulator:Storage:sa	
-		RenameWindow #,SSCurvaIV
-		ModifyGraph /W=$gname tick=2
-		ModifyGraph /W=$gname zero=2
-		ModifyGraph /W=$gname mirror=1
-		ModifyGraph /W=$gname minor=1
-		ModifyGraph /W=$gname standoff=0	
-		ModifyGraph /W=$gname alblRGB(left)=(39321,39319,1),alblRGB(bottom)=(1,39321,39321)
-		ModifyGraph /W=$gname wbRGB=(65535,65278,63479)
-		Label /W=$gname left "Current (mA\\M)"
-		Label /W=$gname bottom "Voltage (V)"	
-		SetAxis /W=$gname left -0.018, 0.018
-		SetAxis /W=$gname bottom -1, 4.5	
-		break		
-	endswitch
-	if(strlen(tracelist))
-		variable i		
-		string trace
-		for (i=0; strlen(trace)!=0; i+=1)
-			trace = (StringFromList(i, traceList))
-			if (!cmpstr(trace, "sa") || strlen(trace)==0)
-				continue
-			endif
-			//Return the full path including the wavename.
-			string path_trace = "root:"+StringFromList(0,trace,"_")+":IV:"+trace
-			wave wtrace = $path_trace
-			AppendToGraph  /W=$gname wtrace
-			ModifyGraph /W=$gname lsize=1.5
-			setcolorGraph("")
-		endfor
-	endif
-End
-
-Function DoButtonClick(btnName)
-
-	string btnName
-   STRUCT WMButtonAction ba    
-   ba.eventCode = 2
-   ba.userData = ""
-   ba.ctrlName = btnName
-   ButtonProc_SimSolar(ba)
-   return 0
-end
-
-Function Button_Leds()
-
-	wave wLed = root:SolarSimulator:Storage:wLed	
-	nvar ledcheck = root:SolarSimulator:Storage:ledcheck	
-	nvar lasercheck = root:SolarSimulator:Storage:lasercheck
-	string name
-	variable i
-	if (lasercheck)
-		doButtonClick("btnLaser")
-	endif
-	if (ledcheck)
-		//ledcheck saves the state of leds (on=1, off=0)
-		ledcheck = TurnOff_Leds()		
-		Button buttonLed,title="TURN ON LEDS",fColor=(22000,22000,22000)
-		for (i	=0; i<DimSize(wled, 0); i++)
-			name = "setvarLedValue"+num2str(i)
-			SetVariable $name, disable = 2
-			name = "setvarLedIset"+num2str(i)
-			SetVariable $name,disable = 2		
-		endfor
-		Check_PlotEnable (8, checked=0)
-	else
-		ledcheck = TurnOn_Leds()
-		Button buttonLed,title="TURN OFF LEDS",fColor=(16385,65535,41303)
-		for (i	=0; i<DimSize(wled, 0); i++)
-			name = "setvarLedValue"+num2str(i)
-			SetVariable $name, disable = 0
-			name = "setvarLedIset"+num2str(i)
-			SetVariable $name,disable = 0				
-			Button btnLaser, disable = 0, fColor=(65535,0,0)	
-		endfor
-		Check_PlotEnable (8, checked=1)
-	endif
-end
-
-Function NameExists ( dname )
-	string dname
-	string sampleStr=StringFromList(0,dname,"_")
-	string strwave = "root:"+sampleStr+":IV:"+dname
-	wave wstr = $strwave
-	if (WaveExists(wstr))
-		return 1
-	else 
-		return 0
-	endif
-end
-
-Function resetLeds()
-	wave Iset = root:SolarSimulator:Storage:Iset
-	wave LedLevel = root:SolarSimulator:Storage:LedLevel
-	LedLevel = 0
-	Iset = 0
-	led_apply()
-	DoUpdate /W=SSpanel
-end
+//--------------------------------------------END OF BACKGROUND TASKS--------------------------------------------------------------------------------------------------------------------------------------------------------//	
