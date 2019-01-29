@@ -1,5 +1,5 @@
-# Simulador-Solar
-Simulador Solar llevado a cabo en el Instituto de Energía Solar. Trabajo de final de grado. 
+﻿# Sistema de ajuste espectral
+Sistema de ajuste espectral llevado a cabo en el Instituto de Energía Solar. Trabajo de final de grado. 
 
 Objetivo: Medir células multiunión (semiconductores III-V).
 Obtener información de cada unión por separado y automatizar los cálculos y la manera de realizar las medidas que actualmente se llevaban a cabo en el laboratorio
