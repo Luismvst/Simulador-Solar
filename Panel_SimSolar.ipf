@@ -322,7 +322,7 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 				svar com = root:SolarSimulator:Storage:com
 				nvar ledcheck = root:SolarSImulator:Storage:ledcheck
 				if (strlen(com)>=2 && ledcheck)
-					Led_Apply()
+//					Led_Apply()
 				endif
 			endif
 		break
@@ -374,7 +374,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "btnMeasIV":	
 					if (laserStatus)
 						doButtonClick("btnLaser")
-					endif			
+					endif		
 					Meas_IV(deviceID)
 					break
 				case "btnAbort":
@@ -433,14 +433,14 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 				case "btnLaser":	
 					laserStatus = !laserStatus
 					if (laserStatus)
-						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
-						setNormalParameters (laser_channel, laser_imax, 0)		//Defalt parameters (Imax, Iset)
-						setNormalCurrent (laser_channel, laser_iset )			//Iset 
+//						setMode (laser_channel, 1)	//Mode 1 -> Enable Channel Normal Mode
+//						setNormalParameters (laser_channel, laser_imax, 0)		//Defalt parameters (Imax, Iset)
+//						setNormalCurrent (laser_channel, laser_iset )			//Iset 
 						Button btnlaser, fColor=(47545,5397,65535),valueColor=(65535,65535,65535)
 						String laserstr= "--------LASER-------"
 						TitleBox lasertext,pos={621.00,280.00},size={118.00,23.00},title=laserstr,labelBack=(65535,20000,30000),fColor=(0,0,0)
 					else
-						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
+//						setMode (laser_channel, 0)	//Mode 0 -> Disable Channel
 						Button btnlaser, fColor=(65280,0,0),valueColor=(0,0,0)
 						TitleBox lasertext,pos={621.00,280.00},size={118.00,23.00},title="",labelBack=(65535,20000,30000),fColor=(65535,0,0)						
 					endif						
@@ -461,7 +461,9 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 								nvar idtask = root:SolarSimulator:Storage:idtask
 								idtask = id 
 								nvar deviceIDtask = root:SolarSimulator:Storage:deviceidtask
-								deviceIDtask = deviceID	
+								deviceIDtask = deviceID								
+								nvar btn = root:SolarSimulator:Storage:count
+								btn = 0.9	
 								StartCountdown ()	
 							endif
 						endif
@@ -629,18 +631,20 @@ Function Init_SP ([val])
 	Load_Spectrum()	
 	//MightexLeds doesnt need to be initialized. They are turned on or off in the Solar panel
 	//We need to initialize the VDTCOMPORT
-	Init_Keithley_2600()
+//	Init_Keithley_2600()
 	svar /Z com = root:SolarSimulator:Storage:com	
+	com="COM1"
 	Solar_Panel ()
 	// We init first the COM1 as main init value		
-	if (init_OpenSerialLed("COM1","LedController"))
-		com="COM1"
-		nvar ledcheck = root:SolarSimulator:Storage:ledcheck
-		ledcheck = Initialize_Leds()
-	else
-		print "Mightex did not initialized"
-		PopupMenu popupLedCom, popvalue=" ", mode=1
-	endif	
+//	if (init_OpenSerialLed("COM1","LedController"))
+//		com="COM1"
+//		nvar ledcheck = root:SolarSimulator:Storage:ledcheck
+//		ledcheck = Initialize_Leds()
+//	else
+//		print "Mightex did not initialized"
+//		PopupMenu popupLedCom, popvalue=" ", mode=1
+//	endif	
+	
 End 
 
 //In case we only export the procedure, not the experiment (in the fture it will make sense) 
@@ -777,7 +781,7 @@ Function Init_SolarVar ()
 	variable/G root:SolarSimulator:Storage:idtask
 	variable/G root:SolarSimulator:Storage:Count
 	nvar count =root:SolarSimulator:Storage:Count
-	count = 0 
+	count = 0.9 
 	
 	//Jsc
 	make /N=6 /O root:SolarSimulator:Storage:JscObj 	= 0
@@ -917,9 +921,6 @@ Function Solar_Panel()
 	Button buttonContractSS,fColor=(16385,65535,41303)
 	Button buttonAutoscale0,pos={278.00,661.00},size={65.00,32.00},proc=ButtonProc_SimSolar,title="AutoScale"
 	Button buttonAutoscale0,fColor=(16385,65535,41303)
-//	Button buttonSave,pos={631.00,231.00},size={100.00,25.00},proc=ButtonProc_SimSolar,title="\\f01SAVE"
-//	Button buttonExport,pos={632.00,262.00},size={100.00,25.00},disable=2,title="EXPORT"
-//	Button buttonExport,labelBack=(65280,0,0),fSize=14,fStyle=1,fColor=(65280,0,0)
 	
 	PopupMenu popupSubSref,pos={17.00,33.00},size={144.00,19.00},bodyWidth=143,proc=PopMenuProc_SimSolar
 	PopupMenu popupSubSref,mode=100,popvalue=wspecname,value= #"QEWaveList(1)"
@@ -1129,7 +1130,7 @@ Function Solar_Panel()
 	ValDisplay valdispff,pos={1037.00,160.00},size={108,17.00},bodyWidth=75,disable=2,title="FF(%)"
 	ValDisplay valdispff,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:ff"
 	ValDisplay valdisph,pos={1037.00,185.00},size={108,17.00},bodyWidth=75,disable=2,title="h(%)"
-	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:eff"
+	ValDisplay valdisph,limits={0,0,0},barmisc={0,1000},value = #"root:SolarSimulator:Storage:eff"
 	ValDisplay valdispJmp,pos={1037.00,210.00},size={108,17.00},bodyWidth=75,disable=2,title="Jmp\\B(mA/cm2)"
 	ValDisplay valdispJmp,limits={0,0,0},barmisc={0,1000},value= #"root:SolarSimulator:Storage:jmp"
 	ValDisplay valdispVmp,pos={1037.00,235.00},size={108,17.00},bodyWidth=75,disable=2,title="Vmp\\B(V)"
@@ -1375,7 +1376,7 @@ Function NameExists ( dname )
 	string dname
 	string sampleStr=StringFromList(0,dname,"_")
 	string strwave = "root:"+sampleStr+":IV:"+dname
-	wave wstr = $strwave
+	wave/z wstr = $strwave
 	if (WaveExists(wstr))
 		return 1
 	else 
@@ -1772,7 +1773,7 @@ Function resetLeds()
 	wave LedLevel = root:SolarSimulator:Storage:LedLevel
 	LedLevel = 0
 	Iset = 0
-	led_apply()
+//	led_apply()
 	DoUpdate /W=SSpanel
 end
 
@@ -1952,7 +1953,7 @@ Function Meas_IV (deviceID)
 	nvar probe, ilimit, nplc, delay, step, vmin, vmax, forward
 	svar channeL		
 	Button_IVEnable(0)
-	configK2600_GPIB_SSCurvaIV(deviceID,0,channel,probe,ilimit,nplc,delay)
+//	configK2600_GPIB_SSCurvaIV(deviceID,0,channel,probe,ilimit,nplc,delay)
 	measIV_K2600(deviceID,step,vmin,vmax,channel,forward)
 	Button_IVEnable(1)
 	
@@ -1965,16 +1966,17 @@ Function Meas_Jsc (deviceID)
 	SetDataFolder "root:SolarSimulator:Storage"
 	nvar probe, probe, ilimit, nplc, delay, darea
 	svar channeL
-	variable jsc
+	wave jscm = root:SolarSimulator:Storage:JscMeas
+	variable jsc = jscm[0]
 		
-	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 
-	jsc = -1*measI_K2600(deviceID,channel)
-	if (darea == 0)
-		SetVariable setvarDAreaiV, valueBackColor= (57933,66846,1573)		
-	else 
-		SetVariable setvarDAreaiV, valueBackColor=0		
-		jsc/=(darea)
-	endif
+//	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)	 
+//	jsc = -1*measI_K2600(deviceID,channel)
+//	if (darea == 0)
+//		SetVariable setvarDAreaiV, valueBackColor= (57933,66846,1573)		
+//	else 
+//		SetVariable setvarDAreaiV, valueBackColor=0		
+//		jsc/=(darea)
+//	endif
 	return jsc
 	SetDataFolder sdf
 End
@@ -1983,15 +1985,17 @@ Function Meas_JscSS (deviceID)
 	variable deviceID
 	variable jsc
 	nvar darea = root:SolarSimulator:Storage:dareaSS
+	wave jscM = root:SolarSimulator:Storage:jscmeas
 //	configK2600_GPIB_SSCurvaIV(deviceID,3,channel,probe,ilimit,nplc,delay)
-	configK2600_GPIB_SSCurvaIV(deviceID,3,"A"    ,2    ,0.1   ,1   , 1 )
-	jsc = -1*measI_K2600(deviceID,"A")*1000	//mA
-	if (darea == 0)
-		SetVariable setvarDAreaSS, valueBackColor= (57933,66846,1573)		
-	else 
-		SetVariable setvarDAreaSS, valueBackColor=0		
-		jsc/=(darea)
-	endif
+//	configK2600_GPIB_SSCurvaIV(deviceID,3,"A"    ,2    ,0.1   ,1   , 1 )
+//	jsc = -1*measI_K2600(deviceID,"A")*1000	//mA
+//	if (darea == 0)
+//		SetVariable setvarDAreaSS, valueBackColor= (57933,66846,1573)		
+//	else 
+//		SetVariable setvarDAreaSS, valueBackColor=0		
+//		jsc/=(darea)
+//	endif
+	jsc = JscM[2]
 	return jsc
 End
 
@@ -2003,8 +2007,9 @@ Function Meas_Voc(deviceID)
 	svar channel
 	nvar darea
 	variable voc
-	configK2600_GPIB_SSCurvaIV(deviceID,2,channel,probe,ilimit,nplc,delay)	
-	voc=measV_K2600(deviceID,channel)
+	voc = 2.25
+//	configK2600_GPIB_SSCurvaIV(deviceID,2,channel,probe,ilimit,nplc,delay)	
+//	voc=measV_K2600(deviceID,channel)
 	return voc
 	SetDataFolder sdf
 End
@@ -2013,20 +2018,21 @@ Function measI_K2600 (deviceID, channel)
 	variable deviceID
 	String channel
 	String cmd, target
-	channel=lowerstr(channel)
-	
-	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
-	sendcmd_GPIB(deviceID,cmd)
-	cmd="smu"+channel+".source.levelv = 0"
-	sendcmd_GPIB(deviceID,cmd)
-	cmd="print(smu"+channel+".measure.i(smu"+channel+".nvbuffer1))"
-	sendcmd_GPIB(deviceID,cmd)
-	GPIBRead2 /Q target
-	variable imeas=str2num(target)
-	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
-	sendcmd_GPIB(deviceID,cmd)
-	GPIB2 InterfaceClear
-	GPIB2 KillIO
+	variable imeas
+//	channel=lowerstr(channel)
+//	
+//	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
+//	sendcmd_GPIB(deviceID,cmd)
+//	cmd="smu"+channel+".source.levelv = 0"
+//	sendcmd_GPIB(deviceID,cmd)
+//	cmd="print(smu"+channel+".measure.i(smu"+channel+".nvbuffer1))"
+//	sendcmd_GPIB(deviceID,cmd)
+//	GPIBRead2 /Q target
+//	variable imeas=str2num(target)
+//	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
+//	sendcmd_GPIB(deviceID,cmd)
+//	GPIB2 InterfaceClear
+//	GPIB2 KillIO
 	
 	return imeas
 End
@@ -2037,20 +2043,20 @@ Function measV_K2600(deviceID,channel)
 	String cmd, target
 	channel=lowerstr(channel)
 	
-	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
-	sendcmd_GPIB(deviceID,cmd)
-	cmd="smu"+channel+".source.leveli = 0"
-	sendcmd_GPIB(deviceID,cmd)
-	cmd="print(smu"+channel+".measure.v(smu"+channel+".nvbuffer1))"
-	sendcmd_GPIB(deviceID,cmd)
-	GPIBRead2 /Q target
-	variable vmeas=str2num(target)
-	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
-	sendcmd_GPIB(deviceID,cmd)
-	sendcmd_GPIB(deviceID,"waitcomplete()")
-	GPIB2 InterfaceClear
-	GPIB2 KillIO
-	
+//	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
+//	sendcmd_GPIB(deviceID,cmd)
+//	cmd="smu"+channel+".source.leveli = 0"
+//	sendcmd_GPIB(deviceID,cmd)
+//	cmd="print(smu"+channel+".measure.v(smu"+channel+".nvbuffer1))"
+//	sendcmd_GPIB(deviceID,cmd)
+//	GPIBRead2 /Q target
+//	variable vmeas=str2num(target)
+//	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
+//	sendcmd_GPIB(deviceID,cmd)
+//	sendcmd_GPIB(deviceID,"waitcomplete()")
+//	GPIB2 InterfaceClear
+//	GPIB2 KillIO
+	variable vmeas
 	return vmeas
 End
 
@@ -2074,11 +2080,13 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	if (strlen(wname)==0)
 		string mss1 = "Please, enter a valid name"
 		DoAlert /T="Invalid name" 0, mss1
+		Button_IVEnable(1)
 		ABOrtonvalue V_Flag, 1
 	elseif (nameExists(wname))
 		string mss2 = "Name used already exists. Do you want to overwrite it?"
 		DoAlert /T="Name Duplicated" 1, mss2
 		if (V_Flag==2)
+			Button_IVEnable(1)
 			ABOrtonvalue V_Flag, 2
 		endif
 	endif			 
@@ -2097,12 +2105,12 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 		vini=nmin
 		vstep=step
 	endif
-	
+//	
 	make /D/O/N=(npoints) dfrw:$wname
 	wave ww=dfrw:$wname
-	
-	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
-	sendcmd_GPIB(deviceID,cmd)
+//	
+//	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_ON"
+//	sendcmd_GPIB(deviceID,cmd)
 	//cmd="SweepVLinMeasureI(smu"+channel+", "+num2str(nmin)+", "+num2str(nmax)+", "+num2str(delay)+", "+num2str(npoints)+")"
 	//sendcmd_GPIB(deviceID,cmd)
 	//setscale /P x,vini,vstep,"V", ww
@@ -2110,18 +2118,19 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	for(i=0;i<(npoints);i+=1)
 //		start = StartMsTimer
 //		print start 
-		inc=vini+(vstep*i)
-		cmd="smu"+channel+".source.levelv = "+num2str(inc)
-		sendcmd_GPIB(deviceID,cmd)
-		// waitcomplete?
-		//cmd="smu"+channel+".measure.i(smu"+channel+".nvbuffer1)"
-		//sendcmd_GPIB(deviceID,cmd)
-		//ww[i]=-1*measureI_K2600(deviceID,channel)
-		cmd="print(smu"+channel+".measure.i(smu"+channel+".nvbuffer1))"
-		sendcmd_GPIB(deviceID,cmd)
-		GPIBRead2 /Q target
-		ww[i]=str2num(target)
-//		endd = StopMSTimer (start)
+		delay (10)
+//		inc=vini+(vstep*i)
+//		cmd="smu"+channel+".source.levelv = "+num2str(inc)
+//		sendcmd_GPIB(deviceID,cmd)
+//		// waitcomplete?
+//		//cmd="smu"+channel+".measure.i(smu"+channel+".nvbuffer1)"
+//		//sendcmd_GPIB(deviceID,cmd)
+//		//ww[i]=-1*measureI_K2600(deviceID,channel)
+//		cmd="print(smu"+channel+".measure.i(smu"+channel+".nvbuffer1))"
+//		sendcmd_GPIB(deviceID,cmd)
+//		GPIBRead2 /Q target
+//		ww[i]=str2num(target)
+////		endd = StopMSTimer (start)
 //		print endd 
 		GetMouse /W=SSPanel  // test for mouse press in pseudo-"ABORT" button area
 		click=V_Flag //1 if click, 0 if not
@@ -2139,11 +2148,11 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	//sendcmd_GPIB(deviceID,cmd)
 	//GPIBReadWave2 /Q dfr:$wstr
 	
-	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
-	sendcmd_GPIB(deviceID,cmd)
-	sendcmd_GPIB(deviceID,"smu"+channel+".reset()")
-	GPIB2 InterfaceClear
-	GPIB2 KillIO
+//	cmd="smu"+channel+".source.output = smu"+channel+".OUTPUT_OFF"
+//	sendcmd_GPIB(deviceID,cmd)
+//	sendcmd_GPIB(deviceID,"smu"+channel+".reset()")
+//	GPIB2 InterfaceClear
+//	GPIB2 KillIO
 	//Duplicate /O ww,dfrw:$wname
 	//wave ww2=dfrw:$wname
 	setscale /P x,vini,vstep,"V", ww
@@ -2151,22 +2160,30 @@ Function/WAVE measIV_K2600 (deviceID, step, nmin, nmax, channel, forw)
 	
 	string tracelist=TraceNameList("SSCurvaIV",";",1)
 	if(!StringMatch(tracelist,"*"+wname+"*"))
-		AppendtoGraph /W=SSPanel#SSCurvaIV ww
+		AppendtoGraph /W=SSPanel#SSCurvaIV root:tempIV_IMM_CM
 		ModifyGraph /W=SSPanel#SSCurvaIV lsize=1.5
 		setcolorGraph("")
 	endif
 	string nots=getFecha4note()+notas+";\r"+setupNotes
 	// What happens if its Light or Dark
 	if(light==1 && aborted ==0)
-		ww*=-1
+//		ww*=-1
 		//calculate solar cell parameters - always 1-sun.
-		wave sc=getIVCellParams(ww,1,darea,1,nots)
+//		wave sc=getIVCellParams(ww,1,darea,1,nots)
 		NVAR jsc=root:SolarSimulator:Storage:jsc
 		NVAR voc=root:SolarSimulator:Storage:voc
 		NVAR ff=root:SolarSimulator:Storage:ff 	
 		NVAR eff=root:SolarSimulator:Storage:eff
 		NVAR vmp=root:SolarSimulator:Storage:vmp 
-		NVAR jmp=root:SolarSimulator:Storage:jmp		
+		NVAR jmp=root:SolarSimulator:Storage:jmp	
+		jsc = 	8.7256
+		voc = 2.8529
+		vmp  = 2.52
+		jmp = 8.4253
+		ff = 0.8529
+		variable specincid = area (root:SolarSimulator:Spectra:SLamp:XT10open2012_w)
+		eff = jmp*vmp/specincid
+		
 
 		// For the moment we replace Amperes and Area. This is good for using general function for SC parameters
 		// Next version will split functions of SC params and standarized areas for sim and exp data.
@@ -2403,12 +2420,12 @@ Function CountDown_Jsc(s)
 	string message = "------Measuring-----"
 	String abortStr= "Hold escape to abort"
 	nvar count = root:SolarSimulator:Storage:count
-	count +=1	
+	count +=0.01
 	TitleBox countdown_message,pos={621.00,228.00},size={118.00,23.00},title=message,labelBack=(65535,65534,49151),fColor=(2,39321,1)
 	TitleBox countdown_abort,pos={621.00,254.00},size={118.00,23.00},title=abortStr,labelBack=(49151,65535,57456),fColor=(65535,0,0)
 	
-			JscMeas[id] = Meas_JscSS (deviceID)
-//			JscMeas[id] = count //Just to get some auxiliary values
+//			JscMeas[id] = Meas_JscSS (deviceID)
+			JscMeas[id] = jscObj[id]*count //Just to get some auxiliary values
 			NSol[id] = abs (JscMeas[id]/JscObj[id])
 			
 			ValDisplay $valdispIX,value = #getJscMeas
