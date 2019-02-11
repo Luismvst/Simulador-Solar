@@ -58,7 +58,7 @@ End
 //IMPROTANT: 
 //To make this program work, we have to introduce the folder called "SolarSimulatorData" into the "Igor Pro User Files" Folder.
 //The path to that folder is "C:User:Documents:Wavemetric:IgorProUserFiles:" for most computers
-Menu "S.Solar"
+Menu "Spec Adj"
 	SubMenu "Solar Panel"	
 		"Display SolarPanel /ç", /Q, Init_SP (val=1)	
 		"Initialize Solar Panel ", /Q, Init_SP ()
@@ -159,8 +159,10 @@ end
 
 Function Draw (trace, id)
 	wave trace
+	//Id means to be 1:EQEref, 2:EQEdut, 3: ledwave
 	variable id
 	variable id2
+	variable id3=1
 	string cadena
 	String traceList = TraceNameList("SSPanel#SSGraph", ";", 1)
 	if(strlen(tracelist))
@@ -168,7 +170,11 @@ Function Draw (trace, id)
 		for (i=0; strlen(cadena)!=0; i+=1)
 			cadena = (StringFromList(i, traceList))
 			if(stringmatch(cadena, NameOfWave(trace)) )
-				 return 0
+				if (stringmatch (cadena, "waveled*"))
+					id3=0
+					continue
+				endif
+				return 0
 			endif				
 		endfor
 	endif
@@ -214,8 +220,10 @@ Function Draw (trace, id)
 			SetAxis /W=SSPanel#SSGraph right 0,2.5
 			break
 		case 8:	//led Spectra
-			Appendtograph /W=SSPanel#SSGraph trace
-			ModifyGraph /W=SSPanel#SSGraph lSize($realname)=1.5
+			if (id3!=0)
+				Appendtograph /W=SSPanel#SSGraph trace
+				ModifyGraph /W=SSPanel#SSGraph lSize($realname)=1.5
+			endif
 			WaveStats/Q trace
 //			variable num = trace[V_MaxRowLoc]
 			variable num = V_MaxLoc
@@ -302,6 +310,11 @@ Function SetVarProc_SimSol(sva) : SetVariableControl
 				case "setvarLedIset5":
 					LG ( 0, 5)
 				break
+				case "setvarJscref":
+					variable num = sva.ctrlname[12]
+					wave JscRef = root:SolarSimulator:Storage:JscRef
+					jscRef [num] = sva.dval
+				break
 				case "setvarledstep":
 					wave wled = root:SolarSimulator:Storage:Wled
 					nvar ledstep = root:Solarsimulator:Storage:ledstep
@@ -345,7 +358,7 @@ Function ButtonProc_SimSolar(ba) : ButtonControl
 			string baName = ba.ctrlname
 			String traceList, trace, path_trace
 			variable i, ii			
-			variable deviceID = getDeviceID("K2600")
+			variable deviceID=35520// = getDeviceID("K2600")
 			nvar laserStatus = root:SolarSimulator:Storage:lasercheck		
 			if (deviceID == 0 )
 				string ms = "Unable to connect with Keithley 2602A\n\n"
@@ -1773,6 +1786,12 @@ Function resetLeds()
 	wave LedLevel = root:SolarSimulator:Storage:LedLevel
 	LedLevel = 0
 	Iset = 0
+	string name
+	variable i
+	for (i = 0; i<numLeds; i++)
+		name = "setvarLedValue"+num2str(i)
+		DoSetVarclick (name)
+	endfor
 //	led_apply()
 	DoUpdate /W=SSpanel
 end
@@ -1788,6 +1807,16 @@ Function DoButtonClick(btnName)
    return 0
 end
 
+Function DoSetVarClick (setvar)
+	string setvar
+	STRUCT WMSetVariableAction sva
+	sva.eventCode = 2
+	sva.userData=""
+	sva.ctrlName=setvar
+	SetVarProc_SimSol(sva)
+end
+	
+
 Function Button_Leds()
 
 	wave wLed = root:SolarSimulator:Storage:wLed	
@@ -1800,7 +1829,7 @@ Function Button_Leds()
 	endif
 	if (ledcheck)
 		//ledcheck saves the state of leds (on=1, off=0)
-		ledcheck = TurnOff_Leds()		
+		ledcheck = 0//TurnOff_Leds()		
 		Button buttonLed,title="TURN ON LEDS",fColor=(22000,22000,22000)
 		for (i	=0; i<DimSize(wled, 0); i++)
 			name = "setvarLedValue"+num2str(i)
@@ -1810,7 +1839,7 @@ Function Button_Leds()
 		endfor
 		Check_PlotEnable (8, checked=0)
 	else
-		ledcheck = TurnOn_Leds()
+		ledcheck = 1//TurnOn_Leds()
 		Button buttonLed,title="TURN OFF LEDS",fColor=(16385,65535,41303)
 		for (i	=0; i<DimSize(wled, 0); i++)
 			name = "setvarLedValue"+num2str(i)
@@ -1881,7 +1910,8 @@ Function Calc_Jsc (id)
 	//We are not ready to calc the Values
 	//Identify if the wave contains Nan on its first position.
 	//First we calculate JscRef with the EQEref
-	if ( numtype (wsref[0]) != 2  )
+//	if ( numtype (wsref[0]) == 2  )
+	if ( JscRef[id] == 0 ) 
 		JscRef[id] = qe2jscSS ( wsref, waveSpecsun )
 	endif
 	if ( numtype (wsref[0]) == 2 || numtype (wsdut[0]) == 2 || numtype(waveSpecsun[0]) == 2 || numtype (waveLamp[0]) == 2) 
